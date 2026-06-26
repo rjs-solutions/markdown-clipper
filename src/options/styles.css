@@ -1,0 +1,112 @@
+:root {
+  color-scheme: light;
+  --accent: #126b5d;
+  --border: #d7dde4;
+  --page: #f5f7f9;
+  --surface: #ffffff;
+  --text: #162028;
+  --text-muted: #5f6d79;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--page);
+  font: 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.options {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 32px 18px;
+}
+
+h1 {
+  margin: 0 0 18px;
+  font-size: 22px;
+  letter-spacing: 0;
+}
+
+form {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  color: var(--text-muted);
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+input {
+  accent-color: var(--accent);
+  font: inherit;
+}
+
+input[type="number"] {
+  width: min(100%, 220px);
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+
+.input-with-unit input {
+  width: 180px;
+}
+
+.buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+button {
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover,
+button[type="submit"] {
+  border-color: var(--accent);
+}
+
+button[type="submit"] {
+  color: #ffffff;
+  background: var(--accent);
+}
+
+#status {
+  min-height: 20px;
+  margin: 12px 0 0;
+  color: var(--accent);
+}

@@ -1,0 +1,129 @@
+:root {
+  color-scheme: light;
+  --accent: #126b5d;
+  --accent-dark: #0c5146;
+  --border: #d7dde4;
+  --surface: #ffffff;
+  --surface-muted: #f5f7f9;
+  --text: #162028;
+  --text-muted: #5f6d79;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 330px;
+  color: var(--text);
+  background: var(--surface);
+  font: 13px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.popup {
+  padding: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+p {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-muted);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: var(--surface-muted);
+  color: var(--accent);
+}
+
+.icon-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.actions {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.action {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  align-items: center;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 4px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.action:hover {
+  background: var(--surface-muted);
+}
+
+.action:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.action-icon {
+  width: 18px;
+  height: 18px;
+  color: #ffffff;
+  fill: none;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.status {
+  min-height: 18px;
+  margin-top: 8px;
+  color: var(--accent-dark);
+}
+
+.status.is-error {
+  color: #a33a26;
+}

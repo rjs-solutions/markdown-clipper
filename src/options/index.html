@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SharePoint Markdown Options</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="options">
+      <h1>SharePoint Markdown Options</h1>
+
+      <form id="options-form">
+        <label class="field checkbox-field">
+          <input id="scroll-before-capture" type="checkbox">
+          <span>Scroll to bottom before capture</span>
+        </label>
+
+        <label class="field checkbox-field">
+          <input id="include-source" type="checkbox">
+          <span>Include page metadata at top</span>
+        </label>
+
+        <label class="field">
+          <span>Maximum scroll time</span>
+          <span class="input-with-unit">
+            <input id="max-scroll-ms" type="number" min="3000" max="45000" step="500">
+            <span aria-hidden="true">ms</span>
+          </span>
+        </label>
+
+        <label class="field">
+          <span>Pause after each scroll</span>
+          <span class="input-with-unit">
+            <input id="scroll-pause-ms" type="number" min="150" max="2500" step="50">
+            <span aria-hidden="true">ms</span>
+          </span>
+        </label>
+
+        <div class="buttons">
+          <button id="save" type="submit">Save</button>
+          <button id="reset" type="button">Reset</button>
+        </div>
+      </form>
+
+      <p id="status" role="status" aria-live="polite"></p>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>
