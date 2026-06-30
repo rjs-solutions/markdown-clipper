@@ -1,23 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "SharePoint Markdown Exporter",
-  "version": "0.1.0",
-  "description": "Export the active SharePoint page to a clean Markdown file, tab, or clipboard.",
+  "name": "Markdown Web Clipper",
+  "short_name": "MarkdownClip",
+  "version": "0.2.0",
+  "description": "Capture any web page - including SharePoint - as clean Markdown. Copy, download, open, or export a whole site.",
   "icons": {
     "16": "assets/icons/icon-16.png",
     "32": "assets/icons/icon-32.png",
     "48": "assets/icons/icon-48.png",
     "128": "assets/icons/icon-128.png"
   },
-  "permissions": [
-    "activeTab",
-    "clipboardWrite",
-    "downloads",
-    "scripting",
-    "storage"
-  ],
   "action": {
-    "default_title": "Export SharePoint Markdown",
+    "default_title": "Clip page to Markdown",
     "default_popup": "src/popup/index.html",
     "default_icon": {
       "16": "assets/icons/icon-16.png",
@@ -26,5 +20,40 @@
       "128": "assets/icons/icon-128.png"
     }
   },
-  "options_page": "src/options/index.html"
+  "options_page": "src/options/index.html",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "downloads",
+    "storage"
+  ],
+  "optional_permissions": [
+    "tabs"
+  ],
+  "optional_host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/content/*.js",
+        "src/lib/*.js",
+        "src/vendor/*.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+M"
+      }
+    }
+  }
 }

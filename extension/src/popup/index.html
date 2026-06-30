@@ -3,15 +3,15 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SharePoint Markdown Exporter</title>
+    <title>Markdown Web Clipper</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
     <main class="popup">
       <header class="header">
         <div>
-          <h1>SharePoint Markdown</h1>
-          <p>Capture the active page as Markdown.</p>
+          <h1>Markdown Web Clipper</h1>
+          <p>Capture this page as Markdown.</p>
         </div>
         <button class="icon-button" id="open-options" type="button" title="Options" aria-label="Options">
           <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -21,13 +21,13 @@
         </button>
       </header>
 
-      <section class="actions" aria-label="Export actions">
+      <section class="actions" aria-label="Capture actions">
         <button class="action" type="button" data-action="copy">
           <svg class="action-icon" aria-hidden="true" viewBox="0 0 24 24">
             <path d="M8 8h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z"></path>
             <path d="M4 16H3a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1"></path>
           </svg>
-          <span>Copy Markdown to Clipboard</span>
+          <span>Copy Markdown to clipboard</span>
         </button>
         <button class="action" type="button" data-action="open">
           <svg class="action-icon" aria-hidden="true" viewBox="0 0 24 24">
@@ -35,7 +35,7 @@
             <path d="M10 14 21 3"></path>
             <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"></path>
           </svg>
-          <span>Open Markdown in New Tab</span>
+          <span>Open Markdown in new tab</span>
         </button>
         <button class="action" type="button" data-action="download">
           <svg class="action-icon" aria-hidden="true" viewBox="0 0 24 24">
@@ -43,12 +43,23 @@
             <path d="M7 10l5 5 5-5"></path>
             <path d="M12 15V3"></path>
           </svg>
-          <span>Download Content as Markdown File</span>
+          <span>Download as Markdown file</span>
+        </button>
+      </section>
+
+      <section class="actions actions-secondary" aria-label="Site actions">
+        <button class="action action-ghost" type="button" data-action="export">
+          <svg class="action-icon" aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M3 7l9-4 9 4-9 4-9-4Z"></path>
+            <path d="M3 12l9 4 9-4"></path>
+            <path d="M3 17l9 4 9-4"></path>
+          </svg>
+          <span>Export a whole site&#8230;</span>
         </button>
       </section>
 
       <p class="status" id="status" role="status" aria-live="polite">Ready</p>
     </main>
-    <script src="popup.js"></script>
+    <script type="module" src="popup.js"></script>
   </body>
 </html>

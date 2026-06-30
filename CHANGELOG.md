@@ -14,13 +14,26 @@ general-purpose Markdown web clipper with SharePoint as a first-class mode.
 - Vendored conversion libraries (Turndown + GFM plugin + Mozilla Readability) as browser ES
   modules in `extension/src/vendor/`, regenerated via `npm run vendor`.
 
+- HTML→Markdown now uses Turndown + the GFM plugin (tables, strikethrough, task lists,
+  fenced code), replacing the hand-rolled 921-line renderer.
+- General-webpage **article mode** via Mozilla Readability, with a full-page fallback; a
+  capture **mode** setting (auto / sharepoint / article / full).
+- Modular content pipeline (`content/`: scroll, sharepoint, clean, metadata, article,
+  collect) injected via a dynamic-import ESM bootstrap; pure logic in `lib/`.
+- Output options: **YAML front matter**, a plain metadata list, or none; optional title H1.
+- `node --test` suites for markdown, slug, front matter, compose, cleaning, and an end-to-end
+  collector integration test (31 tests).
+
 ### Changed
 - Restructured to the `extension/` layout (manifest + `src/` + `assets/` under `extension/`).
+- Renamed to **Markdown Web Clipper** (v0.2.0); manifest gains `short_name`, an `extension_pages`
+  CSP, an `Alt+M` command, and `web_accessible_resources` for the content modules.
+- Modernized the popup/report: native promises, **Blob** downloads (no more data: URLs), and
+  clipboard via `navigator.clipboard` — dropped the deprecated `execCommand` fallback and the
+  `clipboardWrite` permission.
 
 ### Planned
-- Replace the hand-rolled HTML→Markdown converter with Turndown.
-- General-webpage support (Readability article mode) alongside SharePoint capture.
-- YAML front matter + templating with page variables (title/author/date/selector/schema).
+- Templating with page variables (title/author/date/selector/schema) over the front matter.
 - Site spider / aggregate export: per-page Markdown preserving site structure (ZIP + index)
   or a single concatenated aggregate file.
 

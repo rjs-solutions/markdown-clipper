@@ -1,3 +1,5 @@
+import { downloadText } from "../lib/download.js";
+
 const titleElement = document.getElementById("title");
 const metaElement = document.getElementById("meta");
 const markdownElement = document.getElementById("markdown");
@@ -14,12 +16,13 @@ async function initialize() {
   if (!currentPayload) {
     titleElement.textContent = "Markdown Export";
     metaElement.textContent = "The export data is no longer available.";
-    markdownElement.textContent = "Open the extension popup and export the page again.";
+    markdownElement.textContent = "Open the extension popup and capture the page again.";
     copyButton.disabled = true;
     downloadButton.disabled = true;
     return;
   }
 
+  document.title = currentPayload.title || "Markdown Export";
   titleElement.textContent = currentPayload.title || "Markdown Export";
   metaElement.textContent = currentPayload.url || "";
   markdownElement.textContent = currentPayload.markdown || "";
@@ -32,12 +35,8 @@ async function initialize() {
     }, 1400);
   });
 
-  downloadButton.addEventListener("click", async () => {
-    await chrome.downloads.download({
-      url: `data:text/markdown;charset=utf-8,${encodeURIComponent(currentPayload.markdown || "")}`,
-      filename: currentPayload.filename || "sharepoint-page.md",
-      saveAs: false
-    });
+  downloadButton.addEventListener("click", () => {
+    downloadText(currentPayload.markdown || "", currentPayload.filename || "page.md");
   });
 }
 
@@ -46,7 +45,6 @@ async function loadPayload() {
   if (!id) {
     return null;
   }
-
   const key = `export:${id}`;
   const data = await chrome.storage.session.get(key);
   return data[key] || null;
