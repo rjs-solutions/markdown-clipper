@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Export site to Markdown</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="crawl">
+      <h1>Export a site to Markdown</h1>
+      <p class="lead">
+        Capture many pages of a site as Markdown. Pages open in background tabs so even
+        JavaScript-rendered SharePoint pages are captured. You'll be asked for permission to
+        access the site before the export starts.
+      </p>
+
+      <form id="crawl-form">
+        <fieldset class="group">
+          <legend>What to capture</legend>
+
+          <div class="modes" role="radiogroup" aria-label="Discovery mode">
+            <label><input type="radio" name="mode" value="list" checked> Paste a list of URLs</label>
+            <label><input type="radio" name="mode" value="sitemap"> From a sitemap.xml</label>
+            <label><input type="radio" name="mode" value="crawl"> Crawl links from a start page</label>
+          </div>
+
+          <label class="field" data-mode="list">
+            <span>Page URLs (one per line)</span>
+            <textarea id="urls" rows="6" spellcheck="false" placeholder="https://contoso.sharepoint.com/sites/team/SitePages/Home.aspx"></textarea>
+          </label>
+
+          <label class="field" data-mode="sitemap crawl">
+            <span id="start-label">Start URL</span>
+            <input id="start" type="url" placeholder="https://contoso.sharepoint.com/...">
+          </label>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Options</legend>
+          <label class="field">
+            <span>Maximum pages</span>
+            <input id="max-pages" type="number" min="1" max="500" step="1" value="25">
+          </label>
+          <label class="field checkbox-field" data-mode="crawl">
+            <input id="same-host" type="checkbox" checked>
+            <span>Only follow links on the same host</span>
+          </label>
+          <label class="field">
+            <span>Output</span>
+            <select id="output">
+              <option value="zip">ZIP archive (one file per page + index.md)</option>
+              <option value="aggregate">Single aggregate Markdown file</option>
+              <option value="both">Both</option>
+            </select>
+          </label>
+        </fieldset>
+
+        <div class="buttons">
+          <button id="start-btn" type="submit">Start export</button>
+          <button id="stop-btn" type="button" disabled>Stop</button>
+        </div>
+      </form>
+
+      <p id="summary" class="summary" role="status" aria-live="polite"></p>
+      <ol id="log" class="log" aria-label="Progress log"></ol>
+    </main>
+    <script type="module" src="crawl.js"></script>
+  </body>
+</html>

@@ -20,7 +20,10 @@ function initialize() {
 
 async function runAction(action) {
   if (action === "export") {
-    await chrome.tabs.create({ url: chrome.runtime.getURL("src/crawl/index.html") });
+    const tab = await activeTab();
+    const seedUrl = tab && /^https?:\/\//i.test(tab.url || "") ? tab.url : "";
+    const suffix = seedUrl ? `?seed=${encodeURIComponent(seedUrl)}` : "";
+    await chrome.tabs.create({ url: chrome.runtime.getURL(`src/crawl/index.html${suffix}`) });
     window.close();
     return;
   }

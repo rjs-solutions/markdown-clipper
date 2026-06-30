@@ -28,6 +28,13 @@ general-purpose Markdown web clipper with SharePoint as a first-class mode.
   fields (title/author/published/modified/date/description/url/domain/site/captured/today/time),
   `{{meta:NAME}}`, `{{schema:KEY}}` (JSON-LD), and `{{selector:CSS}}`. Filters: lower, upper,
   trim, slug, default, replace, truncate, date.
+- **Site spider / export** (`Export a whole site...` in the popup): discover pages from a
+  pasted URL list, a `sitemap.xml`, or by crawling same-host links from a start page; each
+  page is captured in a background tab (so JS-rendered SharePoint pages work). Output as a ZIP
+  preserving the site's folder structure (one `.md` per page + `index.md`) and/or a single
+  aggregate Markdown file with a table of contents. Host access is requested per-site at start.
+- Store-only ZIP writer, URL discovery, structure-preserving path mapping, and aggregate
+  builders are pure and unit-tested (53 tests total).
 
 ### Changed
 - Restructured to the `extension/` layout (manifest + `src/` + `assets/` under `extension/`).
@@ -36,10 +43,6 @@ general-purpose Markdown web clipper with SharePoint as a first-class mode.
 - Modernized the popup/report: native promises, **Blob** downloads (no more data: URLs), and
   clipboard via `navigator.clipboard` — dropped the deprecated `execCommand` fallback and the
   `clipboardWrite` permission.
-
-### Planned
-- Site spider / aggregate export: per-page Markdown preserving site structure (ZIP + index)
-  or a single concatenated aggregate file.
 
 ## [0.1.0] — alpha (pre-graduation baseline)
 
