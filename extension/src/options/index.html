@@ -69,6 +69,45 @@
           </label>
         </fieldset>
 
+        <fieldset class="group">
+          <legend>Template (advanced)</legend>
+
+          <label class="field checkbox-field">
+            <input id="use-template" type="checkbox">
+            <span>Use a custom template instead of the Output settings above</span>
+          </label>
+
+          <label class="field">
+            <span>Note template</span>
+            <textarea id="template" rows="10" spellcheck="false"></textarea>
+          </label>
+
+          <label class="field">
+            <span>Filename template</span>
+            <input id="filename-template" type="text">
+          </label>
+
+          <details class="help">
+            <summary>Available variables &amp; filters</summary>
+            <p>Use <code>{{name}}</code>, optionally with filters, e.g.
+              <code>{{title|slug}}</code> or <code>{{published|date:YYYY-MM-DD}}</code>.</p>
+            <ul>
+              <li><code>{{content}}</code> &mdash; the converted Markdown body</li>
+              <li><code>{{title}}</code>, <code>{{author}}</code>, <code>{{published}}</code>,
+                <code>{{modified}}</code>, <code>{{date}}</code>, <code>{{description}}</code></li>
+              <li><code>{{url}}</code>, <code>{{domain}}</code>, <code>{{path}}</code>,
+                <code>{{site}}</code>, <code>{{captured}}</code>, <code>{{today}}</code>,
+                <code>{{time}}</code></li>
+              <li><code>{{meta:NAME}}</code> &mdash; any page meta tag (e.g. <code>{{meta:og:image}}</code>)</li>
+              <li><code>{{schema:KEY}}</code> &mdash; JSON-LD field (e.g. <code>{{schema:datePublished}}</code>)</li>
+              <li><code>{{selector:CSS}}</code> &mdash; text of the first match (e.g. <code>{{selector:.byline}}</code>)</li>
+            </ul>
+            <p>Filters: <code>lower</code>, <code>upper</code>, <code>trim</code>, <code>slug</code>,
+              <code>default:x</code>, <code>replace:a,b</code>, <code>truncate:120</code>,
+              <code>date:FORMAT</code>.</p>
+          </details>
+        </fieldset>
+
         <div class="buttons">
           <button id="save" type="submit">Save</button>
           <button id="reset" type="button">Reset</button>

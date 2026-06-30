@@ -7,6 +7,7 @@ import { findSharePointRoot, getSharePointTitle, isSharePoint } from "./sharepoi
 import { prepareContent } from "./clean.js";
 import { collectMetadata } from "./metadata.js";
 import { parseArticle } from "./article.js";
+import { buildVariables } from "./variables.js";
 import { cleanText } from "./dom-utils.js";
 import { htmlToMarkdown } from "../lib/markdown.js";
 
@@ -31,7 +32,8 @@ function sanitize(raw) {
     scrollBeforeCapture: raw.scrollBeforeCapture !== false,
     maxScrollMs: clampNumber(raw.maxScrollMs, 3000, 45000, DEFAULTS.maxScrollMs),
     scrollPauseMs: clampNumber(raw.scrollPauseMs, 150, 2500, DEFAULTS.scrollPauseMs),
-    dropHidden: raw.dropHidden !== false
+    dropHidden: raw.dropHidden !== false,
+    selectors: Array.isArray(raw.selectors) ? raw.selectors.filter((s) => typeof s === "string") : []
   };
 }
 
@@ -94,6 +96,8 @@ export async function collectPage(rawOptions = {}) {
   metadata.title = title;
   metadata.url = location.href;
 
+  const variables = buildVariables(metadata, { content: markdown, selectors: options.selectors });
+
   restoreScroll(startScroll);
 
   return {
@@ -103,6 +107,7 @@ export async function collectPage(rawOptions = {}) {
     mode,
     markdown,
     metadata,
+    variables,
     stats: {
       characters: markdown.length,
       root,

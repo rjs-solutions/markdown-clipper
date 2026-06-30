@@ -21,8 +21,13 @@ general-purpose Markdown web clipper with SharePoint as a first-class mode.
 - Modular content pipeline (`content/`: scroll, sharepoint, clean, metadata, article,
   collect) injected via a dynamic-import ESM bootstrap; pure logic in `lib/`.
 - Output options: **YAML front matter**, a plain metadata list, or none; optional title H1.
-- `node --test` suites for markdown, slug, front matter, compose, cleaning, and an end-to-end
-  collector integration test (31 tests).
+- `node --test` suites for markdown, slug, front matter, compose, cleaning, templating, and an
+  end-to-end collector integration test.
+- **Templating** (opt-in) inspired by the Obsidian Web Clipper: a note template and filename
+  template with `{{variable|filter}}` substitution. Variables include `{{content}}`, page
+  fields (title/author/published/modified/date/description/url/domain/site/captured/today/time),
+  `{{meta:NAME}}`, `{{schema:KEY}}` (JSON-LD), and `{{selector:CSS}}`. Filters: lower, upper,
+  trim, slug, default, replace, truncate, date.
 
 ### Changed
 - Restructured to the `extension/` layout (manifest + `src/` + `assets/` under `extension/`).
@@ -33,7 +38,6 @@ general-purpose Markdown web clipper with SharePoint as a first-class mode.
   `clipboardWrite` permission.
 
 ### Planned
-- Templating with page variables (title/author/date/selector/schema) over the front matter.
 - Site spider / aggregate export: per-page Markdown preserving site structure (ZIP + index)
   or a single concatenated aggregate file.
 

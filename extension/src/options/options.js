@@ -10,7 +10,10 @@ const fields = {
   scrollBeforeCapture: document.getElementById("scroll-before-capture"),
   dropHidden: document.getElementById("drop-hidden"),
   maxScrollMs: document.getElementById("max-scroll-ms"),
-  scrollPauseMs: document.getElementById("scroll-pause-ms")
+  scrollPauseMs: document.getElementById("scroll-pause-ms"),
+  useTemplate: document.getElementById("use-template"),
+  template: document.getElementById("template"),
+  filenameTemplate: document.getElementById("filename-template")
 };
 
 document.addEventListener("DOMContentLoaded", initialize);
@@ -28,6 +31,8 @@ async function initialize() {
     fillForm(await resetSettings());
     flash("Reset");
   });
+
+  fields.useTemplate.addEventListener("change", reflectTemplateMode);
 }
 
 function fillForm(settings) {
@@ -38,6 +43,17 @@ function fillForm(settings) {
   fields.dropHidden.checked = settings.dropHidden;
   fields.maxScrollMs.value = settings.maxScrollMs;
   fields.scrollPauseMs.value = settings.scrollPauseMs;
+  fields.useTemplate.checked = settings.useTemplate;
+  fields.template.value = settings.template;
+  fields.filenameTemplate.value = settings.filenameTemplate;
+  reflectTemplateMode();
+}
+
+// When a custom template is active, the simple Output settings no longer apply.
+function reflectTemplateMode() {
+  const on = fields.useTemplate.checked;
+  fields.metadataStyle.disabled = on;
+  fields.includeTitleHeading.disabled = on;
 }
 
 function readForm() {
@@ -48,7 +64,10 @@ function readForm() {
     scrollBeforeCapture: fields.scrollBeforeCapture.checked,
     dropHidden: fields.dropHidden.checked,
     maxScrollMs: clampNumber(fields.maxScrollMs.value, 3000, 45000, DEFAULT_SETTINGS.maxScrollMs),
-    scrollPauseMs: clampNumber(fields.scrollPauseMs.value, 150, 2500, DEFAULT_SETTINGS.scrollPauseMs)
+    scrollPauseMs: clampNumber(fields.scrollPauseMs.value, 150, 2500, DEFAULT_SETTINGS.scrollPauseMs),
+    useTemplate: fields.useTemplate.checked,
+    template: fields.template.value,
+    filenameTemplate: fields.filenameTemplate.value
   };
 }
 

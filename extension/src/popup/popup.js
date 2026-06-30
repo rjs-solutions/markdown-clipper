@@ -1,6 +1,7 @@
 import { composeDocument } from "../lib/compose.js";
-import { slugify, withMarkdownExtension } from "../lib/slug.js";
+import { slugify, sanitizeFilename, withMarkdownExtension } from "../lib/slug.js";
 import { DEFAULT_SETTINGS, loadSettings } from "../lib/settings.js";
+import { applyTemplate, extractSelectorRefs } from "../lib/template.js";
 import { capturePage } from "../lib/capture.js";
 import { downloadText } from "../lib/download.js";
 
@@ -58,24 +59,42 @@ async function buildPayload(settings) {
     throw new Error("This extension can only capture regular web pages.");
   }
 
-  const result = await capturePage(tab.id, captureOptions(settings));
-  const markdown = composeDocument({
-    title: result.title,
-    body: result.markdown,
-    metadata: result.metadata,
-    options: {
-      metadataStyle: settings.metadataStyle,
-      includeTitleHeading: settings.includeTitleHeading
-    }
-  });
+  const selectors = settings.useTemplate
+    ? extractSelectorRefs(settings.template, settings.filenameTemplate)
+    : [];
+  const result = await capturePage(tab.id, { ...captureOptions(settings), selectors });
+
+  let markdown;
+  let filename;
+  if (settings.useTemplate) {
+    const values = { ...result.variables, content: result.markdown };
+    markdown = ensureTrailingNewline(applyTemplate(settings.template, values));
+    const rawName = applyTemplate(settings.filenameTemplate, values).trim();
+    filename = withMarkdownExtension(sanitizeFilename(rawName || result.title, { fallback: "page" }));
+  } else {
+    markdown = composeDocument({
+      title: result.title,
+      body: result.markdown,
+      metadata: result.metadata,
+      options: {
+        metadataStyle: settings.metadataStyle,
+        includeTitleHeading: settings.includeTitleHeading
+      }
+    });
+    filename = withMarkdownExtension(slugify(result.title, { fallback: "page" }));
+  }
 
   return {
     title: result.title,
     url: result.url,
     mode: result.mode,
     markdown,
-    filename: withMarkdownExtension(slugify(result.title, { fallback: "page" }))
+    filename
   };
+}
+
+function ensureTrailingNewline(text) {
+  return text.endsWith("\n") ? text : `${text}\n`;
 }
 
 function captureOptions(settings) {
