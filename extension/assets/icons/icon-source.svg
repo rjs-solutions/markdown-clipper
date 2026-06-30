@@ -8,7 +8,6 @@
     </linearGradient>
   </defs>
   <rect x="8" y="8" width="112" height="112" rx="26" fill="url(#card)"/>
-  <path d="M94 14 L114 34 L94 34 Z" fill="#ffffff" fill-opacity="0.25"/>
   <path d="M26 92 L26 42 L46 70 L66 42 L66 92" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
   <path d="M90 42 L90 82" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
   <path d="M78 70 L90 86 L102 70" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
