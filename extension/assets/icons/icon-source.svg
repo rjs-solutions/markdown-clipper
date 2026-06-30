@@ -1,14 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="t d">
   <title id="t">Markdown Web Clipper icon</title>
-  <desc id="d">A bold Markdown "M" with a down arrow on a rounded teal-to-indigo card with a folded corner.</desc>
+  <desc id="d">A bold Markdown "M" with a down arrow on a teal-to-indigo card whose top-right corner is folded like a page.</desc>
   <defs>
     <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#14b8a6"/>
       <stop offset="1" stop-color="#4f46e5"/>
     </linearGradient>
   </defs>
-  <rect x="8" y="8" width="112" height="112" rx="26" fill="url(#card)"/>
-  <path d="M26 92 L26 42 L46 70 L66 42 L66 92" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M90 42 L90 82" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
-  <path d="M78 70 L90 86 L102 70" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M34 8 L82 8 L120 46 L120 94 Q120 120 94 120 L34 120 Q8 120 8 94 L8 34 Q8 8 34 8 Z" fill="url(#card)"/>
+  <path d="M82 8 L120 46 L82 46 Z" fill="#0b3b46" fill-opacity="0.45"/>
+  <path d="M26 90 L26 44 L46 70 L66 44 L66 90" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M88 44 L88 80" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  <path d="M77 69 L88 83 L99 69" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
