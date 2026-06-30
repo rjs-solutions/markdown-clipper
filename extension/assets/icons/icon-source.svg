@@ -1,10 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="SharePoint Markdown Exporter icon">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="t d">
+  <title id="t">Markdown Web Clipper icon</title>
+  <desc id="d">A bold Markdown "M" with a down arrow on a rounded teal-to-indigo card with a folded corner.</desc>
   <defs>
-    <linearGradient id="mark" x1="16" y1="16" x2="104" y2="116" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#18b6a4"/>
-      <stop offset="1" stop-color="#0b6872"/>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#14b8a6"/>
+      <stop offset="1" stop-color="#4f46e5"/>
     </linearGradient>
   </defs>
-  <path d="M9 102V25h20l23 38 23-38h20v77H75V61L52 96 29 61v41Z" fill="url(#mark)"/>
-  <path d="M102 24c6 0 11 5 11 11v38h10l-21 30-21-30h10V35c0-6 5-11 11-11Z" fill="url(#mark)"/>
+  <rect x="8" y="8" width="112" height="112" rx="26" fill="url(#card)"/>
+  <path d="M94 14 L114 34 L94 34 Z" fill="#ffffff" fill-opacity="0.25"/>
+  <path d="M26 92 L26 42 L46 70 L66 42 L66 92" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M90 42 L90 82" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  <path d="M78 70 L90 86 L102 70" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

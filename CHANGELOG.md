@@ -44,6 +44,8 @@ web clipper with SharePoint as a first-class mode. (Load unpacked and run the
 - Modernized the popup/report: native promises, **Blob** downloads (no more data: URLs), and
   clipboard via `navigator.clipboard` — dropped the deprecated `execCommand` fallback and the
   `clipboardWrite` permission.
+- New icon (Markdown `M` + down arrow on a teal→indigo card). Icons are now rasterized from
+  `icon-source.svg` via `npm run icons` (resvg), replacing the PowerShell redraw generator.
 
 ## [0.1.0] — alpha (pre-graduation baseline)
 
