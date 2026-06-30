@@ -8,11 +8,14 @@ extension/                 # the shippable extension (Load unpacked points here)
 ├── assets/icons/
 └── src/
     ├── popup/             # toolbar action: copy / download / open / export
-    ├── options/           # settings + (planned) template rules
+    ├── options/           # settings + template editor
     ├── report/            # Markdown preview + per-page export
-    ├── crawl/             # (planned) site spider UI + engine
-    ├── content/           # injected into pages: collector + DOM extraction
-    ├── lib/               # pure ES modules: markdown config, templating, slug, url, zip
+    ├── crawl/             # site spider UI (list / sitemap / crawl) + output
+    ├── content/           # injected into pages: scroll, sharepoint, clean,
+    │                      #   metadata, article, variables, collect (orchestrator)
+    ├── lib/               # pure ES modules: markdown, compose, frontmatter,
+    │                      #   template, slug, settings, capture, download,
+    │                      #   discover, sitepath, aggregate, zip, crawl
     └── vendor/            # vendored Turndown + GFM + Readability (generated)
 package.json, eslint.config.js, tests/, scripts/, docs/   # dev tooling
 ```

@@ -4,9 +4,10 @@ A Chrome extension that turns web pages into clean Markdown — with first-class
 SharePoint. Copy, download, or open the active page as Markdown, and (coming as part of the
 1.0 work) export an entire SharePoint site preserving its structure.
 
-> **Status:** graduating from its alpha (`SharePoint Markdown Exporter` 0.1.0). The
-> single-page SharePoint capture works today; general-webpage mode, templating, and the site
-> spider are in active development. See [CHANGELOG.md](CHANGELOG.md) for what's landed.
+> **Status:** 1.0.0, graduated from its alpha (`SharePoint Markdown Exporter` 0.1.0). All
+> features below are implemented and covered by automated tests. Load the unpacked `extension/`
+> and run the [manual smoke test](docs/TESTING.md) before publishing. See
+> [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## What it does
 
@@ -14,15 +15,18 @@ SharePoint. Copy, download, or open the active page as Markdown, and (coming as 
   the Markdown in a new tab.
 - **SharePoint-aware** — scrolls to trigger lazy-loaded sections and uses a scored content-root
   finder to skip chrome/navigation and keep the real page content.
+- **Works on any page** — general webpages use Mozilla Readability article extraction, with a
+  full-page fallback. A capture **mode** setting (auto / sharepoint / article / full) lets you
+  override.
+- **Front matter & templating** — emit YAML front matter (or a plain list, or nothing), or
+  define your own note + filename templates with `{{variable|filter}}` substitution
+  (`{{title}}`, `{{author}}`, `{{date}}`, `{{meta:…}}`, `{{schema:…}}`, `{{selector:…}}`),
+  inspired by the Obsidian Web Clipper.
+- **Export a whole site** — discover pages from a URL list, a `sitemap.xml`, or by crawling
+  same-host links, then export per-page Markdown preserving the site structure (ZIP + `index.md`)
+  and/or a single aggregate Markdown file. Host access is requested per-site, only when you start.
 - **Local and private** — all conversion happens in your browser. No backend, no analytics, no
   remote code. See [PRIVACY.md](PRIVACY.md).
-
-### Planned for 1.0
-- General-webpage capture (article extraction via Readability) so it works beyond SharePoint.
-- YAML front matter + templates with page variables (`{{title}}`, `{{author}}`, `{{date}}`,
-  `{{selector:…}}`, `{{schema:…}}`), inspired by the Obsidian Web Clipper.
-- Site spider: export many pages of a SharePoint site as per-page Markdown preserving the site
-  structure (ZIP + `index.md`) or as a single aggregate Markdown file.
 
 ## Install locally (unpacked)
 

@@ -1,6 +1,6 @@
 {
   "name": "markdown-web-clipper",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Tooling for the Markdown Web Clipper Chrome extension (tests + lint + vendored libraries). The extension itself ships from extension/.",

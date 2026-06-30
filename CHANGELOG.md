@@ -3,10 +3,11 @@
 All notable changes to Markdown Web Clipper are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.0.0] — 2026-06-30
 
-The extension is being graduated from its alpha (`SharePoint Markdown Exporter` 0.1.0) into a
-general-purpose Markdown web clipper with SharePoint as a first-class mode.
+Graduated from the alpha (`SharePoint Markdown Exporter` 0.1.0) into a general-purpose Markdown
+web clipper with SharePoint as a first-class mode. (Load unpacked and run the
+[manual smoke test](docs/TESTING.md) before publishing to the Chrome Web Store.)
 
 ### Added
 - Project scaffolding to match the BulkStatus reference: git repo, `package.json`, ESLint flat
