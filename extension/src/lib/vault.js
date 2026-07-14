@@ -42,20 +42,26 @@ async function writeIntoVault(rootHandle, relativePath, content) {
   return { dirSegments, fileName };
 }
 
-// { relativePath, content, saveAs } -> { backend: "vault" | "downloads", ok, path?, error? }
+// { relativePath, content, saveAs, useVault } -> { backend: "vault" | "downloads", ok, path?, error? }
+// useVault is the caller's opt-in (typically settings.vaultEnabled). When
+// false, the vault is never attempted (not even a handle lookup) and the
+// downloads backend is used unconditionally, regardless of any remembered
+// folder handle.
 export async function writeArtifact(
-  { relativePath, content, saveAs = false },
+  { relativePath, content, saveAs = false, useVault = false },
   { getHandle = loadHandle, checkPermission = ensurePermission, download = downloadText } = {}
 ) {
-  const handle = await getHandle();
-  if (handle) {
-    const state = await checkPermission(handle, { interactive: false });
-    if (state === "granted") {
-      try {
-        const written = await writeIntoVault(handle, relativePath, content);
-        return { backend: "vault", ok: true, path: [...written.dirSegments, written.fileName].join("/") };
-      } catch (error) {
-        return { backend: "vault", ok: false, error: error && error.message ? error.message : String(error) };
+  if (useVault) {
+    const handle = await getHandle();
+    if (handle) {
+      const state = await checkPermission(handle, { interactive: false });
+      if (state === "granted") {
+        try {
+          const written = await writeIntoVault(handle, relativePath, content);
+          return { backend: "vault", ok: true, path: [...written.dirSegments, written.fileName].join("/") };
+        } catch (error) {
+          return { backend: "vault", ok: false, error: error && error.message ? error.message : String(error) };
+        }
       }
     }
   }

@@ -28,3 +28,15 @@ test("buildFrontmatter skips empty values and returns empty when nothing remains
   assert.equal(buildFrontmatter({}), "");
   assert.equal(buildFrontmatter({ a: "x", b: "" }), "---\na: x\n---");
 });
+
+test("buildFrontmatter renders Knowledge Base preset field names (snake_case keys, unquoted type)", () => {
+  const fm = buildFrontmatter({
+    title: "My Page",
+    source_url: "https://example.com/a",
+    clipped: "2026-06-26T10:00:00.000Z",
+    type: "article"
+  });
+  assert.match(fm, /source_url: "https:\/\/example\.com\/a"/);
+  assert.match(fm, /clipped: "2026-06-26T10:00:00\.000Z"/);
+  assert.match(fm, /type: article/);
+});

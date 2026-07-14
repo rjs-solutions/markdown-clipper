@@ -39,6 +39,7 @@ export function collectMetadata(root, { mode, overrides = {}, selectors = {} } =
     modified,
     pageDate,
     description: overrides.description || metaContent("description") || metaContent("og:description"),
+    twitterDescription: metaContent("twitter:description"),
     site: metaContent("og:site_name") || siteFromHost(),
     tags: collectTags(),
     capturedAt: new Date().toLocaleString(),

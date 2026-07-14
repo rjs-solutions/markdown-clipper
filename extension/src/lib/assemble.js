@@ -2,7 +2,7 @@
 // user's edits. Shared by the popup card and the full-screen editor so both
 // produce identical output. Pure -- unit-tested.
 
-import { composeDocument } from "./compose.js";
+import { composeDocument, contentTypeFromMode } from "./compose.js";
 import { applyTemplate } from "./template.js";
 import { slugify, sanitizeFilename, withMarkdownExtension } from "./slug.js";
 
@@ -41,7 +41,8 @@ export function assembleOutput({ result, fields = {}, settings }) {
     author: fields.author != null ? fields.author : meta.author,
     published: fields.published != null ? fields.published : meta.published,
     modified: fields.modified != null ? fields.modified : meta.modified,
-    site: fields.site != null ? fields.site : meta.site
+    site: fields.site != null ? fields.site : meta.site,
+    type: contentTypeFromMode(result.mode)
   };
 
   let markdown;
@@ -66,7 +67,8 @@ export function assembleOutput({ result, fields = {}, settings }) {
       metadata,
       options: {
         metadataStyle: settings.metadataStyle,
-        includeTitleHeading: settings.includeTitleHeading
+        includeTitleHeading: settings.includeTitleHeading,
+        knowledgeBasePreset: settings.knowledgeBasePreset
       }
     });
   }

@@ -57,7 +57,7 @@ test("writeArtifact writes into the vault and creates nested directories when pe
   let downloaderCalled = false;
 
   const result = await writeArtifact(
-    { relativePath: "clips/2026/my page.md", content: "# Hello" },
+    { relativePath: "clips/2026/my page.md", content: "# Hello", useVault: true },
     {
       getHandle: async () => root,
       checkPermission: async () => "granted",
@@ -85,7 +85,7 @@ test("writeArtifact falls back to the injected downloader when no vault handle e
   let downloadArgs = null;
 
   const result = await writeArtifact(
-    { relativePath: "my-page.md", content: "# Fallback" },
+    { relativePath: "my-page.md", content: "# Fallback", useVault: true },
     {
       getHandle: async () => null,
       checkPermission: async () => "granted",
@@ -109,7 +109,7 @@ test("writeArtifact falls back to downloads when a handle exists but permission 
   let downloadArgs = null;
 
   const result = await writeArtifact(
-    { relativePath: "nested/page.md", content: "content" },
+    { relativePath: "nested/page.md", content: "content", useVault: true },
     {
       getHandle: async () => root,
       checkPermission: async () => "prompt",
@@ -123,4 +123,54 @@ test("writeArtifact falls back to downloads when a handle exists but permission 
   assert.equal(result.ok, true);
   assert.deepEqual(downloadArgs, { content: "content", filename: "page.md" });
   assert.equal(root.children.size, 0, "nothing was written into the vault");
+});
+
+test("writeArtifact goes straight to downloads when useVault is false, even with a granted handle present", async () => {
+  const root = makeFakeDirectory("vault-root");
+  let downloadArgs = null;
+  let getHandleCalled = false;
+
+  const result = await writeArtifact(
+    { relativePath: "page.md", content: "content" },
+    {
+      getHandle: async () => {
+        getHandleCalled = true;
+        return root;
+      },
+      checkPermission: async () => "granted",
+      download: async (content, filename) => {
+        downloadArgs = { content, filename };
+      }
+    }
+  );
+
+  assert.equal(result.backend, "downloads");
+  assert.equal(result.ok, true);
+  assert.deepEqual(downloadArgs, { content: "content", filename: "page.md" });
+  assert.equal(getHandleCalled, false, "the vault handle is never even looked up when useVault is false");
+  assert.equal(root.children.size, 0, "nothing was written into the vault");
+});
+
+test("writeArtifact surfaces a write failure as a failed vault result without falling back to downloads", async () => {
+  const root = makeFakeDirectory("vault-root");
+  root.getFileHandle = async () => {
+    throw new Error("disk is full");
+  };
+  let downloaderCalled = false;
+
+  const result = await writeArtifact(
+    { relativePath: "page.md", content: "content", useVault: true },
+    {
+      getHandle: async () => root,
+      checkPermission: async () => "granted",
+      download: async () => {
+        downloaderCalled = true;
+      }
+    }
+  );
+
+  assert.equal(result.backend, "vault");
+  assert.equal(result.ok, false);
+  assert.equal(result.error, "disk is full");
+  assert.equal(downloaderCalled, false, "a vault write failure must not silently fall back to downloads");
 });

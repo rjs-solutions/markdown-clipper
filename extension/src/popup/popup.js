@@ -4,7 +4,8 @@ import { applyTemplate, extractSelectorRefs } from "../lib/template.js";
 import { assembleOutput, parseTags } from "../lib/assemble.js";
 import { capturePage } from "../lib/capture.js";
 import { writeArtifact } from "../lib/vault.js";
-import { appendClip } from "../lib/clip-log.js";
+import { appendClip, listClips } from "../lib/clip-log.js";
+import { buildWikiIndexMarkdown } from "../lib/wiki-index.js";
 import { applyTheme } from "../lib/theme.js";
 
 const el = {
@@ -258,7 +259,11 @@ async function run(action) {
       await openInTab(payload);
       setStatus("Opened Markdown tab");
     } else {
-      const written = await writeArtifact({ relativePath: payload.filename, content: payload.markdown });
+      const written = await writeArtifact({
+        relativePath: payload.filename,
+        content: payload.markdown,
+        useVault: settings.vaultEnabled
+      });
       if (!written.ok) {
         throw new Error(written.error || "Could not save the file.");
       }
@@ -273,6 +278,9 @@ async function run(action) {
         description: fields.description || "",
         byteLength: new TextEncoder().encode(payload.markdown).length
       });
+      if (written.backend === "vault" && settings.knowledgeBasePreset) {
+        await regenerateVaultIndex();
+      }
       setStatus(
         written.backend === "vault" ? `Saved to vault: ${written.path}` : `Downloaded ${payload.filename}`
       );
@@ -283,6 +291,21 @@ async function run(action) {
   } finally {
     busy = false;
     setBusy(false);
+  }
+}
+
+// Rebuild index.md from the full clip log and write it back into the vault.
+// Best-effort: an index write failure should never surface as a clip failure.
+async function regenerateVaultIndex() {
+  try {
+    const records = await listClips();
+    const content = buildWikiIndexMarkdown(records);
+    const written = await writeArtifact({ relativePath: "index.md", content, useVault: true });
+    if (!written.ok) {
+      console.error("Markdown Clipper index.md write failed:", written.error);
+    }
+  } catch (error) {
+    console.error("Markdown Clipper index.md regeneration failed:", error);
   }
 }
 

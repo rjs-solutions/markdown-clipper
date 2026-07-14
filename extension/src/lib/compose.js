@@ -4,6 +4,7 @@
 
 import { buildFrontmatter } from "./frontmatter.js";
 import { normalizeMarkdown, removeDuplicateLeadHeading } from "./markdown.js";
+import { toRelativeMarkdownPath } from "./sitepath.js";
 
 const LIST_LABELS = {
   source: "Source",
@@ -16,8 +17,124 @@ const LIST_LABELS = {
   description: "Description"
 };
 
+// Map a capture mode to a Knowledge Base preset content type. See
+// docs/llm-vault-design.md ("Frontmatter"). Only three shapes are supported;
+// anything that isn't sharepoint/confluence is treated as a plain article.
+export function contentTypeFromMode(mode) {
+  if (mode === "sharepoint") {
+    return "sharepoint";
+  }
+  if (mode === "confluence") {
+    return "confluence";
+  }
+  return "article";
+}
+
+// Strip enough Markdown syntax to leave a readable plain-text snippet, for
+// the last-resort auto-description fallback (first ~200 chars of the body).
+function stripMarkdownForSummary(text) {
+  return String(text || "")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`[^`]*`/g, " ")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/[>*_#-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function autoDescriptionFromBody(body, limit = 200) {
+  const text = stripMarkdownForSummary(body);
+  if (!text) {
+    return "";
+  }
+  if (text.length <= limit) {
+    return text;
+  }
+  const truncated = text.slice(0, limit);
+  const lastSpace = truncated.lastIndexOf(" ");
+  return `${(lastSpace > 40 ? truncated.slice(0, lastSpace) : truncated).trim()}...`;
+}
+
+// Auto-description order (docs/llm-vault-design.md): og:description / meta
+// description are already merged into metadata.description by
+// content/metadata.js, so here it's description -> twitterDescription ->
+// first ~200 chars of the body.
+function resolveDescription(m, body) {
+  if (m.description) {
+    return m.description;
+  }
+  if (m.twitterDescription) {
+    return m.twitterDescription;
+  }
+  return autoDescriptionFromBody(body);
+}
+
+function withoutEmpty(props) {
+  const clean = {};
+  for (const [key, value] of Object.entries(props)) {
+    if (value === undefined || value === null || value === "") {
+      continue;
+    }
+    if (Array.isArray(value) && value.length === 0) {
+      continue;
+    }
+    clean[key] = value;
+  }
+  return clean;
+}
+
+// Knowledge Base preset: content-type-aware frontmatter. Only used when
+// options.knowledgeBasePreset is true; otherwise buildProperties keeps its
+// original, unconditional shape (see below) so existing users see zero
+// change.
+function buildKnowledgeBaseProperties(metadata, options) {
+  const m = metadata;
+  const type = contentTypeFromMode(m.type || m.mode);
+  const path = m.url ? toRelativeMarkdownPath(m.url, { fallback: "page" }) : undefined;
+  const description = resolveDescription(m, options.body);
+
+  let props;
+  if (type === "sharepoint") {
+    props = {
+      title: m.title,
+      source_url: m.url,
+      site: m.site,
+      path,
+      last_modified: m.modified,
+      captured: m.capturedAt,
+      author: m.author,
+      type
+    };
+  } else {
+    props = {
+      title: m.title,
+      source_url: m.url,
+      author: m.author,
+      published: m.published,
+      clipped: m.clippedAt || new Date().toISOString(),
+      description,
+      tags: m.tags,
+      type
+    };
+    if (type === "confluence") {
+      props.path = path;
+    }
+  }
+
+  const clean = withoutEmpty(props);
+  if (options.extraProperties) {
+    Object.assign(clean, options.extraProperties);
+  }
+  return clean;
+}
+
 // Map raw collected metadata into ordered front-matter properties.
 export function buildProperties(metadata = {}, options = {}) {
+  if (options.knowledgeBasePreset) {
+    return buildKnowledgeBaseProperties(metadata, options);
+  }
   const m = metadata;
   const props = {};
   if (m.title) {
@@ -81,7 +198,10 @@ export function composeDocument({ title, body, metadata = {}, options = {} }) {
   const style = options.metadataStyle || "frontmatter";
   const includeTitleHeading = options.includeTitleHeading !== false;
   const heading = String(title || metadata.title || "").replace(/^#+\s*/, "").trim();
-  const props = buildProperties({ ...metadata, title: heading || metadata.title }, options);
+  const props = buildProperties(
+    { ...metadata, title: heading || metadata.title },
+    { ...options, body }
+  );
 
   const parts = [];
   if (style === "frontmatter") {
