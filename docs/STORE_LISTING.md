@@ -1,7 +1,7 @@
 # Chrome Web Store Listing
 
 ## Name
-Markdown Web Clipper
+Markdown Clipper
 
 ## Short description (≤132 chars)
 Capture any web page - including SharePoint - as clean Markdown. Copy, download, open, or export a whole site.
@@ -11,11 +11,13 @@ Productivity
 
 ## Detailed description
 
-Markdown Web Clipper turns web pages into clean, portable Markdown — with first-class support
+Markdown Clipper turns web pages into clean, portable Markdown — with first-class support
 for SharePoint.
 
 Capture the page you're on:
 - Copy Markdown to the clipboard, download a .md file, or open it in a new tab.
+- Keep the clip card open beside the page in Chrome's side panel, or expand it into a
+  full-screen editor before saving.
 - SharePoint-aware: scrolls to load lazy sections and keeps the real content, skipping
   navigation and chrome.
 - Works on any site: general pages use article extraction (Mozilla Readability) with a
@@ -43,6 +45,7 @@ Private by design:
 - **scripting** — inject the collector that reads the page DOM and builds the Markdown.
 - **downloads** — save the .md file or the site-export archive you requested.
 - **storage** — remember your settings and templates on your device.
+- **sidePanel** — show the clip card beside the page when you choose Open in side panel.
 - **Optional host access (http/https)** — requested only when you start a site export, so the
   extension can open and read the pages of the site you chose.
 - **Optional tabs** — used during a site export to manage the background tabs it opens.

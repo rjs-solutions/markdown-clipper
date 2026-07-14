@@ -1,12 +1,4 @@
-:root {
-  color-scheme: light;
-  --accent: #126b5d;
-  --border: #d7dde4;
-  --page: #f5f7f9;
-  --surface: #ffffff;
-  --text: #162028;
-  --text-muted: #5f6d79;
-}
+/* Tokens come from ../theme.css (linked first). */
 
 * {
   box-sizing: border-box;
@@ -15,29 +7,115 @@
 body {
   margin: 0;
   color: var(--text);
-  background: var(--page);
+  background: var(--bg);
   font: 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .options {
-  max-width: 640px;
+  max-width: 840px;
   margin: 0 auto;
   padding: 32px 18px;
+}
+
+/* Left-nav settings layout */
+.settings {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 24px;
+}
+
+.nav-item {
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nav-item:hover {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.nav-item.is-active {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+  font-weight: 500;
+}
+
+.panel h2 {
+  margin: 0 0 2px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+@media (max-width: 680px) {
+  .settings {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .settings-nav {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
 }
 
 h1 {
   margin: 0 0 18px;
   font-size: 22px;
-  letter-spacing: 0;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.page-title .brand-mark {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  display: block;
+}
+
+.page-title-sub {
+  font-weight: 500;
+  color: var(--text-muted);
 }
 
 form {
   display: grid;
+  gap: 16px;
+}
+
+.group {
+  display: grid;
   gap: 12px;
-  padding: 18px;
+  padding: 16px 18px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+legend {
+  font-weight: 600;
+  padding: 0 6px;
+  color: var(--text);
 }
 
 .field {
@@ -52,19 +130,33 @@ form {
   gap: 8px;
 }
 
-input {
+.checkbox-field > span {
+  color: var(--text);
+}
+
+input,
+select,
+textarea {
   accent-color: var(--accent);
   font: inherit;
+  color: var(--text);
+}
+
+select,
+input[type="text"],
+input[type="number"],
+textarea {
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
 }
 
 input[type="number"] {
   width: min(100%, 220px);
-  min-height: 34px;
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  background: var(--surface);
 }
 
 .input-with-unit {
@@ -78,6 +170,27 @@ input[type="number"] {
   width: 180px;
 }
 
+textarea {
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.help {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.help summary {
+  cursor: pointer;
+  color: var(--accent-hover);
+}
+
+.help code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--surface-muted);
+}
+
 .buttons {
   display: flex;
   gap: 8px;
@@ -85,28 +198,40 @@ input[type="number"] {
 }
 
 button {
-  min-height: 34px;
-  padding: 6px 12px;
+  min-height: 36px;
+  padding: 7px 14px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--text);
   background: var(--surface);
   font: inherit;
   cursor: pointer;
 }
 
-button:hover,
-button[type="submit"] {
+button:hover {
   border-color: var(--accent);
 }
 
 button[type="submit"] {
-  color: #ffffff;
+  color: var(--accent-contrast);
   background: var(--accent);
+  border-color: var(--accent);
+}
+
+button[type="submit"]:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+button:disabled,
+input:disabled,
+select:disabled {
+  opacity: 0.55;
 }
 
 #status {
-  min-height: 20px;
-  margin: 12px 0 0;
-  color: var(--accent);
+  align-self: center;
+  margin-left: 4px;
+  font-size: 13px;
+  color: var(--accent-hover);
 }

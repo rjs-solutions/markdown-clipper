@@ -1,25 +1,4 @@
-:root {
-  color-scheme: light dark;
-  --bg: #ffffff;
-  --fg: #1b1b1f;
-  --muted: #5c5f66;
-  --border: #d7d9de;
-  --accent: #2563eb;
-  --error: #c0392b;
-  --panel: #f6f7f9;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1b1b1f;
-    --fg: #e7e7ea;
-    --muted: #a0a3aa;
-    --border: #34363c;
-    --accent: #6ea8fe;
-    --error: #ff7a6b;
-    --panel: #232429;
-  }
-}
+/* Tokens come from ../theme.css (linked first). */
 
 * {
   box-sizing: border-box;
@@ -28,31 +7,33 @@
 body {
   margin: 0;
   background: var(--bg);
-  color: var(--fg);
+  color: var(--text);
   font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
 
 .crawl {
   max-width: 760px;
   margin: 0 auto;
-  padding: 28px 20px 60px;
+  padding: 24px 20px 60px;
 }
 
 h1 {
-  font-size: 22px;
+  font-size: 20px;
   margin: 0 0 6px;
 }
 
 .lead {
-  color: var(--muted);
+  color: var(--text-muted);
   margin: 0 0 20px;
 }
 
 .group {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 14px 16px;
   margin: 0 0 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 
 legend {
@@ -75,7 +56,7 @@ legend {
 .field > span {
   display: block;
   margin-bottom: 4px;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 
 .checkbox-field {
@@ -86,7 +67,11 @@ legend {
 
 .checkbox-field > span {
   margin: 0;
-  color: var(--fg);
+  color: var(--text);
+}
+
+input {
+  accent-color: var(--accent);
 }
 
 textarea,
@@ -97,8 +82,8 @@ select {
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--bg);
-  color: var(--fg);
+  background: var(--surface);
+  color: var(--text);
   font: inherit;
 }
 
@@ -116,16 +101,25 @@ button {
   padding: 9px 16px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--panel);
-  color: var(--fg);
+  background: var(--surface-muted);
+  color: var(--text);
   font: inherit;
   cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--accent);
 }
 
 #start-btn {
   background: var(--accent);
   border-color: var(--accent);
-  color: #fff;
+  color: var(--accent-contrast);
+}
+
+#start-btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 button:disabled {
@@ -143,8 +137,8 @@ button:disabled {
   margin: 0;
   padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel);
+  border-radius: 12px;
+  background: var(--surface-muted);
   max-height: 320px;
   overflow: auto;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -156,5 +150,5 @@ button:disabled {
 }
 
 .log .is-error {
-  color: var(--error);
+  color: var(--danger);
 }

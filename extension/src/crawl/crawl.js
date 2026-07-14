@@ -5,13 +5,13 @@ import { buildPageFiles, buildIndexMarkdown, buildAggregateMarkdown } from "../l
 import { createZip } from "../lib/zip.js";
 import { downloadBlob, downloadText } from "../lib/download.js";
 import { slugify } from "../lib/slug.js";
+import { applyTheme } from "../lib/theme.js";
 
 const form = document.getElementById("crawl-form");
 const urlsInput = document.getElementById("urls");
 const startInput = document.getElementById("start");
 const startLabel = document.getElementById("start-label");
 const maxPagesInput = document.getElementById("max-pages");
-const sameHostInput = document.getElementById("same-host");
 const outputSelect = document.getElementById("output");
 const startButton = document.getElementById("start-btn");
 const stopButton = document.getElementById("stop-btn");
@@ -23,6 +23,7 @@ let stopFlag = false;
 document.addEventListener("DOMContentLoaded", initialize);
 
 function initialize() {
+  loadSettings().then((settings) => applyTheme(settings.theme));
   const seed = new URLSearchParams(location.search).get("seed");
   if (seed) {
     urlsInput.value = seed;
@@ -63,19 +64,14 @@ async function start() {
 
   try {
     const mode = currentMode();
-    const settings = await loadSettings();
-    const captureOptions = {
-      mode: settings.mode,
-      scrollBeforeCapture: settings.scrollBeforeCapture,
-      maxScrollMs: settings.maxScrollMs,
-      scrollPauseMs: settings.scrollPauseMs,
-      dropHidden: settings.dropHidden
-    };
     const maxPages = clampInt(maxPagesInput.value, 1, 500, 25);
 
     let seeds = [];
     let followLinks = false;
 
+    // Resolve seeds and request host permission FIRST, before any other await,
+    // so the Start click's user activation is still valid when we call
+    // chrome.permissions.request (which requires it).
     if (mode === "list") {
       seeds = parseUrlList(urlsInput.value);
       if (!seeds.length) {
@@ -94,7 +90,14 @@ async function start() {
         throw new Error("No URLs found in that sitemap.");
       }
       log(`Found ${seeds.length} URL(s) in the sitemap.`);
-      await requestOrigins(seeds);
+      const permitted = await keepPermittedUrls(seeds);
+      if (permitted.length !== seeds.length) {
+        log(`Skipped ${seeds.length - permitted.length} URL(s) on unapproved origins. Use URL-list mode to approve multiple hosts.`);
+      }
+      seeds = permitted;
+      if (!seeds.length) {
+        throw new Error("The sitemap did not contain pages on an approved origin.");
+      }
     } else {
       const startUrl = startInput.value.trim();
       if (!/^https?:\/\//i.test(startUrl)) {
@@ -105,13 +108,22 @@ async function start() {
       await requestOrigins(seeds);
     }
 
+    const settings = await loadSettings();
+    const captureOptions = {
+      mode: settings.mode,
+      scrollBeforeCapture: settings.scrollBeforeCapture,
+      maxScrollMs: settings.maxScrollMs,
+      scrollPauseMs: settings.scrollPauseMs,
+      dropHidden: settings.dropHidden
+    };
+
     log(`Capturing up to ${maxPages} page(s)...`);
     const pages = await crawlSite({
       seeds,
       captureOptions,
       maxPages,
       followLinks,
-      sameHostOnly: sameHostInput.checked,
+      sameHostOnly: true,
       onProgress: handleProgress,
       shouldStop: () => stopFlag
     });
@@ -177,10 +189,23 @@ async function requestOrigins(urls) {
   if (!origins.length) {
     return;
   }
+  // Call request() as the first asynchronous operation from the Start click.
+  // Chrome resolves already-granted origins without showing another prompt.
   const granted = await chrome.permissions.request({ origins });
   if (!granted) {
     throw new Error("Permission to access those sites was declined.");
   }
+}
+
+async function keepPermittedUrls(urls) {
+  const allowed = [];
+  for (const url of urls) {
+    const origin = originPattern(url);
+    if (origin && await chrome.permissions.contains({ origins: [origin] })) {
+      allowed.push(url);
+    }
+  }
+  return allowed;
 }
 
 function originPattern(url) {

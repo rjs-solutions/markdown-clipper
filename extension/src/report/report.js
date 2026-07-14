@@ -1,4 +1,6 @@
 import { downloadText } from "../lib/download.js";
+import { loadSettings } from "../lib/settings.js";
+import { applyTheme } from "../lib/theme.js";
 
 const titleElement = document.getElementById("title");
 const metaElement = document.getElementById("meta");
@@ -11,6 +13,7 @@ let currentPayload = null;
 document.addEventListener("DOMContentLoaded", initialize);
 
 async function initialize() {
+  loadSettings().then((settings) => applyTheme(settings.theme));
   currentPayload = await loadPayload();
 
   if (!currentPayload) {

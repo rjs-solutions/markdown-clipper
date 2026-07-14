@@ -57,8 +57,10 @@ test("collectPage (auto) falls back to article mode on a generic site", async ()
     "https://news.example.com/story"
   );
 
-  const result = await collectPage({ scrollBeforeCapture: false, mode: "auto" });
+  const result = await collectPage({ scrollBeforeCapture: true, mode: "auto" });
   assert.equal(result.ok, true);
   assert.equal(result.mode, "article");
   assert.match(result.markdown, /meaningful sentence in the article body/);
+  assert.equal(result.stats.scroll, null, "non-SharePoint captures must never scroll");
+  assert.equal(document.querySelector("[data-mwc-capture-overlay]"), null);
 });

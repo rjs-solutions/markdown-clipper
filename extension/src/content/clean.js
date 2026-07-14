@@ -10,6 +10,7 @@ const UNWANTED_TAGS = [
 ];
 
 const UNWANTED_SELECTORS = [
+  "[data-mwc-capture-overlay]",
   "[aria-hidden='true']",
   "[role='navigation']",
   "[role='banner']",

@@ -54,3 +54,29 @@ test("removeDuplicateLeadHeading drops a leading heading equal to the title", ()
   assert.equal(removeDuplicateLeadHeading("# Other\n\nBody", "Hello"), "# Other\n\nBody");
   assert.equal(removeDuplicateLeadHeading("Body", "Hello"), "Body");
 });
+
+test("removeDuplicateLeadHeading skips a leading image before the duplicate heading", () => {
+  const md = '![](https://x.com/a.jpg "Hello")\n\n# Hello\n\nBody';
+  assert.equal(removeDuplicateLeadHeading(md, "Hello"), '![](https://x.com/a.jpg "Hello")\n\nBody');
+});
+
+test("htmlToMarkdown converts iframes to a link and drops non-http ones", () => {
+  const md = htmlToMarkdown('<iframe title="User Location Map" src="https://maps.example.com/x"></iframe>');
+  assert.match(md, /\[Embedded: User Location Map\]\(https:\/\/maps\.example\.com\/x\)/);
+  assert.equal(htmlToMarkdown('<iframe src="about:blank"></iframe>'), "");
+  assert.doesNotMatch(htmlToMarkdown('<iframe src="https://x.com/a"></iframe>'), /<iframe/);
+});
+
+test("htmlToMarkdown converts an ARIA grid (div-based table) into a GFM table", () => {
+  const html = `
+    <div role="grid">
+      <div role="row"><span role="columnheader">Name</span><span role="columnheader">Area</span></div>
+      <div role="row"><span role="gridcell">Ryan</span><span role="gridcell">Digital Marketing</span></div>
+      <div role="row"><span role="gridcell">Jasmine</span><span role="gridcell">Design</span></div>
+    </div>`;
+  const md = htmlToMarkdown(html);
+  assert.match(md, /\| Name \| Area \|/);
+  assert.match(md, /\| --- \| --- \|/);
+  assert.match(md, /\| Ryan \| Digital Marketing \|/);
+  assert.match(md, /\| Jasmine \| Design \|/);
+});

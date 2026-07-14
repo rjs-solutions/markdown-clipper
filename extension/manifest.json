@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Markdown Web Clipper",
+  "name": "Markdown Clipper",
   "short_name": "MarkdownClip",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Capture any web page - including SharePoint - as clean Markdown. Copy, download, open, or export a whole site.",
   "icons": {
     "16": "assets/icons/icon-16.png",
@@ -21,11 +21,15 @@
     }
   },
   "options_page": "src/options/index.html",
+  "side_panel": {
+    "default_path": "src/popup/index.html?panel=1"
+  },
   "permissions": [
     "activeTab",
     "scripting",
     "downloads",
-    "storage"
+    "storage",
+    "sidePanel"
   ],
   "optional_permissions": [
     "tabs"

@@ -1,7 +1,74 @@
 # Changelog
 
-All notable changes to Markdown Web Clipper are documented here. This project follows
+All notable changes to Markdown Clipper are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
+
+## [1.1.0] — 2026-07-13
+
+### Changed
+- Renamed the product from **Markdown Web Clipper** to **Markdown Clipper** ("web" was
+  misleading given internal SharePoint capture). Folder and npm package names are unchanged.
+- Unified theming: a single shared `src/theme.css` token set now drives the popup, options,
+  report, and site-export pages, ending the light-popup / dark-export mismatch and the two
+  different accent colors. The accent is now the icon's teal brand throughout.
+- The popup is wider with rounded, accent-highlighted action rows and a clearer secondary
+  "Export a whole site" row. The stray "Ready" status is gone — the status line stays empty
+  until there's something to report.
+- "Export a whole site…" now opens in a focused popup window instead of a new tab, so it reads
+  as a deliberate action rather than navigating into a settings page.
+- Popup actions are now three equal **Download / Copy / Open** buttons in one row under a
+  "Markdown action" label (graded shades of the accent), and a very long image URL in the
+  preview no longer forces the popup to scroll horizontally.
+- Tightened the popup for less scrolling: a single header band (wordmark + expand/settings
+  icons) instead of a title-plus-subtitle stack, the capture mode folded into the preview
+  header, the auto-generated "Captured" property removed, and a taller Markdown preview.
+- The extension icon now appears in the header lockup (popup, options, editor) for consistent
+  brand identity, and the single accent moved from indigo-purple to a clear blue (`#2563eb`) so
+  every button, link, and highlight shares one blue that matches the icon's cooler tones. The
+  icon was redesigned to a Markdown "M" beside an upright pair of **scissors** ("clipper") on
+  the folded-corner card, recolored teal→indigo → **teal→blue** so the mark and the app share
+  one blue/green (web + SharePoint) ethos with no purple; PNGs regenerated from the SVG.
+- **Site export permissions hardened:** host permission is requested as the first async work
+  from the Start click so user activation is still valid. Link crawling is explicitly
+  same-host, and sitemap entries on unapproved origins are skipped with guidance to use URL-list
+  mode for intentional multi-host exports.
+- Stronger surface contrast in both light and dark so the header, panels, inputs, and page
+  background read as distinct layers; the popup header is now its own shaded band, and the
+  read-only Source/Site context is a condensed strip at the top of the card. Theme tokens were
+  refactored to CSS `light-dark()` (one definition per token) to end light/dark drift.
+- Scroll-to-load now runs **only for SharePoint** captures (whose content is virtualized).
+  Article and full-page captures use the DOM as-is — no scrolling, no delay — so those clips
+  are instant. Opening the popup no longer starts the full SharePoint scroll: it is deferred
+  until Copy, Download, Open, or the editor is chosen, with a brief loading overlay masking
+  the page movement. (The single-page popup previously scrolled every page.)
+- **Conversion:** div-based ARIA grids (`role="grid"`/`role="table"`, e.g. SharePoint list
+  views) now convert to GFM tables instead of loose per-cell paragraphs. A duplicate page-title
+  heading is dropped even when a banner image precedes it. Iframes (maps, videos, embedded
+  forms) become a plain `[Embedded: …](url)` link instead of leaking raw `<iframe>` HTML.
+
+### Added
+- **Side panel.** An "open in side panel" button in the popup docks the same clip card to the
+  side of the window (`chrome.sidePanel`) so it stays open while you read the page. It captures
+  the tab that was active when opened and is scoped to that tab, hiding on unrelated tabs
+  instead of showing an empty global fallback. (Requires Chrome 116+; the button hides where
+  unsupported.)
+- **Options page left-nav.** The options view is now a grouped left-nav layout (General /
+  Capture / Output / Template) instead of one long scrolling column of fieldsets.
+- **Edit before saving.** The popup's Markdown preview and Description are now editable, and a
+  new **full-screen editor** (the Expand ⤢ icon) lets you edit every property — title, file
+  name, tags, description, author/published/modified/site, source URL — and the full Markdown
+  body, with a live output preview, a collapsible **page-variables** reference panel, and
+  icon-labeled Copy / Download, and a Close button (separated by a divider) that warns if there
+  are edits not yet copied or downloaded. Output assembly is shared with the popup via
+  `lib/assemble.js`.
+- **Rich clip card in the popup** (inspired by the Obsidian Web Clipper): the popup now captures
+  a fast preview as soon as it opens and shows the extracted properties (source, author,
+  published, site, captured, description), an editable **title**, **file name**, and **tags**,
+  and a scrollable Markdown preview. Primary **Download .md** button plus one-click
+  **Copy Markdown** and **Open .md in tab**. When scroll-to-load is enabled, the full capture
+  is pre-warmed in the background as soon as the card appears, so the actions feel instant
+  while still including lazy-loaded content.
+- **Theme** setting (System default / Light / Dark) on the options page, with live preview.
 
 ## [1.0.0] — 2026-06-30
 
@@ -39,7 +106,7 @@ web clipper with SharePoint as a first-class mode. (Load unpacked and run the
 
 ### Changed
 - Restructured to the `extension/` layout (manifest + `src/` + `assets/` under `extension/`).
-- Renamed to **Markdown Web Clipper** (v0.2.0); manifest gains `short_name`, an `extension_pages`
+- Renamed to **Markdown Clipper** (v0.2.0); manifest gains `short_name`, an `extension_pages`
   CSP, an `Alt+M` command, and `web_accessible_resources` for the content modules.
 - Modernized the popup/report: native promises, **Blob** downloads (no more data: URLs), and
   clipboard via `navigator.clipboard` — dropped the deprecated `execCommand` fallback and the

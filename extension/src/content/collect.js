@@ -56,64 +56,92 @@ export async function collectPage(rawOptions = {}) {
   const options = sanitize(rawOptions);
   const mode = resolveMode(options.mode);
   const startScroll = getCurrentScroll();
+  let captureOverlay = null;
 
-  let scrollStats = null;
-  if (options.scrollBeforeCapture) {
-    scrollStats = await scrollThroughPage(options);
-  }
+  try {
+    let scrollStats = null;
+    if (options.scrollBeforeCapture && mode === "sharepoint") {
+      captureOverlay = showCaptureOverlay();
+      scrollStats = await scrollThroughPage(options);
+    }
 
-  let title = "";
-  let html = "";
-  let root = "document";
-  const overrides = {};
+    let title = "";
+    let html = "";
+    let root = "document";
+    const overrides = {};
 
-  if (mode === "sharepoint") {
-    const element = findSharePointRoot();
-    title = getSharePointTitle(element);
-    html = prepareContent(element, { baseUrl: document.baseURI, dropHidden: options.dropHidden });
-    root = describe(element);
-  } else if (mode === "article") {
-    const article = parseArticle();
-    if (article && visibleLength(article.content) > 200) {
-      title = article.title || cleanDocumentTitle();
-      html = article.content;
-      overrides.author = article.byline;
-      overrides.description = article.excerpt;
-      root = "readability";
+    if (mode === "sharepoint") {
+      const element = findSharePointRoot();
+      title = getSharePointTitle(element);
+      html = prepareContent(element, { baseUrl: document.baseURI, dropHidden: options.dropHidden });
+      root = describe(element);
+    } else if (mode === "article") {
+      const article = parseArticle();
+      if (article && visibleLength(article.content) > 200) {
+        title = article.title || cleanDocumentTitle();
+        html = article.content;
+        overrides.author = article.byline;
+        overrides.description = article.excerpt;
+        root = "readability";
+      } else {
+        title = cleanDocumentTitle();
+        html = prepareContent(document.body, { baseUrl: document.baseURI, dropHidden: options.dropHidden });
+        root = "body (article fallback)";
+      }
     } else {
       title = cleanDocumentTitle();
       html = prepareContent(document.body, { baseUrl: document.baseURI, dropHidden: options.dropHidden });
-      root = "body (article fallback)";
+      root = "body";
     }
-  } else {
-    title = cleanDocumentTitle();
-    html = prepareContent(document.body, { baseUrl: document.baseURI, dropHidden: options.dropHidden });
-    root = "body";
+
+    const markdown = htmlToMarkdown(html);
+    const metadata = collectMetadata(document.body, { mode, overrides });
+    metadata.title = title;
+    metadata.url = location.href;
+
+    const variables = buildVariables(metadata, { content: markdown, selectors: options.selectors });
+
+    return {
+      ok: true,
+      title,
+      url: location.href,
+      mode,
+      markdown,
+      metadata,
+      variables,
+      stats: {
+        characters: markdown.length,
+        root,
+        scroll: scrollStats
+      }
+    };
+  } finally {
+    restoreScroll(startScroll);
+    captureOverlay?.remove();
   }
+}
 
-  const markdown = htmlToMarkdown(html);
-  const metadata = collectMetadata(document.body, { mode, overrides });
-  metadata.title = title;
-  metadata.url = location.href;
-
-  const variables = buildVariables(metadata, { content: markdown, selectors: options.selectors });
-
-  restoreScroll(startScroll);
-
-  return {
-    ok: true,
-    title,
-    url: location.href,
-    mode,
-    markdown,
-    metadata,
-    variables,
-    stats: {
-      characters: markdown.length,
-      root,
-      scroll: scrollStats
-    }
-  };
+function showCaptureOverlay() {
+  const overlay = document.createElement("div");
+  overlay.setAttribute("data-mwc-capture-overlay", "");
+  overlay.setAttribute("role", "status");
+  overlay.setAttribute("aria-live", "polite");
+  overlay.textContent = "Markdown Clipper is loading the complete SharePoint page…";
+  Object.assign(overlay.style, {
+    position: "fixed",
+    inset: "0",
+    zIndex: "2147483647",
+    display: "grid",
+    placeItems: "center",
+    padding: "32px",
+    background: "rgba(15, 23, 42, 0.92)",
+    color: "#f8fafc",
+    font: "600 16px/1.5 system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    textAlign: "center",
+    cursor: "wait"
+  });
+  (document.body || document.documentElement).appendChild(overlay);
+  return overlay;
 }
 
 function describe(element) {

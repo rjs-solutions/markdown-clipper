@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-Markdown Web Clipper bundles the following libraries in `extension/src/vendor/`. They are
+Markdown Clipper bundles the following libraries in `extension/src/vendor/`. They are
 vendored as browser ES modules (regenerate with `npm run vendor`) and retain their own
 licenses. The extension's own source is under [LICENSE.md](LICENSE.md).
 

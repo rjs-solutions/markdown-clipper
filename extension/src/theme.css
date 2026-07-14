@@ -1,0 +1,46 @@
+/* Shared design tokens + theme resolution for every extension page.
+   Single source of truth so the popup, options, report, editor, and site-export
+   pages stay visually consistent.
+
+   Each token is defined ONCE via light-dark(light, dark); the active value is
+   chosen by the resolved `color-scheme`. Theme is driven by data-theme on <html>
+   (set from settings by lib/theme.js): "system" (default) follows the OS,
+   "light"/"dark" force a mode. No duplicated dark block to keep in sync. */
+
+:root {
+  color-scheme: light dark; /* system default follows the OS */
+
+  --accent: light-dark(#2563eb, #60a5fa);
+  --accent-hover: light-dark(#1d4ed8, #93c5fd);
+  --accent-soft: light-dark(#e4edfd, rgba(96, 165, 250, 0.20));
+  --accent-contrast: light-dark(#ffffff, #0b1220);
+
+  --bg: light-dark(#eceff3, #0f1115);
+  --surface: light-dark(#ffffff, #1b1e25);
+  --surface-muted: light-dark(#dde3ea, #2a2f38);
+  --border: light-dark(#cdd5de, #3a4150);
+
+  --text: light-dark(#162028, #e8eaed);
+  --text-muted: light-dark(#5f6d79, #a3a9b3);
+  --danger: light-dark(#b3381f, #ff8a73);
+
+  --shadow-color: light-dark(rgba(16, 32, 40, 0.12), rgba(0, 0, 0, 0.55));
+  --shadow: 0 1px 2px var(--shadow-color), 0 8px 22px var(--shadow-color);
+}
+
+/* Explicit overrides just flip the resolved color-scheme; light-dark() does the
+   rest. Absent / "system" inherits the base `light dark` and follows the OS. */
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* The hidden attribute must always win, even over an element that sets its own
+   display (e.g. .loading is display:flex). Without this, toggling `.hidden`
+   from JS has no effect. */
+[hidden] {
+  display: none !important;
+}

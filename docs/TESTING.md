@@ -24,16 +24,40 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 - [ ] **Download** saves a sensibly named `.md` file with the same content.
 - [ ] **Open in tab** shows the Markdown preview.
 - [ ] A long, lazy-loading page captures the below-the-fold content (scroll-to-load worked).
+- [ ] Merely opening the popup does not move the SharePoint page. Choosing Copy, Download,
+      Open, or the editor shows a brief loading overlay, then restores the original position.
 
-## 3. Single-page capture — general webpage (once Phase 2 lands)
+## 3. Single-page capture — general webpage
 
 - [ ] On a news/article page, capture produces clean article Markdown (Readability mode).
 - [ ] On a non-article page, the full-page fallback still produces usable Markdown.
 
-## 4. Permissions sanity
+## 4. Options, side panel, and templating
+
+- [ ] Options uses the General / Capture / Output / Template left navigation; switching panes,
+      Save, and Reset all work.
+- [ ] From the popup, **Open in side panel** opens a docked, full-width clip card; Copy,
+      Download, and Open work there.
+- [ ] Switching to another tab hides the clipper panel instead of showing an empty capture;
+      returning to the original tab restores it, with no horizontal scrolling at narrow widths.
+- [ ] In the full-page editor, Close has a visible secondary-button outline before hover.
+- [ ] Enable a custom template containing `{{title|slug}}` and `{{content}}`; save, capture,
+      and confirm both the rendered Markdown and filename.
+
+## 5. Site export
+
+- [ ] Run URL-list, sitemap, and same-host crawl modes once each.
+- [ ] The host-access prompt appears when needed and does not repeat for an already-approved
+      host.
+- [ ] ZIP output contains per-page Markdown plus `index.md`; aggregate output downloads when
+      selected.
+- [ ] A sitemap containing page URLs on unapproved origins skips them with a clear message;
+      use URL-list mode to explicitly approve multiple hosts.
+
+## 6. Permissions sanity
 
 - [ ] On the extensions card, confirm **no host permissions requested at install**.
-- [ ] Optional host access is requested only when starting a site export (Phase 4).
+- [ ] Optional host access is requested only when starting a site export.
 
 ## Expected console noise from captured sites (not bugs)
 

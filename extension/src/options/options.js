@@ -1,9 +1,11 @@
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, resetSettings } from "../lib/settings.js";
+import { applyTheme } from "../lib/theme.js";
 
 const form = document.getElementById("options-form");
 const statusElement = document.getElementById("status");
 
 const fields = {
+  theme: document.getElementById("theme"),
   mode: document.getElementById("mode"),
   metadataStyle: document.getElementById("metadata-style"),
   includeTitleHeading: document.getElementById("include-title-heading"),
@@ -33,9 +35,35 @@ async function initialize() {
   });
 
   fields.useTemplate.addEventListener("change", reflectTemplateMode);
+
+  // Live-preview the theme as soon as it's changed, before saving.
+  fields.theme.addEventListener("change", () => applyTheme(fields.theme.value));
+
+  wireSectionNav();
+}
+
+// Left-nav section switching. Every field stays in the DOM (just hidden), so
+// Save still reads them all regardless of the active section.
+function wireSectionNav() {
+  const navItems = Array.from(document.querySelectorAll(".nav-item"));
+  const panels = Array.from(document.querySelectorAll(".panel"));
+  const show = (section) => {
+    for (const item of navItems) {
+      item.classList.toggle("is-active", item.dataset.section === section);
+    }
+    for (const panel of panels) {
+      panel.hidden = panel.dataset.section !== section;
+    }
+  };
+  for (const item of navItems) {
+    item.addEventListener("click", () => show(item.dataset.section));
+  }
+  show("general");
 }
 
 function fillForm(settings) {
+  fields.theme.value = settings.theme;
+  applyTheme(settings.theme);
   fields.mode.value = settings.mode;
   fields.metadataStyle.value = settings.metadataStyle;
   fields.includeTitleHeading.checked = settings.includeTitleHeading;
@@ -58,6 +86,7 @@ function reflectTemplateMode() {
 
 function readForm() {
   return {
+    theme: fields.theme.value,
     mode: fields.mode.value,
     metadataStyle: fields.metadataStyle.value,
     includeTitleHeading: fields.includeTitleHeading.checked,

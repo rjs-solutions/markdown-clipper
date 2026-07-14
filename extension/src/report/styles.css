@@ -1,12 +1,4 @@
-:root {
-  color-scheme: light;
-  --accent: #126b5d;
-  --border: #d7dde4;
-  --page: #f5f7f9;
-  --surface: #ffffff;
-  --text: #162028;
-  --text-muted: #5f6d79;
-}
+/* Tokens come from ../theme.css (linked first). */
 
 * {
   box-sizing: border-box;
@@ -15,7 +7,7 @@
 body {
   margin: 0;
   color: var(--text);
-  background: var(--page);
+  background: var(--bg);
   font: 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -35,7 +27,6 @@ body {
 h1 {
   margin: 0;
   font-size: 18px;
-  letter-spacing: 0;
 }
 
 p {
@@ -53,7 +44,7 @@ button {
   min-height: 34px;
   padding: 6px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   color: var(--text);
   background: var(--surface);
   font: inherit;
@@ -76,7 +67,7 @@ pre {
   padding: 20px;
   overflow: auto;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--surface);
   white-space: pre-wrap;
   word-break: break-word;

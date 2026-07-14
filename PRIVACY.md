@@ -1,13 +1,13 @@
-# Markdown Web Clipper Privacy Policy
+# Markdown Clipper Privacy Policy
 
-_Last updated: June 26, 2026_
+_Last updated: July 13, 2026_
 
-Markdown Web Clipper ("the extension") converts web pages — including SharePoint pages — into
+Markdown Clipper ("the extension") converts web pages — including SharePoint pages — into
 Markdown. This policy explains what the extension does and does not do with data.
 
 ## Summary
 
-Markdown Web Clipper does **not** collect, store, sell, or transmit your personal information.
+Markdown Clipper does **not** collect, store, sell, or transmit your personal information.
 All processing happens locally in your browser. There is no external backend and no analytics.
 
 ## What the extension accesses
@@ -32,6 +32,9 @@ after you act:
 - **`scripting`** — inject the collector that reads the page DOM and builds the Markdown.
 - **`downloads`** — save the Markdown file (or site export archive) you requested.
 - **`storage`** — remember your settings and templates on your device.
+- **`sidePanel`** — display the clip card beside the page when you explicitly open the side
+  panel.
+- **Optional `tabs`** — open and close the background tabs required for a site export.
 - **Optional host access (`http://*/*`, `https://*/*`)** — requested only when you start a
   site export, so the extension can open and read the pages within the site you chose. It does
   not monitor your browsing and does not run automatically on websites.
@@ -51,7 +54,7 @@ never transmitted anywhere.
 
 ## Your responsibility
 
-Use Markdown Web Clipper only on pages and sites you are authorized to access and capture.
+Use Markdown Clipper only on pages and sites you are authorized to access and capture.
 
 ## Changes to this policy
 

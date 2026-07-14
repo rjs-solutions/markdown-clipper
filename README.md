@@ -1,4 +1,4 @@
-# Markdown Web Clipper
+# Markdown Clipper
 
 A Chrome extension that turns web pages into clean Markdown — with first-class support for
 SharePoint. Copy, download, or open the active page as Markdown, and (coming as part of the

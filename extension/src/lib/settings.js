@@ -4,6 +4,7 @@
 import { DEFAULT_TEMPLATE, DEFAULT_FILENAME_TEMPLATE } from "./template.js";
 
 export const DEFAULT_SETTINGS = {
+  theme: "system", // system | light | dark
   mode: "auto", // auto | sharepoint | article | full
   scrollBeforeCapture: true,
   maxScrollMs: 12000,

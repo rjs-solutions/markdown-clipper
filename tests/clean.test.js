@@ -25,12 +25,14 @@ test("prepareContent strips chrome and absolutizes links/images", () => {
   const root = document.createElement("div");
   root.innerHTML = `
     <nav>skip me</nav>
+    <div data-mwc-capture-overlay>capture status</div>
     <script>var x = 1;</script>
     <p>Keep <a href="/docs">this</a>.</p>
     <img src="pics/a.png" alt="A">
   `;
   const html = prepareContent(root, { baseUrl: "https://site.example.com/a/b/", dropHidden: false });
   assert.equal(html.includes("skip me"), false);
+  assert.equal(html.includes("capture status"), false);
   assert.equal(html.includes("var x"), false);
   assert.match(html, /href="https:\/\/site\.example\.com\/docs"/);
   assert.match(html, /src="https:\/\/site\.example\.com\/a\/b\/pics\/a\.png"/);

@@ -1,6 +1,6 @@
 # Architecture &amp; Build Report
 
-Markdown Web Clipper — graduated from the `SharePoint Markdown Exporter` alpha (0.1.0) to a
+Markdown Clipper — graduated from the `SharePoint Markdown Exporter` alpha (0.1.0) to a
 general web→Markdown clipper at **1.0.0**. This document is the design overview and the record
 of what was built. For setup see [DEVELOPMENT.md](DEVELOPMENT.md); for the test gate see
 [TESTING.md](TESTING.md).

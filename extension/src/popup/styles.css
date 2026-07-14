@@ -1,13 +1,4 @@
-:root {
-  color-scheme: light;
-  --accent: #126b5d;
-  --accent-dark: #0c5146;
-  --border: #d7dde4;
-  --surface: #ffffff;
-  --surface-muted: #f5f7f9;
-  --text: #162028;
-  --text-muted: #5f6d79;
-}
+/* Tokens come from ../theme.css (linked first). */
 
 * {
   box-sizing: border-box;
@@ -15,10 +6,18 @@
 
 body {
   margin: 0;
-  min-width: 330px;
+  width: 460px;
   color: var(--text);
-  background: var(--surface);
-  font: 13px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  font: 13px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* When the same card is shown in the side panel, fill the panel width. */
+body.in-panel {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  overflow-x: hidden;
 }
 
 button,
@@ -27,38 +26,58 @@ input {
 }
 
 .popup {
-  padding: 16px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 12px;
 }
 
+/* Header ------------------------------------------------------------------ */
+
+/* Full-width header band: negative margins pull it to the popup edges, the
+   bottom border sets it apart so no subtitle/empty row is needed. */
 .header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin: -12px -12px 8px;
+  padding: 6px 12px;
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--border);
 }
 
-h1 {
+.wordmark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0;
+  letter-spacing: 0.01em;
 }
 
-p {
-  margin: 2px 0 0;
-  color: var(--text-muted);
+.brand-mark {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  display: block;
+}
+
+.header-actions {
+  display: flex;
+  gap: 2px;
 }
 
 .icon-button {
   display: inline-grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 7px;
   color: var(--text-muted);
-  background: var(--surface);
+  background: transparent;
   cursor: pointer;
 }
 
@@ -77,53 +96,367 @@ p {
   stroke-width: 1.8;
 }
 
-.actions {
-  display: grid;
-  gap: 2px;
-  margin-bottom: 8px;
+/* Loading + empty states -------------------------------------------------- */
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 4px;
+  color: var(--text-muted);
 }
 
-.action {
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2s;
+  }
+}
+
+.empty {
+  padding: 16px 4px;
+  color: var(--text-muted);
+}
+
+.empty p {
+  margin: 0;
+}
+
+/* Card -------------------------------------------------------------------- */
+
+.card {
   display: grid;
-  grid-template-columns: 24px 1fr;
-  align-items: center;
+  /* minmax(0, …) lets the column shrink below its content's intrinsic width,
+     so a long unbreakable URL in the preview can't force horizontal scroll. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.field > span:not(.filename-input) {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.field input,
+.field textarea {
   width: 100%;
-  min-height: 40px;
-  padding: 8px 4px;
+  min-height: 30px;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.field-title input {
+  font-weight: 600;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.filename-input {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.filename-input:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.filename-input input {
   border: 0;
-  border-radius: 6px;
+  border-radius: 0;
+  min-width: 0;
+}
+
+.filename-input input:focus {
+  box-shadow: none;
+}
+
+.filename-input .ext {
+  padding: 0 9px;
+  color: var(--text-muted);
+  background: var(--surface-muted);
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  border-left: 1px solid var(--border);
+}
+
+/* Read-only source context — a compact strip at the top of the card, set apart
+   from the editable fields by a single divider below it. */
+.props {
+  margin: 0;
+  padding: 0 0 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11.5px;
+}
+
+.props:empty {
+  display: none;
+}
+
+.prop-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 2px 0;
+}
+
+.prop-label {
+  flex: 0 0 58px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.prop-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+
+.prop-value a {
+  color: var(--accent-hover);
+  text-decoration: none;
+}
+
+.prop-value a:hover {
+  text-decoration: underline;
+}
+
+/* Markdown preview */
+.preview {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.char-count {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.preview-body {
+  display: block;
+  width: 100%;
+  height: 150px;
+  margin: 0;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 0;
+  resize: vertical;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   color: var(--text);
   background: var(--surface);
-  text-align: left;
+}
+
+.preview-body:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--accent-soft);
+}
+
+/* Actions ----------------------------------------------------------------- */
+
+.actions {
+  margin-top: 10px;
+}
+
+.section-label {
+  margin: 0 0 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.actions-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
   cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
 }
 
-.action:hover {
-  background: var(--surface-muted);
+.btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
-.action:disabled {
-  cursor: wait;
-  opacity: 0.65;
+.btn:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 
-.action-icon {
+.btn-icon {
   width: 18px;
   height: 18px;
-  color: #ffffff;
+  flex: 0 0 auto;
   fill: none;
-  stroke: var(--accent);
+  stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 2;
+  stroke-width: 1.9;
 }
 
-.status {
-  min-height: 18px;
+/* The three actions: equal columns, icon + label on one row (compact height),
+   graded shades of the accent so they read as one set with Download strongest. */
+.act {
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.act-download {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.act-download:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.act-copy {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 24%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--surface));
+}
+
+.act-copy:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 32%, var(--surface));
+  border-color: var(--accent);
+}
+
+.act-open {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 11%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--surface));
+}
+
+.act-open:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  border-color: var(--accent);
+}
+
+.act-copy .btn-icon,
+.act-open .btn-icon {
+  stroke: var(--accent);
+}
+
+.btn-export {
+  width: 100%;
+  min-height: 36px;
   margin-top: 8px;
-  color: var(--accent-dark);
+  color: var(--text-muted);
+}
+
+.btn-export:hover {
+  color: var(--text);
+}
+
+/* Status ------------------------------------------------------------------ */
+
+.status {
+  min-height: 16px;
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--accent-hover);
+}
+
+.status:empty {
+  min-height: 0;
+  margin: 0;
 }
 
 .status.is-error {
-  color: #a33a26;
+  color: var(--danger);
 }

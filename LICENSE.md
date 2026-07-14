@@ -2,9 +2,9 @@
 
 <https://polyformproject.org/licenses/noncommercial/1.0.0>
 
-Required Notice: Copyright © 2026 the Markdown Web Clipper author.
+Required Notice: Copyright © 2026 the Markdown Clipper author.
 
-> Plain-language summary (not part of the license): Markdown Web Clipper is source-available.
+> Plain-language summary (not part of the license): Markdown Clipper is source-available.
 > You may read, use, modify, and distribute it for **noncommercial** purposes. Commercial use —
 > and redistributing it or a derivative as a competing product or service — is not permitted.
 > For commercial licensing, contact the author.
