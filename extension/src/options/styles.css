@@ -143,6 +143,28 @@ legend {
   gap: 8px;
 }
 
+/* Bespoke vault folder-picker control (not schema-driven, see options.js). */
+.vault-field {
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.vault-label {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.vault-status {
+  margin: 0;
+}
+
+.vault-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .checkbox-field > span {
   color: var(--text);
 }

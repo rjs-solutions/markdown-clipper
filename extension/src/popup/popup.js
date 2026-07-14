@@ -1,9 +1,10 @@
 import { slugify, sanitizeFilename } from "../lib/slug.js";
 import { loadSettings } from "../lib/settings.js";
 import { applyTemplate, extractSelectorRefs } from "../lib/template.js";
-import { assembleOutput } from "../lib/assemble.js";
+import { assembleOutput, parseTags } from "../lib/assemble.js";
 import { capturePage } from "../lib/capture.js";
-import { downloadText } from "../lib/download.js";
+import { writeArtifact } from "../lib/vault.js";
+import { appendClip } from "../lib/clip-log.js";
 import { applyTheme } from "../lib/theme.js";
 
 const el = {
@@ -257,8 +258,24 @@ async function run(action) {
       await openInTab(payload);
       setStatus("Opened Markdown tab");
     } else {
-      await downloadText(payload.markdown, payload.filename);
-      setStatus(`Downloaded ${payload.filename}`);
+      const written = await writeArtifact({ relativePath: payload.filename, content: payload.markdown });
+      if (!written.ok) {
+        throw new Error(written.error || "Could not save the file.");
+      }
+      const fields = currentFields();
+      await appendClip({
+        url: payload.url,
+        title: payload.title,
+        path: written.path,
+        clipped: new Date().toISOString(),
+        type: payload.mode,
+        tags: parseTags(fields.tags),
+        description: fields.description || "",
+        byteLength: new TextEncoder().encode(payload.markdown).length
+      });
+      setStatus(
+        written.backend === "vault" ? `Saved to vault: ${written.path}` : `Downloaded ${payload.filename}`
+      );
     }
   } catch (error) {
     console.error("Markdown Clipper action failed:", error);

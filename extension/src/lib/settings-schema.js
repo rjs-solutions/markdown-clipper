@@ -117,6 +117,20 @@ export const SETTINGS_SCHEMA = [
     ]
   },
   {
+    id: "knowledgeBase",
+    label: "Knowledge Base",
+    fields: [
+      {
+        key: "vaultEnabled",
+        label: "Save clips to a vault folder",
+        type: "toggle",
+        default: false,
+        help:
+          "When on and a folder is chosen below, clips write directly into that folder instead of your Downloads folder."
+      }
+    ]
+  },
+  {
     id: "template",
     label: "Template",
     fields: [

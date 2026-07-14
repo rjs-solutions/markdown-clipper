@@ -5,6 +5,7 @@
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, resetSettings, clampNumber } from "../lib/settings.js";
 import { SETTINGS_SCHEMA, schemaFields, findField } from "../lib/settings-schema.js";
 import { applyTheme } from "../lib/theme.js";
+import { saveHandle, loadHandle, clearHandle, ensurePermission } from "../lib/vault-handle.js";
 
 export function fieldId(key) {
   return `f-${key.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
@@ -216,6 +217,99 @@ function wireSectionNav(navElement, panelsElement) {
   }
 }
 
+// ---- Bespoke vault folder-picker control ---------------------------------
+// This is the ONE control on the options page not driven by the schema loop:
+// it triggers showDirectoryPicker() (needs a live user gesture) and stores a
+// FileSystemDirectoryHandle in IndexedDB (via vault-handle.js), not a plain
+// value in chrome.storage.sync, so it can't be a schema field.
+function renderVaultControl(panel) {
+  if (!panel) {
+    return;
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "field vault-field";
+
+  const label = document.createElement("p");
+  label.className = "vault-label";
+  label.textContent = "Vault folder";
+  wrapper.append(label);
+
+  const statusLine = document.createElement("p");
+  statusLine.className = "help-text vault-status";
+  wrapper.append(statusLine);
+
+  const buttons = document.createElement("div");
+  buttons.className = "vault-buttons";
+
+  const chooseButton = document.createElement("button");
+  chooseButton.type = "button";
+  chooseButton.textContent = "Choose folder";
+
+  const regrantButton = document.createElement("button");
+  regrantButton.type = "button";
+  regrantButton.textContent = "Re-grant access";
+  regrantButton.hidden = true;
+
+  const forgetButton = document.createElement("button");
+  forgetButton.type = "button";
+  forgetButton.textContent = "Forget folder";
+  forgetButton.hidden = true;
+
+  buttons.append(chooseButton, regrantButton, forgetButton);
+  wrapper.append(buttons);
+  panel.append(wrapper);
+
+  async function refresh() {
+    const handle = await loadHandle();
+    if (!handle) {
+      statusLine.textContent = "No vault folder chosen. Clips save to Downloads.";
+      regrantButton.hidden = true;
+      forgetButton.hidden = true;
+      return;
+    }
+    const state = await ensurePermission(handle, { interactive: false });
+    const name = handle.name || "(unnamed folder)";
+    statusLine.textContent =
+      state === "granted" ? `Vault folder: ${name} (access granted)` : `Vault folder: ${name} (access needed)`;
+    regrantButton.hidden = state === "granted";
+    forgetButton.hidden = false;
+  }
+
+  chooseButton.addEventListener("click", async () => {
+    if (!window.showDirectoryPicker) {
+      statusLine.textContent = "This browser doesn't support choosing a folder.";
+      return;
+    }
+    try {
+      const handle = await window.showDirectoryPicker();
+      await saveHandle(handle);
+      await refresh();
+    } catch (error) {
+      // The user cancelling the picker throws AbortError; nothing to report.
+      if (error && error.name !== "AbortError") {
+        console.error("Markdown Clipper vault folder pick failed:", error);
+      }
+    }
+  });
+
+  regrantButton.addEventListener("click", async () => {
+    const handle = await loadHandle();
+    if (!handle) {
+      return;
+    }
+    await ensurePermission(handle, { interactive: true });
+    await refresh();
+  });
+
+  forgetButton.addEventListener("click", async () => {
+    await clearHandle();
+    await refresh();
+  });
+
+  refresh();
+}
+
 async function initialize() {
   const form = document.getElementById("options-form");
   const statusElement = document.getElementById("status");
@@ -227,6 +321,8 @@ async function initialize() {
     panelsElement,
     onThemeChange: applyTheme
   });
+
+  renderVaultControl(panelsElement.querySelector('[data-section="knowledgeBase"]'));
 
   fillForm(await loadSettings());
 
