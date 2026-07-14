@@ -1,21 +1,21 @@
 // Scroll the page (or its main scroll region) to the bottom so lazy-loaded
-// sections render before capture. SharePoint modern pages virtualize content;
+// sections render before capture. Some sites (e.g. SharePoint modern pages)
+// virtualize content and need extra, site-specific scroll regions probed;
 // this gives them a chance to materialize. DOM-bound.
 
 import { describeElement, sleep } from "./dom-utils.js";
 
-export function findScrollTarget() {
+const GENERIC_SCROLL_SELECTORS = ["[role='main']", "main"];
+
+// `scrollTargets` are extra, site-specific scroll-region selectors supplied
+// by the active site adapter; they are tried before the generic ones above
+// and default to none (plain window/document scrolling).
+export function findScrollTarget(scrollTargets = []) {
   const documentScroller = document.scrollingElement || document.documentElement;
+  const selectors = [...scrollTargets, ...GENERIC_SCROLL_SELECTORS];
   const candidates = [
     documentScroller,
-    ...document.querySelectorAll(
-      [
-        "[data-automation-id='contentScrollRegion']",
-        "[data-automation-id='pageScrollRegion']",
-        "[role='main']",
-        "main"
-      ].join(",")
-    )
+    ...document.querySelectorAll(selectors.join(","))
   ];
 
   return candidates
@@ -24,8 +24,8 @@ export function findScrollTarget() {
     .sort((a, b) => getScrollHeight(b) - getScrollHeight(a))[0] || documentScroller;
 }
 
-export function getCurrentScroll() {
-  const target = findScrollTarget();
+export function getCurrentScroll(scrollTargets = []) {
+  const target = findScrollTarget(scrollTargets);
   return {
     target,
     top: getScrollTop(target),
@@ -42,8 +42,8 @@ export function restoreScroll(position) {
   window.scrollTo(position.windowX, position.windowY);
 }
 
-export async function scrollThroughPage(options) {
-  const target = findScrollTarget();
+export async function scrollThroughPage(options, scrollTargets = []) {
+  const target = findScrollTarget(scrollTargets);
   const start = Date.now();
   let steps = 0;
   let stablePasses = 0;

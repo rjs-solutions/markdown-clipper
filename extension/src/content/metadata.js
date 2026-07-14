@@ -3,7 +3,15 @@
 
 import { cleanText, cssEscape, isVisible, looksLikeDate } from "./dom-utils.js";
 
-export function collectMetadata(root, { mode, overrides = {} } = {}) {
+const GENERIC_AUTHOR_SELECTORS = ["[itemprop='author']", ".author", ".byline"];
+const GENERIC_DATE_SELECTORS = ["[itemprop='datePublished']", "[itemprop='dateModified']", "time[datetime]"];
+
+// `selectors` (author/published arrays) come from the active site adapter and
+// are tried before the generic selectors above; they default to none.
+export function collectMetadata(root, { mode, overrides = {}, selectors = {} } = {}) {
+  const authorSelectors = [...(selectors.author || []), ...GENERIC_AUTHOR_SELECTORS];
+  const dateSelectors = [...(selectors.published || []), ...GENERIC_DATE_SELECTORS];
+
   const published = firstValue([
     metaContent("article:published_time"),
     metaContent("og:published_time"),
@@ -19,14 +27,14 @@ export function collectMetadata(root, { mode, overrides = {} } = {}) {
     jsonLdValue(["dateModified"])
   ]);
   const pageDate = firstValue([
-    visibleDateFromSelectors(root),
+    visibleDateFromSelectors(root, dateSelectors),
     metaContent("date"),
     metaContent("DC.date"),
     metaContent("DC.date.issued")
   ]);
 
   return {
-    author: overrides.author || findPageAuthor(root),
+    author: overrides.author || findPageAuthor(root, authorSelectors),
     published,
     modified,
     pageDate,
@@ -54,7 +62,7 @@ function collectTags() {
     .slice(0, 12);
 }
 
-export function findPageAuthor(root) {
+export function findPageAuthor(root, authorSelectors = GENERIC_AUTHOR_SELECTORS) {
   return firstValue([
     metaContent("author"),
     metaContent("article:author"),
@@ -62,7 +70,7 @@ export function findPageAuthor(root) {
     metaContent("creator"),
     metaContent("DC.creator"),
     jsonLdAuthor(),
-    visibleAuthorFromSelectors(root)
+    visibleAuthorFromSelectors(root, authorSelectors)
   ]);
 }
 
@@ -83,30 +91,11 @@ function metaContent(nameOrProperty) {
   return "";
 }
 
-function visibleAuthorFromSelectors(root) {
-  const selectors = [
-    "[data-automation-id='pageAuthor']",
-    "[data-automation-id='newsAuthor']",
-    "[data-automation-id='AuthorByline']",
-    "[data-automation-id='authorByline']",
-    "[data-automation-id='author']",
-    "[itemprop='author']",
-    ".author",
-    ".byline"
-  ];
-  return firstVisibleText(selectors, root).replace(/^by\s+/i, "");
+function visibleAuthorFromSelectors(root, authorSelectors) {
+  return firstVisibleText(authorSelectors, root).replace(/^by\s+/i, "");
 }
 
-function visibleDateFromSelectors(root) {
-  const dateSelectors = [
-    "[data-automation-id='pagePublishedDate']",
-    "[data-automation-id='pageModifiedDate']",
-    "[data-automation-id='newsDate']",
-    "[data-automation-id='modifiedDate']",
-    "[itemprop='datePublished']",
-    "[itemprop='dateModified']",
-    "time[datetime]"
-  ];
+function visibleDateFromSelectors(root, dateSelectors) {
   for (const selector of dateSelectors) {
     const elements = [
       ...document.querySelectorAll(selector),

@@ -3,7 +3,7 @@
 // returns a JSON-serializable result.
 
 import { getCurrentScroll, restoreScroll, scrollThroughPage } from "./scroll.js";
-import { findSharePointRoot, getSharePointTitle, isSharePoint } from "./sharepoint.js";
+import { getAdapterById, resolveAdapter } from "./adapters.js";
 import { prepareContent } from "./clean.js";
 import { collectMetadata } from "./metadata.js";
 import { parseArticle } from "./article.js";
@@ -12,12 +12,22 @@ import { cleanText } from "./dom-utils.js";
 import { htmlToMarkdown } from "../lib/markdown.js";
 
 const DEFAULTS = {
-  mode: "auto", // auto | sharepoint | article | full
+  mode: "auto", // auto | article | full | <registered site-adapter id>
   scrollBeforeCapture: true,
   maxScrollMs: 12000,
   scrollPauseMs: 450,
   dropHidden: true
 };
+
+// A mode is valid if it is one of the generic modes, or the id of a
+// registered, non-generic site adapter (e.g. whatever adapters.js exposes).
+function isValidMode(mode) {
+  if (mode === "auto" || mode === "article" || mode === "full") {
+    return true;
+  }
+  const adapter = getAdapterById(mode);
+  return Boolean(adapter && adapter.id !== "generic");
+}
 
 function sanitize(raw) {
   const clampNumber = (value, min, max, fallback) => {
@@ -28,7 +38,7 @@ function sanitize(raw) {
     return Math.max(min, Math.min(max, number));
   };
   return {
-    mode: ["auto", "sharepoint", "article", "full"].includes(raw.mode) ? raw.mode : DEFAULTS.mode,
+    mode: isValidMode(raw.mode) ? raw.mode : DEFAULTS.mode,
     scrollBeforeCapture: raw.scrollBeforeCapture !== false,
     maxScrollMs: clampNumber(raw.maxScrollMs, 3000, 45000, DEFAULTS.maxScrollMs),
     scrollPauseMs: clampNumber(raw.scrollPauseMs, 150, 2500, DEFAULTS.scrollPauseMs),
@@ -37,11 +47,14 @@ function sanitize(raw) {
   };
 }
 
-function resolveMode(requested) {
+// A matched site adapter (anything but "generic") always finds a usable root
+// (the current site adapter falls back to document.body), so matching is
+// equivalent to "found a root" for the adapters that exist today.
+function resolveMode(requested, detectedAdapter) {
   if (requested !== "auto") {
     return requested;
   }
-  return isSharePoint() ? "sharepoint" : "article";
+  return detectedAdapter && detectedAdapter.id !== "generic" ? detectedAdapter.id : "article";
 }
 
 function visibleLength(html) {
@@ -54,27 +67,33 @@ function cleanDocumentTitle() {
 
 export async function collectPage(rawOptions = {}) {
   const options = sanitize(rawOptions);
-  const mode = resolveMode(options.mode);
-  const startScroll = getCurrentScroll();
+  const detectedAdapter = resolveAdapter();
+  const mode = resolveMode(options.mode, detectedAdapter);
+  const siteAdapter = getAdapterById(mode);
+  const startScroll = getCurrentScroll(siteAdapter ? siteAdapter.scrollTargets : []);
   let captureOverlay = null;
 
   try {
     let scrollStats = null;
-    if (options.scrollBeforeCapture && mode === "sharepoint") {
+    if (options.scrollBeforeCapture && siteAdapter && siteAdapter.needsScroll) {
       captureOverlay = showCaptureOverlay();
-      scrollStats = await scrollThroughPage(options);
+      scrollStats = await scrollThroughPage(options, siteAdapter.scrollTargets);
     }
 
     let title = "";
     let html = "";
     let root = "document";
     const overrides = {};
+    const siteRoot = siteAdapter ? siteAdapter.findRoot() : null;
 
-    if (mode === "sharepoint") {
-      const element = findSharePointRoot();
-      title = getSharePointTitle(element);
-      html = prepareContent(element, { baseUrl: document.baseURI, dropHidden: options.dropHidden });
-      root = describe(element);
+    if (siteAdapter && siteRoot) {
+      title = siteAdapter.getTitle(siteRoot);
+      html = prepareContent(siteRoot, {
+        baseUrl: document.baseURI,
+        dropHidden: options.dropHidden,
+        unwantedSelectors: siteAdapter.unwantedSelectors
+      });
+      root = describe(siteRoot);
     } else if (mode === "article") {
       const article = parseArticle();
       if (article && visibleLength(article.content) > 200) {
@@ -94,8 +113,12 @@ export async function collectPage(rawOptions = {}) {
       root = "body";
     }
 
-    const markdown = htmlToMarkdown(html);
-    const metadata = collectMetadata(document.body, { mode, overrides });
+    const markdown = htmlToMarkdown(html, { baseUrl: document.baseURI });
+    const metadata = collectMetadata(document.body, {
+      mode,
+      overrides,
+      selectors: siteAdapter ? siteAdapter.metadataSelectors : undefined
+    });
     metadata.title = title;
     metadata.url = location.href;
 

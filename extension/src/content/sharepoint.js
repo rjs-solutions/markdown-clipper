@@ -1,7 +1,8 @@
 // SharePoint detection, content-root selection (scored), and title extraction.
 // DOM-bound. This is the specialized path; generic pages use article.js.
 
-import { cleanText, getVisibleText, isVisible } from "./dom-utils.js";
+import { cleanText } from "./dom-utils.js";
+import { pickBestRoot } from "./root-score.js";
 
 export function isSharePoint() {
   const host = location.hostname.toLowerCase();
@@ -26,25 +27,7 @@ const ROOT_SELECTORS = [
 
 // Pick the content root with the best text-to-chrome score.
 export function findSharePointRoot() {
-  const candidates = ROOT_SELECTORS
-    .flatMap((selector) => Array.from(document.querySelectorAll(selector)))
-    .filter(isUsableRoot);
-  if (candidates.length === 0) {
-    return document.body;
-  }
-  return candidates.sort((a, b) => scoreRoot(b) - scoreRoot(a))[0];
-}
-
-function isUsableRoot(element) {
-  return Boolean(element) && isVisible(element) && getVisibleText(element).length > 80;
-}
-
-export function scoreRoot(element) {
-  const textLength = getVisibleText(element).length;
-  const linkCount = element.querySelectorAll("a").length;
-  const headingCount = element.querySelectorAll("h1,h2,h3,h4,h5,h6").length;
-  const navPenalty = element.querySelectorAll("nav,[role='navigation'],header,footer").length * 300;
-  return textLength + headingCount * 120 - linkCount * 5 - navPenalty;
+  return pickBestRoot(ROOT_SELECTORS);
 }
 
 export function getSharePointTitle(root) {

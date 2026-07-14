@@ -9,18 +9,13 @@ const UNWANTED_TAGS = [
   "iframe", "object", "embed", "button", "input", "select", "textarea"
 ];
 
-const UNWANTED_SELECTORS = [
+const GENERIC_UNWANTED_SELECTORS = [
   "[data-mwc-capture-overlay]",
   "[aria-hidden='true']",
   "[role='navigation']",
   "[role='banner']",
   "[role='search']",
-  "nav", "header", "footer",
-  "[data-automation-id='pageCommandBar']",
-  "[data-automation-id='SiteHeader']",
-  "[data-automation-id='SuiteNavWrapper']",
-  ".ms-CommandBar",
-  ".ms-Nav"
+  "nav", "header", "footer"
 ];
 
 const OMIT_ATTR = "data-mwc-omit";
@@ -28,7 +23,9 @@ const OMIT_ATTR = "data-mwc-omit";
 // Clone `root`, strip unwanted nodes, absolutize URLs, and return inner HTML.
 // Visibility is computed on the live tree (detached clones can't be measured),
 // then marked nodes are removed from the clone; the live markers are cleaned up.
-export function prepareContent(root, { baseUrl = document.baseURI, dropHidden = true } = {}) {
+// `unwantedSelectors` are extra, site-specific chrome selectors supplied by
+// the active site adapter; they are merged with the generic set above.
+export function prepareContent(root, { baseUrl = document.baseURI, dropHidden = true, unwantedSelectors = [] } = {}) {
   if (!root) {
     return "";
   }
@@ -46,7 +43,8 @@ export function prepareContent(root, { baseUrl = document.baseURI, dropHidden = 
   try {
     clone.querySelectorAll(`[${OMIT_ATTR}]`).forEach((node) => node.remove());
     clone.querySelectorAll(UNWANTED_TAGS.join(",")).forEach((node) => node.remove());
-    clone.querySelectorAll(UNWANTED_SELECTORS.join(",")).forEach((node) => node.remove());
+    const siteSelectors = [...GENERIC_UNWANTED_SELECTORS, ...unwantedSelectors];
+    clone.querySelectorAll(siteSelectors.join(",")).forEach((node) => node.remove());
     absolutizeUrls(clone, baseUrl);
   } finally {
     for (const element of marked) {
