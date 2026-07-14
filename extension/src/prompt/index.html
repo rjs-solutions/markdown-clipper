@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Generate LLM prompt</title>
+    <link rel="stylesheet" href="../theme.css">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="prompt-page">
+      <h1>Generate an LLM prompt</h1>
+      <p class="lead">
+        Build a ready-to-paste prompt for an LLM with filesystem access (Claude, ChatGPT) to
+        analyze your clipped vault. The inventory below comes from the clip log; hand the
+        prompt to the LLM and let it read the files itself.
+      </p>
+
+      <form id="prompt-form">
+        <fieldset class="group">
+          <legend>Task</legend>
+          <label class="field">
+            <span>What should the LLM do</span>
+            <select id="task"></select>
+          </label>
+          <p class="hint" id="task-description"></p>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend>Filters</legend>
+          <div class="field-row">
+            <label class="field">
+              <span>Content type</span>
+              <select id="type-filter">
+                <option value="">All</option>
+                <option value="article">Article</option>
+                <option value="sharepoint">SharePoint</option>
+                <option value="confluence">Confluence</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Since</span>
+              <input id="since-filter" type="date">
+            </label>
+            <label class="field">
+              <span>Max items</span>
+              <input id="limit-filter" type="number" min="1" step="1" placeholder="No limit">
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="buttons">
+          <button id="generate-btn" type="submit">Generate</button>
+          <button id="copy-btn" type="button" disabled>Copy</button>
+        </div>
+      </form>
+
+      <p id="summary" class="summary" role="status" aria-live="polite"></p>
+
+      <label class="field field-output">
+        <span>Generated prompt</span>
+        <textarea id="output" rows="20" spellcheck="false" readonly aria-label="Generated prompt"></textarea>
+      </label>
+    </main>
+    <script type="module" src="prompt.js"></script>
+  </body>
+</html>

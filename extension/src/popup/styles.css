@@ -434,14 +434,16 @@ input {
   stroke: var(--accent);
 }
 
-.btn-export {
+.btn-export,
+.btn-prompt {
   width: 100%;
   min-height: 36px;
   margin-top: 8px;
   color: var(--text-muted);
 }
 
-.btn-export:hover {
+.btn-export:hover,
+.btn-prompt:hover {
   color: var(--text);
 }
 
