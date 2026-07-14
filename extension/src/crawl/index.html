@@ -43,10 +43,22 @@
             <span>Maximum pages</span>
             <input id="max-pages" type="number" min="1" max="500" step="1" value="25">
           </label>
+          <label class="field" data-mode="crawl">
+            <span>Maximum link depth</span>
+            <input id="max-depth" type="number" min="0" max="20" step="1" value="5">
+          </label>
           <p class="field hint" data-mode="crawl">
             For safety, link crawling stays on the start URL's host. Use the URL-list mode
             when you intentionally need to export pages from multiple hosts.
           </p>
+          <label class="field" data-mode="crawl">
+            <span>Include URL patterns (regex, one per line, optional)</span>
+            <textarea id="include-patterns" rows="2" spellcheck="false" placeholder="/SitePages/"></textarea>
+          </label>
+          <label class="field" data-mode="crawl">
+            <span>Exclude URL patterns (regex, one per line, optional)</span>
+            <textarea id="exclude-patterns" rows="2" spellcheck="false" placeholder="/_layouts/"></textarea>
+          </label>
           <label class="field">
             <span>Output</span>
             <select id="output">
@@ -59,7 +71,9 @@
 
         <div class="buttons">
           <button id="start-btn" type="submit">Start export</button>
-          <button id="stop-btn" type="button" disabled>Stop</button>
+          <button id="pause-btn" type="button" disabled>Pause</button>
+          <button id="resume-btn" type="button" disabled>Resume</button>
+          <button id="stop-btn" type="button" disabled>Cancel</button>
         </div>
       </form>
 

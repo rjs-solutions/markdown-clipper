@@ -24,12 +24,17 @@
   "side_panel": {
     "default_path": "src/popup/index.html?panel=1"
   },
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
   "permissions": [
     "activeTab",
     "scripting",
     "downloads",
     "storage",
-    "sidePanel"
+    "sidePanel",
+    "alarms"
   ],
   "optional_permissions": [
     "tabs"
@@ -46,7 +51,8 @@
       "resources": [
         "src/content/*.js",
         "src/lib/*.js",
-        "src/vendor/*.js"
+        "src/vendor/*.js",
+        "src/popup/index.html"
       ],
       "matches": [
         "<all_urls>"

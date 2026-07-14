@@ -24,9 +24,14 @@ test("no host permissions are requested at install", () => {
 test("base permissions are exactly the expected minimal set", () => {
   assert.deepEqual(
     [...manifest.permissions].sort(),
-    ["activeTab", "downloads", "scripting", "sidePanel", "storage"].sort()
+    ["activeTab", "alarms", "downloads", "scripting", "sidePanel", "storage"].sort()
   );
   assert.deepEqual(manifest.optional_permissions, ["tabs"]);
+});
+
+test("a module background service worker is registered for durable crawls", () => {
+  assert.equal(manifest.background.service_worker, "src/background/service-worker.js");
+  assert.equal(manifest.background.type, "module");
 });
 
 test("release versions match and the side-panel entry is packaged", () => {
@@ -39,4 +44,13 @@ test("collector modules are web-accessible for dynamic-import injection", () => 
   assert.ok(resources.includes("src/content/*.js"));
   assert.ok(resources.includes("src/lib/*.js"));
   assert.ok(resources.includes("src/vendor/*.js"));
+});
+
+test("the popup page is web-accessible so the overlay panel can iframe it", () => {
+  const resources = manifest.web_accessible_resources.flatMap((entry) => entry.resources);
+  assert.ok(resources.includes("src/popup/index.html"));
+});
+
+test("no content_scripts block: everything stays on the on-demand executeScript model", () => {
+  assert.ok(!("content_scripts" in manifest));
 });

@@ -10,6 +10,7 @@ const el = {
   optionsButton: document.getElementById("open-options"),
   expand: document.getElementById("do-expand"),
   sidepanel: document.getElementById("do-sidepanel"),
+  panel: document.getElementById("do-panel"),
   loading: document.getElementById("loading"),
   empty: document.getElementById("empty"),
   emptyMessage: document.getElementById("empty-message"),
@@ -31,6 +32,7 @@ const el = {
 
 const MODE_LABELS = {
   sharepoint: "SharePoint",
+  confluence: "Confluence",
   article: "Article",
   readability: "Article",
   full: "Full page"
@@ -38,6 +40,8 @@ const MODE_LABELS = {
 
 let settings = null;
 let tab = null;
+let inPanel = false; // shown in the native side panel (manifest ?panel=1)
+let inIframe = false; // shown in the in-page overlay panel (?context=iframe)
 let preview = null; // fast (no-scroll) capture used to populate the card
 let fullResult = null; // cached full-settings capture, once produced
 let fullResultPromise = null; // in-flight full capture (deduped / pre-warmed)
@@ -47,15 +51,24 @@ document.addEventListener("DOMContentLoaded", initialize);
 
 async function initialize() {
   wireEvents();
-  const inPanel = new URLSearchParams(location.search).get("panel") === "1";
+  const params = new URLSearchParams(location.search);
+  inPanel = params.get("panel") === "1";
+  inIframe = params.get("context") === "iframe";
   if (inPanel) {
     document.body.classList.add("in-panel");
+  }
+  if (inIframe) {
+    document.body.classList.add("in-iframe");
   }
   try {
     settings = await loadSettings();
     applyTheme(settings.theme);
     await loadPreview();
-    if (!inPanel) {
+    // The native side panel and the in-page overlay are separate, mutually
+    // exclusive surfaces from the plain popup. Neither offers the other.
+    if (!inPanel && !inIframe) {
+      el.panel.hidden = false;
+      el.panel.addEventListener("click", openInPagePanel);
       try {
         await setupSidePanel();
       } catch (error) {
@@ -94,7 +107,12 @@ function wireEvents() {
 }
 
 async function loadPreview() {
-  tab = await activeTab();
+  // In the in-page overlay, the tab we must capture is the host page the
+  // panel was opened on, not whatever tab happens to be focused (the iframe
+  // itself has no "active tab" of its own). The id travels in via the query
+  // string, set by panel-host.js from the tabId the popup passed at inject
+  // time — see openInPagePanel().
+  tab = inIframe ? await hostTab() : await activeTab();
   if (!tab || !tab.id || !/^https?:\/\//i.test(tab.url || "")) {
     showEmpty("This page can’t be captured. Open a normal web page and try again.");
     return;
@@ -271,7 +289,11 @@ async function openEditor() {
     await chrome.tabs.create({
       url: chrome.runtime.getURL(`src/editor/index.html?id=${encodeURIComponent(id)}`)
     });
-    window.close();
+    // The overlay panel stays open after handing off to the editor tab; the
+    // plain popup and native side panel close as before.
+    if (!inIframe) {
+      window.close();
+    }
   } catch (error) {
     console.error("Markdown Clipper open-editor failed:", error);
     setStatus(messageFrom(error), true);
@@ -374,7 +396,35 @@ async function exportWholeSite() {
     width: 560,
     height: 760
   });
-  window.close();
+  if (!inIframe) {
+    window.close();
+  }
+}
+
+// Injects the overlay-panel mounter into the active tab. Mirrors capturePage
+// (capture.js): a tiny serializable function dynamically imports the
+// web-accessible module in the page's isolated world, since executeScript
+// can't otherwise tell panel-host.js which tab it was launched from.
+async function injectedTogglePanel(moduleUrl, tabId) {
+  const mod = await import(moduleUrl);
+  return mod.togglePanel(tabId);
+}
+
+async function openInPagePanel() {
+  if (!tab || tab.id == null) {
+    return;
+  }
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: injectedTogglePanel,
+      args: [chrome.runtime.getURL("src/content/panel-host.js"), tab.id]
+    });
+    window.close();
+  } catch (error) {
+    console.error("Markdown Clipper open-in-page failed:", error);
+    setStatus(messageFrom(error), true);
+  }
 }
 
 async function openInTab(payload) {
@@ -396,6 +446,19 @@ function withTimeout(promise, ms, message) {
 async function activeTab() {
   const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
   return active;
+}
+
+async function hostTab() {
+  const tabId = Number(new URLSearchParams(location.search).get("tabId"));
+  if (!Number.isFinite(tabId)) {
+    return null;
+  }
+  try {
+    return await chrome.tabs.get(tabId);
+  } catch (error) {
+    console.error("Markdown Clipper could not resolve the host tab:", error);
+    return null;
+  }
 }
 
 function showEmpty(message) {
