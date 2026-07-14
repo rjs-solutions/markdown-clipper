@@ -1,21 +1,10 @@
-// Settings persistence (chrome.storage.sync). DEFAULT_SETTINGS is the single
-// source of truth for option keys/shape, shared by the popup and options page.
+// Settings persistence (chrome.storage.sync). The option keys/shape live in
+// settings-schema.js (the single source of truth); DEFAULT_SETTINGS is derived
+// from it so the schema and the stored defaults cannot drift apart.
 
-import { DEFAULT_TEMPLATE, DEFAULT_FILENAME_TEMPLATE } from "./template.js";
+import { defaultsFromSchema } from "./settings-schema.js";
 
-export const DEFAULT_SETTINGS = {
-  theme: "system", // system | light | dark
-  mode: "auto", // auto | sharepoint | article | full
-  scrollBeforeCapture: true,
-  maxScrollMs: 12000,
-  scrollPauseMs: 450,
-  dropHidden: true,
-  metadataStyle: "frontmatter", // frontmatter | list | none
-  includeTitleHeading: true,
-  useTemplate: false,
-  template: DEFAULT_TEMPLATE,
-  filenameTemplate: DEFAULT_FILENAME_TEMPLATE
-};
+export const DEFAULT_SETTINGS = defaultsFromSchema();
 
 export async function loadSettings() {
   const stored = await chrome.storage.sync.get(DEFAULT_SETTINGS);
@@ -29,4 +18,14 @@ export async function saveSettings(values) {
 export async function resetSettings() {
   await chrome.storage.sync.set(DEFAULT_SETTINGS);
   return { ...DEFAULT_SETTINGS };
+}
+
+// Shared numeric clamp for schema "number" fields (options page, and anywhere
+// else a stored value needs to be coerced back into its field's range).
+export function clampNumber(value, min, max, fallback) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    return fallback;
+  }
+  return Math.max(min, Math.min(max, number));
 }

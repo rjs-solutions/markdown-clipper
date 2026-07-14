@@ -61,6 +61,10 @@ body {
   font-weight: 500;
 }
 
+.panel {
+  scroll-margin-top: 24px;
+}
+
 @media (max-width: 680px) {
   .settings {
     grid-template-columns: 1fr;
@@ -124,6 +128,15 @@ legend {
   color: var(--text-muted);
 }
 
+.field > label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.field.is-disabled {
+  opacity: 0.55;
+}
+
 .checkbox-field {
   display: flex;
   align-items: center;
@@ -175,17 +188,27 @@ textarea {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-.help {
+.help-text {
+  margin: 0;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
-.help summary {
+.variables-help summary {
   cursor: pointer;
   color: var(--accent-hover);
 }
 
-.help code {
+.variables-help p,
+.variables-help ul {
+  margin: 8px 0 0;
+}
+
+.variables-help ul {
+  padding-left: 18px;
+}
+
+.variables-help code {
   padding: 1px 4px;
   border-radius: 4px;
   background: var(--surface-muted);
