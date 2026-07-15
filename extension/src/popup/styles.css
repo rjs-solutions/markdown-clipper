@@ -60,7 +60,7 @@ input {
 .wordmark {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   margin: 0;
   font-size: 12px;
   font-weight: 600;
@@ -68,8 +68,8 @@ input {
 }
 
 .brand-mark {
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   flex: 0 0 auto;
   display: block;
 }
