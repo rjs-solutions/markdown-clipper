@@ -1,0 +1,102 @@
+<style>
+  :root{--bg:#f5f6f8; --panel:#fff; --ink:#1b2230; --muted:#5b6577; --line:#e4e7ec; --radius:14px;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  @media (prefers-color-scheme:dark){:root{--bg:#0f131a;--panel:#171d27;--ink:#e8ecf3;--muted:#95a0b3;--line:#252c38;}}
+  :root[data-theme="dark"]{--bg:#0f131a;--panel:#171d27;--ink:#e8ecf3;--muted:#95a0b3;--line:#252c38;}
+  :root[data-theme="light"]{--bg:#f5f6f8;--panel:#fff;--ink:#1b2230;--muted:#5b6577;--line:#e4e7ec;}
+  *{box-sizing:border-box;} body{margin:0;}
+  .wrap{font-family:var(--sans);color:var(--ink);background:var(--bg);min-height:100vh;padding:40px 24px 64px;line-height:1.5;}
+  .inner{max-width:820px;margin:0 auto;}
+  h1{font-size:26px;font-weight:600;margin:0 0 4px;letter-spacing:-0.01em;}
+  .sub{color:var(--muted);font-size:15px;margin:0 0 30px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;display:flex;flex-direction:column;gap:16px;}
+  .big{display:flex;align-items:center;justify-content:center;height:128px;}
+  .big svg{width:112px;height:112px;}
+  .name{font-size:16px;font-weight:600;margin:0;}
+  .desc{font-size:13px;color:var(--muted);margin:2px 0 0;}
+  .toolbars{display:flex;gap:10px;}
+  .tb{flex:1;border-radius:10px;padding:11px;display:flex;align-items:center;gap:12px;}
+  .tb.l{background:#eceef1;} .tb.d{background:#20252e;}
+  .tb .lab{font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin-left:auto;}
+  .tb.l .lab{color:#67707e;} .tb.d .lab{color:#8b95a4;}
+  footer{margin-top:36px;color:var(--muted);font-size:13px;}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2563eb"/><stop offset="1" stop-color="#14b8a6"/></linearGradient>
+  <linearGradient id="vg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#c4b5fd"/></linearGradient>
+
+  <symbol id="scissorsT" viewBox="0 0 128 128">
+    <path d="M36 12 L92 12 Q116 12 116 36 M116 92 Q116 116 92 116 L36 116 Q12 116 12 92 L12 36 Q12 12 36 12" fill="none" stroke="url(#g)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M40 90 L40 40 L64 72 L88 40 L88 90" fill="none" stroke="url(#g)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M111 50 L116 62 L121 74" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M121 50 L116 62 L111 74" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="121" cy="76" r="4.2" fill="none" stroke="currentColor" stroke-width="2.6"/>
+    <circle cx="111" cy="76" r="4.2" fill="none" stroke="currentColor" stroke-width="2.6"/>
+  </symbol>
+
+  <symbol id="scissorsV" viewBox="0 0 128 128">
+    <path d="M36 12 L92 12 Q116 12 116 36 M116 92 Q116 116 92 116 L36 116 Q12 116 12 92 L12 36 Q12 12 36 12" fill="none" stroke="url(#g)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M40 90 L40 40 L64 72 L88 40 L88 90" fill="none" stroke="url(#g)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M111 50 L116 62 L121 74" fill="none" stroke="url(#vg)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M121 50 L116 62 L111 74" fill="none" stroke="url(#vg)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="121" cy="76" r="4.2" fill="none" stroke="url(#vg)" stroke-width="2.6"/>
+    <circle cx="111" cy="76" r="4.2" fill="none" stroke="url(#vg)" stroke-width="2.6"/>
+  </symbol>
+
+  <symbol id="clipT" viewBox="0 0 128 128">
+    <path d="M36 12 L92 12 Q116 12 116 36 M116 92 Q116 116 92 116 L36 116 Q12 116 12 92 L12 36 Q12 12 36 12" fill="none" stroke="url(#g)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M40 90 L40 40 L64 72 L88 40 L88 90" fill="none" stroke="url(#g)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path transform="translate(116,63) scale(0.052,-0.052) translate(-470,480)" fill="currentColor" d="M720-330q0 104-73 177T470-80q-104 0-177-73t-73-177v-370q0-75 52.5-127.5T400-880q75 0 127.5 52.5T580-700v350q0 46-32 78t-78 32q-46 0-78-32t-32-78v-370h80v370q0 13 8.5 21.5T470-320q13 0 21.5-8.5T500-350v-350q-1-42-29.5-71T400-800q-42 0-71 29t-29 71v370q-1 71 49 120.5T470-160q70 0 119-49.5T640-330v-390h80v390Z"/>
+  </symbol>
+
+  <symbol id="clipV" viewBox="0 0 128 128">
+    <path d="M36 12 L92 12 Q116 12 116 36 M116 92 Q116 116 92 116 L36 116 Q12 116 12 92 L12 36 Q12 12 36 12" fill="none" stroke="url(#g)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M40 90 L40 40 L64 72 L88 40 L88 90" fill="none" stroke="url(#g)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path transform="translate(116,63) scale(0.052,-0.052) translate(-470,480)" fill="url(#vg)" d="M720-330q0 104-73 177T470-80q-104 0-177-73t-73-177v-370q0-75 52.5-127.5T400-880q75 0 127.5 52.5T580-700v350q0 46-32 78t-78 32q-46 0-78-32t-32-78v-370h80v370q0 13 8.5 21.5T470-320q13 0 21.5-8.5T500-350v-350q-1-42-29.5-71T400-800q-42 0-71 29t-29 71v370q-1 71 49 120.5T470-160q70 0 119-49.5T640-330v-390h80v390Z"/>
+  </symbol>
+</defs></svg>
+
+<div class="wrap"><div class="inner">
+  <h1>Markdown Clipper — the finalists</h1>
+  <p class="sub">Blue-teal gradient M in a soft frame; the cut tool sits in the open right side. Scissors vs paperclip, teal vs purple gradient. Each shown large, then at 16px and 32px on a light and a dark toolbar.</p>
+  <div class="grid">
+    <div class="card">
+      <div class="big" style="color:#2dd4bf"><svg><use href="#clipT"/></svg></div>
+      <div class="toolbars">
+        <div class="tb l" style="color:#0d9488"><svg width="16" height="16"><use href="#clipT"/></svg><svg width="32" height="32"><use href="#clipT"/></svg><span class="lab">Light</span></div>
+        <div class="tb d" style="color:#2dd4bf"><svg width="16" height="16"><use href="#clipT"/></svg><svg width="32" height="32"><use href="#clipT"/></svg><span class="lab">Dark</span></div>
+      </div>
+      <div><p class="name">Paperclip · teal</p><p class="desc">Material attach-clip in mid-teal. Your front-runner.</p></div>
+    </div>
+
+    <div class="card">
+      <div class="big"><svg><use href="#clipV"/></svg></div>
+      <div class="toolbars">
+        <div class="tb l"><svg width="16" height="16"><use href="#clipV"/></svg><svg width="32" height="32"><use href="#clipV"/></svg><span class="lab">Light</span></div>
+        <div class="tb d"><svg width="16" height="16"><use href="#clipV"/></svg><svg width="32" height="32"><use href="#clipV"/></svg><span class="lab">Dark</span></div>
+      </div>
+      <div><p class="name">Paperclip · purple gradient</p><p class="desc">Same clip with the violet gradient (deep to light), like the purple scissors.</p></div>
+    </div>
+
+    <div class="card">
+      <div class="big" style="color:#2dd4bf"><svg><use href="#scissorsT"/></svg></div>
+      <div class="toolbars">
+        <div class="tb l" style="color:#0d9488"><svg width="16" height="16"><use href="#scissorsT"/></svg><svg width="32" height="32"><use href="#scissorsT"/></svg><span class="lab">Light</span></div>
+        <div class="tb d" style="color:#2dd4bf"><svg width="16" height="16"><use href="#scissorsT"/></svg><svg width="32" height="32"><use href="#scissorsT"/></svg><span class="lab">Dark</span></div>
+      </div>
+      <div><p class="name">Scissors · teal</p><p class="desc">Mid-teal scissors in the same opening.</p></div>
+    </div>
+
+    <div class="card">
+      <div class="big"><svg><use href="#scissorsV"/></svg></div>
+      <div class="toolbars">
+        <div class="tb l"><svg width="16" height="16"><use href="#scissorsV"/></svg><svg width="32" height="32"><use href="#scissorsV"/></svg><span class="lab">Light</span></div>
+        <div class="tb d"><svg width="16" height="16"><use href="#scissorsV"/></svg><svg width="32" height="32"><use href="#scissorsV"/></svg><span class="lab">Dark</span></div>
+      </div>
+      <div><p class="name">Scissors · purple gradient</p><p class="desc">Violet-gradient scissors for comparison.</p></div>
+    </div>
+  </div>
+  <footer>Say which one (shape + color) and I will write it into the real icon-source.svg, regenerate the toolbar PNGs, and wire the header logo.</footer>
+</div></div>
