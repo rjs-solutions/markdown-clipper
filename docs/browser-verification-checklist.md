@@ -1,6 +1,6 @@
 # Browser verification checklist — feature/clipper-expansion
 
-Everything on this branch passes 205 automated tests and a static load-safety audit
+Everything on this branch passes 253 automated tests and a static load-safety audit
 (service worker has no load-fatal DOM globals, no `createObjectURL` in the worker tree,
 all manifest-referenced files exist). What remains can only be checked in a real Chrome
 because it needs the extension loaded, the File System Access API, real IndexedDB, or a
@@ -39,7 +39,7 @@ independent once the extension is loaded.
 - [ ] Enable "Use LLM-friendly frontmatter and keep an index". Clip two different pages into the vault.
 - [ ] The vault folder root has an `index.md` with a table row per clip (newest first, with `source_url`, `clipped`, `type`, `tags`).
 - [ ] Open a clipped `.md`: frontmatter shows `source_url`, `clipped`, `type: article`, and a `description` that is **auto-filled even if the page showed no summary**. No empty `author:`/`published:` lines when the page lacked them.
-- [ ] Clip a SharePoint page and a Confluence page → each uses its content-type frontmatter shape (`site`/`path`/`last_modified` for SharePoint). *(Note: `page_type` and `space` are intentionally absent — pending an adapter follow-up.)*
+- [ ] Clip a SharePoint page and a Confluence page → each uses its content-type frontmatter shape: SharePoint shows `site`/`path`/`last_modified`/`page_type` (news or page); Confluence shows `space`.
 
 ## 6. Prompt generator
 - [ ] Popup → "Generate LLM prompt…" → a new tab opens, no console errors.
@@ -61,6 +61,13 @@ independent once the extension is loaded.
 - [ ] Side panel: an **X** closes it (only shown there).
 - [ ] Settings > General > **Toolbar icon click**: set to Popup / Side panel / Open in page, save, click the icon each time — behavior matches. Fresh reload still opens the popup before the worker adjusts.
 - [ ] Right-click a page > **Clip with Markdown Clipper** → the in-page overlay opens.
+
+## 9. Tweet / X clipping
+- [ ] First, Settings > Knowledge Base > "X / Twitter clipping" > **Enable** (grants cdn.syndication.twimg.com). Without this, a tweet still clips via normal DOM, just less cleanly.
+- [ ] Open a normal tweet with an image, click the icon > clip. Body is a clean blockquote (author, date, text, image, "View on X"), no t.co noise.
+- [ ] A **quote tweet** shows the quoted tweet nested under "Quoting @author"; an **X article** shows title + preview + "Read the full article" link (preview only, by design).
+- [ ] A tweet whose author left a **follow-up reply** below it: the clip includes an "--- Author's follow-up ---" section with that reply. (Toggle Settings > Capture > "Include the author's follow-up replies" off to skip it.)
+- [ ] A protected/unavailable tweet falls back to normal page capture with a status note.
 
 ---
 Anything that fails, paste me the symptom (and console text if any) and I'll route a fix. Items 1-card, 3-close/reopen, 3-file-content, and 4-toggle are the four I'd most want confirmed.
