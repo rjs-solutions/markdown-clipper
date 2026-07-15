@@ -26,6 +26,7 @@ const el = {
   tags: document.getElementById("f-tags"),
   description: document.getElementById("f-description"),
   charCount: document.getElementById("char-count"),
+  contentType: document.getElementById("content-type"),
   previewBody: document.getElementById("preview-body"),
   actions: document.getElementById("actions"),
   download: document.getElementById("do-download"),
@@ -343,6 +344,22 @@ function selectionCaptureResult(selection) {
   };
 }
 
+// Friendly label for the content-type indicator above the preview body.
+// Mirrors contentTypeFromMode (compose.js) but with the reader-facing names
+// this popup wants, plus the "full" (whole-page) and default cases that
+// compose.js's frontmatter mapping doesn't need to distinguish.
+const CONTENT_TYPE_LABELS = {
+  article: "Article",
+  sharepoint: "SharePoint",
+  confluence: "Confluence",
+  tweet: "Tweet",
+  full: "Page"
+};
+
+function contentTypeLabel(mode) {
+  return CONTENT_TYPE_LABELS[mode] || "Article";
+}
+
 function populateCard(result) {
   el.loading.hidden = true;
   el.empty.hidden = true;
@@ -358,6 +375,7 @@ function populateCard(result) {
   delete el.previewBody.dataset.edited;
   delete el.tags.dataset.edited;
 
+  el.contentType.textContent = contentTypeLabel(result.mode);
   updateCharCount();
   setStatus("");
 
