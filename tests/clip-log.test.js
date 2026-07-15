@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { appendClip, listClips, getClip, clearLog } from "../extension/src/lib/clip-log.js";
+import { appendClip, listClips, getClip, findClipByUrl, updateClip, clearLog } from "../extension/src/lib/clip-log.js";
 
 // Minimal in-memory fake of the IndexedDB APIs clip-log.js actually uses
 // (open/onupgradeneeded, one object store keyed by "id", put/get/delete/clear,
@@ -219,6 +219,86 @@ test("listClips returns newest-first and supports since/type/limit filters", asy
 
   const limited = await listClips({ limit: 1 });
   assert.deepEqual(limited.map((c) => c.id), ["new"]);
+
+  await clearLog();
+});
+
+test("findClipByUrl matches on comparableUrl, ignoring a different fragment", async () => {
+  await appendClip({
+    id: "frag",
+    url: "https://example.com/page",
+    title: "Page",
+    path: "page.md",
+    clipped: "2026-07-01T00:00:00.000Z",
+    type: "article",
+    byteLength: 1
+  });
+
+  const found = await findClipByUrl("https://example.com/page#section");
+  assert.equal(found.id, "frag");
+
+  const notFound = await findClipByUrl("https://example.com/different-page");
+  assert.equal(notFound, null);
+
+  await clearLog();
+});
+
+test("findClipByUrl returns null when no clip matches", async () => {
+  const found = await findClipByUrl("https://example.com/nothing-here");
+  assert.equal(found, null);
+});
+
+test("updateClip merges a patch, keeping id/path/clipped and changing updatedAt/title", async () => {
+  await appendClip({
+    id: "keep",
+    url: "https://example.com/keep",
+    title: "Original title",
+    path: "keep.md",
+    clipped: "2026-07-01T00:00:00.000Z",
+    type: "article",
+    byteLength: 1
+  });
+
+  const merged = await updateClip("keep", {
+    title: "Updated title",
+    updatedAt: "2026-07-15T00:00:00.000Z"
+  });
+
+  assert.equal(merged.id, "keep");
+  assert.equal(merged.path, "keep.md");
+  assert.equal(merged.clipped, "2026-07-01T00:00:00.000Z");
+  assert.equal(merged.title, "Updated title");
+  assert.equal(merged.updatedAt, "2026-07-15T00:00:00.000Z");
+
+  const fetched = await getClip("keep");
+  assert.equal(fetched.title, "Updated title");
+
+  await clearLog();
+});
+
+test("appendClip still adds new records after updateClip is used", async () => {
+  await appendClip({
+    id: "first",
+    url: "https://example.com/first",
+    title: "First",
+    path: "first.md",
+    clipped: "2026-07-01T00:00:00.000Z",
+    type: "article",
+    byteLength: 1
+  });
+  await updateClip("first", { title: "First updated" });
+  await appendClip({
+    id: "second",
+    url: "https://example.com/second",
+    title: "Second",
+    path: "second.md",
+    clipped: "2026-07-02T00:00:00.000Z",
+    type: "article",
+    byteLength: 1
+  });
+
+  const all = await listClips();
+  assert.deepEqual(all.map((c) => c.id).sort(), ["first", "second"]);
 
   await clearLog();
 });

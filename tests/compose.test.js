@@ -199,6 +199,95 @@ test("Knowledge Base preset ON omits space on the confluence profile when empty"
   assert.equal("space" in props, false);
 });
 
+test("Knowledge Base preset ON emits updated on the article profile when present", () => {
+  const props = buildProperties(
+    { title: "My Page", url: "https://example.com/a", type: "article", updated: "2026-07-15T00:00:00.000Z" },
+    { knowledgeBasePreset: true, body: "" }
+  );
+  assert.equal(props.updated, "2026-07-15T00:00:00.000Z");
+});
+
+test("Knowledge Base preset ON omits updated on the article profile when empty", () => {
+  const props = buildProperties(
+    { title: "My Page", url: "https://example.com/a", type: "article" },
+    { knowledgeBasePreset: true, body: "" }
+  );
+  assert.equal("updated" in props, false);
+});
+
+test("Knowledge Base preset ON emits updated on the sharepoint profile when present", () => {
+  const props = buildProperties(
+    {
+      title: "Team Plan",
+      url: "https://x.sharepoint.com/sites/team/SitePages/Plan.aspx",
+      type: "sharepoint",
+      updated: "2026-07-15T00:00:00.000Z"
+    },
+    { knowledgeBasePreset: true }
+  );
+  assert.equal(props.updated, "2026-07-15T00:00:00.000Z");
+});
+
+test("Knowledge Base preset ON omits updated on the sharepoint profile when empty", () => {
+  const props = buildProperties(
+    { title: "Team Plan", url: "https://x.sharepoint.com/sites/team/SitePages/Plan.aspx", type: "sharepoint" },
+    { knowledgeBasePreset: true }
+  );
+  assert.equal("updated" in props, false);
+});
+
+test("Knowledge Base preset ON emits updated on the confluence profile when present", () => {
+  const props = buildProperties(
+    {
+      title: "Runbook",
+      url: "https://team.atlassian.net/wiki/spaces/OPS/pages/Runbook",
+      type: "confluence",
+      updated: "2026-07-15T00:00:00.000Z"
+    },
+    { knowledgeBasePreset: true }
+  );
+  assert.equal(props.updated, "2026-07-15T00:00:00.000Z");
+});
+
+test("Knowledge Base preset ON omits updated on the confluence profile when empty", () => {
+  const props = buildProperties(
+    { title: "Runbook", url: "https://team.atlassian.net/wiki/spaces/OPS/pages/Runbook", type: "confluence" },
+    { knowledgeBasePreset: true }
+  );
+  assert.equal("updated" in props, false);
+});
+
+test("Knowledge Base preset ON emits updated on the tweet profile when present", () => {
+  const props = buildProperties(
+    {
+      title: "Jane on X",
+      url: "https://x.com/jane/status/1",
+      type: "tweet",
+      author: "Jane",
+      handle: "@jane",
+      published: "2026-07-01T00:00:00.000Z",
+      updated: "2026-07-15T00:00:00.000Z"
+    },
+    { knowledgeBasePreset: true }
+  );
+  assert.equal(props.updated, "2026-07-15T00:00:00.000Z");
+});
+
+test("Knowledge Base preset ON omits updated on the tweet profile when empty", () => {
+  const props = buildProperties(
+    {
+      title: "Jane on X",
+      url: "https://x.com/jane/status/1",
+      type: "tweet",
+      author: "Jane",
+      handle: "@jane",
+      published: "2026-07-01T00:00:00.000Z"
+    },
+    { knowledgeBasePreset: true }
+  );
+  assert.equal("updated" in props, false);
+});
+
 test("Knowledge Base preset ON omits genuinely unavailable fields instead of emitting blanks", () => {
   const props = buildProperties(
     { title: "No Author Page", url: "https://example.com/a", type: "article" },

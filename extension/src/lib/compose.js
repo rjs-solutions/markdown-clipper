@@ -107,6 +107,7 @@ function buildKnowledgeBaseProperties(metadata, options) {
       path,
       last_modified: m.modified,
       captured: m.capturedAt,
+      updated: m.updated,
       author: m.author,
       type
     };
@@ -120,6 +121,7 @@ function buildKnowledgeBaseProperties(metadata, options) {
       author: m.author,
       handle: m.handle,
       posted: m.published,
+      updated: m.updated,
       type,
       tags: m.tags,
       description
@@ -131,6 +133,7 @@ function buildKnowledgeBaseProperties(metadata, options) {
       author: m.author,
       published: m.published,
       clipped: m.clippedAt || new Date().toISOString(),
+      updated: m.updated,
       description,
       tags: m.tags,
       type

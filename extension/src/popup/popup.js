@@ -5,7 +5,7 @@ import { assembleOutput, parseTags } from "../lib/assemble.js";
 import { capturePage } from "../lib/capture.js";
 import { isTweetUrl, fetchTweet, buildTweetMarkdown } from "../lib/tweet.js";
 import { writeArtifact } from "../lib/vault.js";
-import { appendClip, listClips } from "../lib/clip-log.js";
+import { appendClip, updateClip, findClipByUrl, listClips } from "../lib/clip-log.js";
 import { buildWikiIndexMarkdown } from "../lib/wiki-index.js";
 import { applyTheme } from "../lib/theme.js";
 import { applyTagRules, loadRules } from "../lib/tag-rules.js";
@@ -415,6 +415,25 @@ async function run(action) {
       syncBodyFromFull(result);
     }
     syncTagsFromResult(result);
+
+    // Dedup / update-on-re-clip (vault only, gated by settings.dedupeOnReclip):
+    // look up any existing clip for this URL BEFORE composing, so a match can
+    // seed the composed frontmatter with its original `clipped` date plus a
+    // fresh `updated` date. result.metadata flows straight into compose.js's
+    // metadata (assembleOutput spreads it), so mutating it here is enough --
+    // no changes needed in assemble.js/compose.js's call sites.
+    let existingClip = null;
+    if (action === "download" && settings.vaultEnabled && settings.dedupeOnReclip) {
+      existingClip = await findClipByUrl(result.url);
+      if (existingClip) {
+        result.metadata = {
+          ...result.metadata,
+          clippedAt: existingClip.clipped,
+          updated: new Date().toISOString()
+        };
+      }
+    }
+
     const payload = buildPayload(result);
 
     if (action === "copy") {
@@ -424,8 +443,12 @@ async function run(action) {
       await openInTab(payload);
       setStatus("Opened Markdown tab");
     } else {
+      // Reuse the existing record's path on a matched re-clip so the write
+      // overwrites the same file instead of creating a new one; otherwise
+      // fall back to today's freshly derived filename.
+      const relativePath = existingClip ? existingClip.path : payload.filename;
       const written = await writeArtifact({
-        relativePath: payload.filename,
+        relativePath,
         content: payload.markdown,
         useVault: settings.vaultEnabled
       });
@@ -433,21 +456,36 @@ async function run(action) {
         throw new Error(written.error || "Could not save the file.");
       }
       const fields = currentFields();
-      await appendClip({
-        url: payload.url,
-        title: payload.title,
-        path: written.path,
-        clipped: new Date().toISOString(),
-        type: payload.mode,
-        tags: parseTags(fields.tags),
-        description: fields.description || "",
-        byteLength: new TextEncoder().encode(payload.markdown).length
-      });
+      if (existingClip) {
+        await updateClip(existingClip.id, {
+          title: payload.title,
+          tags: parseTags(fields.tags),
+          description: fields.description || "",
+          byteLength: new TextEncoder().encode(payload.markdown).length,
+          updatedAt: new Date().toISOString(),
+          path: existingClip.path
+        });
+      } else {
+        await appendClip({
+          url: payload.url,
+          title: payload.title,
+          path: written.path,
+          clipped: new Date().toISOString(),
+          type: payload.mode,
+          tags: parseTags(fields.tags),
+          description: fields.description || "",
+          byteLength: new TextEncoder().encode(payload.markdown).length
+        });
+      }
       if (written.backend === "vault" && settings.knowledgeBasePreset) {
         await regenerateVaultIndex();
       }
       setStatus(
-        written.backend === "vault" ? `Saved to vault: ${written.path}` : `Downloaded ${payload.filename}`
+        existingClip
+          ? `Updated existing clip: ${written.path}`
+          : written.backend === "vault"
+            ? `Saved to vault: ${written.path}`
+            : `Downloaded ${payload.filename}`
       );
     }
   } catch (error) {

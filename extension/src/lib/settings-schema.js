@@ -146,6 +146,14 @@ export const SETTINGS_SCHEMA = [
         default: false,
         help:
           "Adds content-type frontmatter (article, SharePoint, Confluence), fills in a description when the page has none, and keeps an index.md manifest of every clip in your vault folder."
+      },
+      {
+        key: "dedupeOnReclip",
+        label: "Update instead of duplicate when re-clipping",
+        type: "toggle",
+        default: true,
+        help:
+          "Update an existing clip instead of duplicating when you re-clip the same URL (vault only)."
       }
     ]
   },

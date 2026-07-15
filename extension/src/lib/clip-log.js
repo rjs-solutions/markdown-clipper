@@ -5,6 +5,8 @@
 // (index.md generation, the prompt generator) can build off it without
 // re-reading disk.
 
+import { comparableUrl } from "./discover.js";
+
 const DB_NAME = "markdown-clip-log";
 const DB_VERSION = 1;
 const STORE_NAME = "clips";
@@ -85,6 +87,40 @@ export async function listClips({ since, type, limit } = {}) {
   }
   filtered.sort((a, b) => new Date(b.clipped).getTime() - new Date(a.clipped).getTime());
   return typeof limit === "number" ? filtered.slice(0, limit) : filtered;
+}
+
+// Most recent record whose URL normalizes the same as `url` (comparableUrl --
+// the same normalization the crawler's dedupe uses, e.g. it strips the
+// fragment so "…/page#section" matches an existing "…/page" clip). Returns
+// null when nothing matches, so callers can fall back to a plain new clip.
+export async function findClipByUrl(url) {
+  const target = comparableUrl(url);
+  const all = await listClips();
+  return all.find((clip) => comparableUrl(clip.url) === target) || null;
+}
+
+// Merge `patch` into the existing record with this id (keeping its id) and
+// save. Used to refresh a clip in place on re-clip -- title/tags/description
+// /byteLength/updatedAt change, while the original id, path, and clipped date
+// stay unless explicitly overridden in the patch.
+export async function updateClip(id, patch) {
+  const existing = await getClip(id);
+  if (!existing) {
+    throw new Error(`No clip found with id ${id}`);
+  }
+  const merged = { ...existing, ...patch, id: existing.id };
+  const db = await openLogDb();
+  try {
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      tx.objectStore(STORE_NAME).put(merged);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } finally {
+    db.close();
+  }
+  return merged;
 }
 
 export async function getClip(id) {
