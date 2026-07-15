@@ -119,6 +119,8 @@ export async function collectPage(rawOptions = {}) {
       overrides,
       selectors: siteAdapter ? siteAdapter.metadataSelectors : undefined
     });
+    const extraMetadata = siteAdapter && siteAdapter.extraMetadata ? siteAdapter.extraMetadata() : {};
+    Object.assign(metadata, extraMetadata);
     metadata.title = title;
     metadata.url = location.href;
 

@@ -147,6 +147,58 @@ test("Knowledge Base preset ON emits the confluence profile (article fields + pa
   assert.ok(props.clipped);
 });
 
+test("Knowledge Base preset ON emits page_type on the sharepoint profile when present", () => {
+  const props = buildProperties(
+    {
+      title: "News Post",
+      url: "https://x.sharepoint.com/sites/team/SitePages/News.aspx",
+      type: "sharepoint",
+      page_type: "news"
+    },
+    { knowledgeBasePreset: true }
+  );
+  assert.equal(props.page_type, "news");
+});
+
+test("Knowledge Base preset ON omits page_type on the sharepoint profile when empty", () => {
+  const props = buildProperties(
+    {
+      title: "Team Plan",
+      url: "https://x.sharepoint.com/sites/team/SitePages/Plan.aspx",
+      type: "sharepoint",
+      page_type: ""
+    },
+    { knowledgeBasePreset: true }
+  );
+  assert.equal("page_type" in props, false);
+});
+
+test("Knowledge Base preset ON emits space on the confluence profile when present", () => {
+  const props = buildProperties(
+    {
+      title: "Runbook",
+      url: "https://team.atlassian.net/wiki/spaces/OPS/pages/Runbook",
+      type: "confluence",
+      space: "OPS"
+    },
+    { knowledgeBasePreset: true }
+  );
+  assert.equal(props.space, "OPS");
+});
+
+test("Knowledge Base preset ON omits space on the confluence profile when empty", () => {
+  const props = buildProperties(
+    {
+      title: "Runbook",
+      url: "https://team.atlassian.net/wiki/spaces/OPS/pages/Runbook",
+      type: "confluence",
+      space: ""
+    },
+    { knowledgeBasePreset: true }
+  );
+  assert.equal("space" in props, false);
+});
+
 test("Knowledge Base preset ON omits genuinely unavailable fields instead of emitting blanks", () => {
   const props = buildProperties(
     { title: "No Author Page", url: "https://example.com/a", type: "article" },

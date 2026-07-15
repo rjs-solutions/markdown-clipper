@@ -14,7 +14,7 @@ function installDom(html, url) {
   return dom;
 }
 
-const { isConfluence, findConfluenceRoot, getConfluenceTitle } = await import(
+const { isConfluence, findConfluenceRoot, getConfluenceTitle, getConfluenceSpace } = await import(
   "../extension/src/content/confluence.js"
 );
 
@@ -101,4 +101,37 @@ test("getConfluenceTitle strips the ' - Confluence' suffix from document.title f
   );
   const root = document.getElementById("main-content");
   assert.equal(getConfluenceTitle(root), "My Page Title");
+});
+
+test("getConfluenceSpace parses a Cloud /wiki/spaces/<KEY>/ URL", () => {
+  installDom(
+    `<!doctype html><html><body><div id="main-content"><h1>Title</h1></div></body></html>`,
+    "https://example.atlassian.net/wiki/spaces/ENG/pages/123/Some+Page"
+  );
+  assert.equal(getConfluenceSpace(), "ENG");
+});
+
+test("getConfluenceSpace parses a Server /display/<KEY>/ URL", () => {
+  installDom(
+    `<!doctype html><html><body><div id="main-content"><h1>Title</h1></div></body></html>`,
+    "https://wiki.internal.example.com/display/OPS/Some+Page"
+  );
+  assert.equal(getConfluenceSpace(), "OPS");
+});
+
+test("getConfluenceSpace falls back to meta[confluence-space-key] when the URL has no space", () => {
+  installDom(
+    `<!doctype html><html><head><meta name="confluence-space-key" content="MKT"></head>
+     <body><div id="main-content"><h1>Title</h1></div></body></html>`,
+    "https://wiki.internal.example.com/pages/viewpage.action?pageId=123"
+  );
+  assert.equal(getConfluenceSpace(), "MKT");
+});
+
+test("getConfluenceSpace returns empty string when no space signal is present", () => {
+  installDom(
+    `<!doctype html><html><body><div id="main-content"><h1>Title</h1></div></body></html>`,
+    "https://wiki.internal.example.com/pages/viewpage.action?pageId=123"
+  );
+  assert.equal(getConfluenceSpace(), "");
 });

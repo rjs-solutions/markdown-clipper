@@ -35,6 +35,39 @@ export function findConfluenceRoot() {
   return pickBestRoot(ROOT_SELECTORS);
 }
 
+// Extract the Confluence space key from the URL shape, falling back to a
+// meta tag or a space link in the page chrome. Returns "" when none found;
+// callers must treat that as "unknown", never fabricate a value.
+export function getConfluenceSpace() {
+  const path = location.pathname;
+  const cloudMatch = path.match(/\/wiki\/spaces\/([^/]+)/);
+  if (cloudMatch) {
+    return cloudMatch[1];
+  }
+  const serverMatch = path.match(/\/(?:display|spaces)\/([^/]+)/);
+  if (serverMatch) {
+    return serverMatch[1];
+  }
+  const meta = document.querySelector("meta[name='confluence-space-key']");
+  const metaValue = meta ? cleanText(meta.getAttribute("content") || "") : "";
+  if (metaValue) {
+    return metaValue;
+  }
+  const chromeSelectors = ["#breadcrumbs a[href*='/spaces/']", "#breadcrumbs a[href*='/display/']", ".aui-nav a[href*='/spaces/']", ".aui-nav a[href*='/display/']"];
+  for (const selector of chromeSelectors) {
+    const anchor = document.querySelector(selector);
+    if (!anchor) {
+      continue;
+    }
+    const href = anchor.getAttribute("href") || "";
+    const match = href.match(/\/(?:spaces|display)\/([^/?#]+)/);
+    if (match) {
+      return match[1];
+    }
+  }
+  return "";
+}
+
 export function getConfluenceTitle(root) {
   const selectors = [
     "#title-text",

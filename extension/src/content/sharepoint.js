@@ -30,6 +30,21 @@ export function findSharePointRoot() {
   return pickBestRoot(ROOT_SELECTORS);
 }
 
+// Weak signal by design: the DOM does not reliably expose semantic page
+// types (policy, how-to, etc.), so this only distinguishes a News post from
+// a regular Site Page, using the same news automation-ids already relied on
+// for author/date metadata.
+const NEWS_INDICATOR_SELECTORS = [
+  "[data-automation-id='newsAuthor']",
+  "[data-automation-id='newsDate']",
+  "[data-automation-id='promotedNews']"
+];
+
+export function getSharePointPageType() {
+  const isNews = NEWS_INDICATOR_SELECTORS.some((selector) => document.querySelector(selector));
+  return isNews ? "news" : "page";
+}
+
 export function getSharePointTitle(root) {
   const selectors = [
     "[data-automation-id='pageTitle']",

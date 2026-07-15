@@ -4,8 +4,8 @@
 // capture pipeline (collect.js, clean.js, metadata.js, scroll.js) stays
 // generic and only consumes the active adapter's data.
 
-import { findSharePointRoot, getSharePointTitle, isSharePoint } from "./sharepoint.js";
-import { findConfluenceRoot, getConfluenceTitle, isConfluence } from "./confluence.js";
+import { findSharePointRoot, getSharePointPageType, getSharePointTitle, isSharePoint } from "./sharepoint.js";
+import { findConfluenceRoot, getConfluenceSpace, getConfluenceTitle, isConfluence } from "./confluence.js";
 
 const sharepointAdapter = {
   id: "sharepoint",
@@ -38,7 +38,8 @@ const sharepointAdapter = {
     "[data-automation-id='contentScrollRegion']",
     "[data-automation-id='pageScrollRegion']"
   ],
-  needsScroll: true
+  needsScroll: true,
+  extraMetadata: () => ({ page_type: getSharePointPageType() })
 };
 
 const confluenceAdapter = {
@@ -65,7 +66,11 @@ const confluenceAdapter = {
     published: [".page-metadata time", "time.livesearch-time", "[data-testid='page-created-date']", ".last-modified"]
   },
   scrollTargets: ["#content", "#main"],
-  needsScroll: false
+  needsScroll: false,
+  extraMetadata: () => {
+    const space = getConfluenceSpace();
+    return space ? { space } : {};
+  }
 };
 
 const genericAdapter = {

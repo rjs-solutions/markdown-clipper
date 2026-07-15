@@ -80,3 +80,44 @@ test("the generic adapter's selector lists are empty and its root/title are null
   assert.deepEqual(adapter.scrollTargets, []);
   assert.equal(adapter.needsScroll, false);
 });
+
+test("the generic adapter defines no extraMetadata seam", () => {
+  const adapter = getAdapterById("generic");
+  assert.equal(adapter.extraMetadata, undefined);
+});
+
+test("confluenceAdapter.extraMetadata returns { space } on a spaced DOM", () => {
+  installDom(
+    `<!doctype html><html><body><div id="main-content"><h1>Title</h1></div></body></html>`,
+    "https://example.atlassian.net/wiki/spaces/ENG/pages/123/Some+Page"
+  );
+  const adapter = getAdapterById("confluence");
+  assert.deepEqual(adapter.extraMetadata(), { space: "ENG" });
+});
+
+test("confluenceAdapter.extraMetadata returns {} when no space is detectable", () => {
+  installDom(
+    `<!doctype html><html><body><div id="main-content"><h1>Title</h1></div></body></html>`,
+    "https://wiki.internal.example.com/pages/viewpage.action?pageId=123"
+  );
+  const adapter = getAdapterById("confluence");
+  assert.deepEqual(adapter.extraMetadata(), {});
+});
+
+test("sharepointAdapter.extraMetadata returns { page_type: 'news' } when a newsAuthor node is present", () => {
+  installDom(
+    `<!doctype html><html><body><div data-automation-id="Canvas"><div data-automation-id="newsAuthor">Jane</div></div></body></html>`,
+    "https://contoso.sharepoint.com/sites/team/news.aspx"
+  );
+  const adapter = getAdapterById("sharepoint");
+  assert.deepEqual(adapter.extraMetadata(), { page_type: "news" });
+});
+
+test("sharepointAdapter.extraMetadata returns { page_type: 'page' } otherwise", () => {
+  installDom(
+    `<!doctype html><html><body><div data-automation-id="Canvas"><h1>Title</h1></div></body></html>`,
+    "https://contoso.sharepoint.com/sites/team/page.aspx"
+  );
+  const adapter = getAdapterById("sharepoint");
+  assert.deepEqual(adapter.extraMetadata(), { page_type: "page" });
+});

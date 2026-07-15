@@ -110,6 +110,9 @@ function buildKnowledgeBaseProperties(metadata, options) {
       author: m.author,
       type
     };
+    if (typeof m.page_type === "string" && m.page_type) {
+      props.page_type = m.page_type;
+    }
   } else if (type === "tweet") {
     props = {
       title: m.title,
@@ -134,6 +137,9 @@ function buildKnowledgeBaseProperties(metadata, options) {
     };
     if (type === "confluence") {
       props.path = path;
+      if (typeof m.space === "string" && m.space) {
+        props.space = m.space;
+      }
     }
   }
 
