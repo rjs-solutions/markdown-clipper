@@ -55,10 +55,21 @@ body {
   font-weight: 500;
 }
 
+/* Major section heading bar, one per panel (General / Clipping / Knowledge
+   base / Advanced). An accent-soft band with an accent bottom border
+   (echoes the popup header's bottom-border band) so it reads as a distinct
+   step above .group-heading's neutral gray subsection bars: bigger type,
+   bold, and accent-colored, so the hierarchy reads section bar >
+   subsection bar > field in every panel, even the ones with no
+   sub-groups. */
 .panel h2 {
-  margin: 0 0 2px;
+  margin: -16px -18px 16px;
+  padding: 10px 18px;
+  background: var(--accent-soft);
+  border-bottom: 2px solid var(--accent);
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .panel {
@@ -66,14 +77,16 @@ body {
 }
 
 /* Subhead for a section's sub-groups (e.g. Clipping's Capture / Format &
-   save / Behavior groups). Deliberately stronger than a field label or
-   description (weight + var(--text), not --text-muted) with a hairline
-   rule underneath, so the hierarchy heading > label > description stays
-   obvious in both themes. */
+   save groups). A filled, full-width bar rather than just a hairline rule,
+   so it reads as a real section divider instead of blending into the field
+   labels below it. Deliberately stronger than a field label or description
+   (weight + var(--text), not --text-muted), so the hierarchy
+   heading > label > description stays obvious in both themes. */
 .group-heading {
-  margin: 20px 0 2px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--border);
+  margin: 20px -18px 8px;
+  padding: 6px 18px;
+  background: var(--surface-muted);
+  border-radius: 4px;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -130,9 +143,7 @@ h1 {
   color: var(--text-muted);
 }
 
-/* Groups Appearance and Save together on the right of the header, so the
-   header reads as title, then Appearance, then Save without either control
-   getting pushed to a far edge. */
+/* Keeps the Save bar pinned to the top-right of the header. */
 .page-header-actions {
   display: flex;
   align-items: center;
@@ -148,20 +159,6 @@ h1 {
   gap: 10px;
 }
 
-/* Persistent Appearance (theme) control, visible in every tab. Reuses the
-   segmented-field styles below but without a wrapping .field so it sits
-   compactly in the header instead of stacking with a full label row. */
-.appearance-control .segmented-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-muted);
-}
-
-.appearance-control .segmented-label {
-  font-size: 13px;
-}
-
 form {
   display: grid;
   gap: 16px;
@@ -175,6 +172,7 @@ form {
   border-radius: 12px;
   background: var(--surface);
   box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
 legend {
@@ -239,7 +237,7 @@ legend {
   gap: 6px;
   min-height: 32px;
   padding: 6px 12px;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
   color: var(--text-muted);
@@ -263,14 +261,15 @@ legend {
 }
 
 .segmented-option:hover {
+  background: var(--surface);
   color: var(--text);
 }
 
 .segmented-option.is-active {
   background: var(--surface);
+  border-color: var(--border);
   color: var(--accent-hover);
   font-weight: 500;
-  box-shadow: var(--shadow);
 }
 
 .segmented-option:disabled {
@@ -278,10 +277,180 @@ legend {
   opacity: 0.55;
 }
 
-/* Bespoke vault folder-picker control (not schema-driven, see options.js). */
-.vault-field {
+/* Theme is the first field in the panel, right under the section bar, so its
+   own bordered/backgrounded .segmented pill reads as a box nested in the
+   panel's box. Drop that field-level card and let the options sit flush,
+   like the plain inputs elsewhere on the page; the active option's own
+   background still shows the current choice. */
+.segmented-field[data-key="theme"] .segmented {
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+/* Behavior control (Toolbar icon click): vertical option rows on the left,
+   an inline "browser window" diagram on the right showing where the clip UI
+   appears for the selected option. Reuses .segmented-field/.segmented-label
+   for the field wrapper and heading; only the option list + diagram below
+   it are bespoke. See options.js renderBehaviorDiagram. */
+.behavior-field {
+  width: 100%;
+}
+
+.behavior-control {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 560px) {
+  .behavior-control {
+    grid-template-columns: 1fr;
+  }
+}
+
+.behavior-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-muted);
+}
+
+.behavior-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.behavior-option:not(.is-active):hover {
+  background: var(--surface);
+}
+
+.behavior-option.is-active {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.behavior-option.is-active .behavior-option-label {
+  color: var(--accent-hover);
+}
+
+.behavior-option:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.behavior-option-icon {
+  display: flex;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: currentColor;
+}
+
+.behavior-option.is-active .behavior-option-icon {
+  color: var(--accent-hover);
+}
+
+.behavior-option-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.behavior-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.behavior-option-label {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.behavior-option-description {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.behavior-diagram {
+  display: flex;
+  justify-content: center;
   padding-top: 4px;
-  border-top: 1px solid var(--border);
+}
+
+.behavior-diagram svg {
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+}
+
+.window-frame {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+
+.window-toolbar {
+  fill: var(--surface-muted);
+  stroke: none;
+}
+
+.window-dot {
+  fill: var(--border);
+}
+
+.region {
+  fill: transparent;
+  stroke: var(--border);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 2;
+  opacity: 0.35;
+}
+
+.behavior-control[data-value="popup"] .region-popup,
+.behavior-control[data-value="sidepanel"] .region-sidepanel,
+.behavior-control[data-value="inpage"] .region-inpage {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  stroke-dasharray: none;
+  opacity: 1;
+}
+
+/* Bespoke vault folder-picker control (not schema-driven, see options.js).
+   Nested under the "Save clips to a vault folder" toggle: an indent plus a
+   left connector line so it reads as one setting with the toggle, not a
+   separate block. Hidden (via the `hidden` attribute) whenever vaultEnabled
+   is off; the `.field` display:grid rule would otherwise beat the browser's
+   default [hidden] styling, so it's overridden explicitly below. */
+.vault-field {
+  margin-left: 24px;
+  padding: 8px 0 0 14px;
+  border-left: 2px solid var(--border);
+}
+
+.vault-field[hidden] {
+  display: none;
 }
 
 .vault-label {
@@ -335,17 +504,45 @@ legend {
   color: var(--text);
 }
 
-/* Bespoke prompt-generator launcher (not schema-driven, see options.js). */
-.prompt-field {
-  padding-top: 4px;
-  border-top: 1px solid var(--border);
+/* Bespoke prompt generator (not schema-driven, see options.js). Rendered
+   inline under its own group-heading bar, so (like .about-field) it needs no
+   extra top border/padding of its own. */
+.prompt-generator {
+  display: grid;
+  gap: 12px;
 }
 
-.prompt-label {
-  margin: 0;
-  font-size: 13px;
+.prompt-filters-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.prompt-filters-row .field {
+  flex: 1;
+  min-width: 160px;
+}
+
+.prompt-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.prompt-summary {
   font-weight: 600;
   color: var(--text);
+}
+
+.prompt-empty-state {
+  margin: 0;
+}
+
+@media (max-width: 560px) {
+  .prompt-filters-row {
+    flex-direction: column;
+    gap: 0;
+  }
 }
 
 .checkbox-field > span {
@@ -376,6 +573,68 @@ legend {
   flex-wrap: wrap;
 }
 
+/* Bespoke About block (not schema-driven, see options.js). Sits under its
+   own group-heading bar at the bottom of General, so it needs no extra
+   top border/padding like the other bespoke fields above. */
+.about-field {
+  gap: 8px;
+}
+
+.about-links {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.about-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 150px;
+  min-height: 36px;
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.about-link:hover {
+  border-color: var(--accent);
+}
+
+.about-link svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.about-version,
+.about-credit {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.about-version a,
+.about-credit a {
+  color: var(--text-muted);
+}
+
+.about-version a:hover,
+.about-credit a:hover {
+  color: var(--accent-hover);
+}
+
 input,
 select,
 textarea {
@@ -393,7 +652,7 @@ textarea {
   padding: 7px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--surface);
+  background: var(--bg);
   color: var(--text);
 }
 
@@ -475,9 +734,17 @@ select:disabled {
   opacity: 0.55;
 }
 
-#status {
-  align-self: center;
-  margin-left: 4px;
-  font-size: 13px;
-  color: var(--accent-hover);
+/* Visually hidden but still announced by assistive tech (used for the Save
+   button's aria-live confirmation, now that the button itself carries the
+   visible "Saved" feedback). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

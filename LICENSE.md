@@ -2,7 +2,7 @@
 
 <https://polyformproject.org/licenses/noncommercial/1.0.0>
 
-Required Notice: Copyright © 2026 the Markdown Clipper author.
+Required Notice: Copyright © 2026 RJS Solutions
 
 > Plain-language summary (not part of the license): Markdown Clipper is source-available.
 > You may read, use, modify, and distribute it for **noncommercial** purposes. Commercial use —

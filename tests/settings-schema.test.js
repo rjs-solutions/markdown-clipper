@@ -75,11 +75,13 @@ test("the Advanced section has no schema fields (it's entirely bespoke controls)
   assert.deepEqual(advanced.fields, []);
 });
 
-test("theme is rendered as a header field, outside the tab nav/panels", () => {
-  const appearance = SETTINGS_SCHEMA.find((section) => section.id === "appearance");
-  assert.ok(appearance, "Appearance section missing");
-  assert.equal(appearance.header, true);
-  assert.ok(appearance.fields.some((field) => field.key === "theme"));
+test("theme and defaultAction live in the General section, which is first", () => {
+  assert.equal(SETTINGS_SCHEMA[0].id, "general");
+  const general = SETTINGS_SCHEMA.find((section) => section.id === "general");
+  assert.ok(general, "General section missing");
+  const fields = general.groups.flatMap((group) => group.fields);
+  assert.ok(fields.some((field) => field.key === "theme"));
+  assert.ok(fields.some((field) => field.key === "defaultAction"));
 });
 
 test("segmented fields' default is one of their own options", () => {

@@ -12,6 +12,7 @@ function installDom() {
     url: "https://example.com/options.html"
   });
   globalThis.window = dom.window;
+  globalThis.Event = dom.window.Event;
   globalThis.document = dom.window.document;
   return dom;
 }
@@ -28,40 +29,35 @@ function makeContainers() {
   return { navElement, panelsElement };
 }
 
-test("renderSchema builds one nav item and one panel per non-header section", async () => {
+test("renderSchema builds one nav item and one panel per section", async () => {
   const { createOptionsForm } = await loadModule();
   const { navElement, panelsElement } = makeContainers();
 
   createOptionsForm(SETTINGS_SCHEMA, { navElement, panelsElement });
 
-  const tabSections = SETTINGS_SCHEMA.filter((section) => !section.header);
-  assert.equal(navElement.querySelectorAll(".nav-item").length, tabSections.length);
-  assert.equal(panelsElement.querySelectorAll(".panel").length, tabSections.length);
+  assert.equal(navElement.querySelectorAll(".nav-item").length, SETTINGS_SCHEMA.length);
+  assert.equal(panelsElement.querySelectorAll(".panel").length, SETTINGS_SCHEMA.length);
 });
 
-test("a header-flagged section's fields render into headerElement, not the nav/panels", async () => {
+test("the theme field renders inside the General panel and is the first nav item", async () => {
   const { createOptionsForm } = await loadModule();
   const { navElement, panelsElement } = makeContainers();
-  const headerElement = document.createElement("div");
-  document.body.append(headerElement);
 
-  createOptionsForm(SETTINGS_SCHEMA, { navElement, panelsElement, headerElement });
+  createOptionsForm(SETTINGS_SCHEMA, { navElement, panelsElement });
 
-  assert.ok(headerElement.querySelector('[data-key="theme"]'));
-  assert.equal(panelsElement.querySelector('[data-key="theme"]'), null);
-  assert.equal(navElement.querySelector('[data-section="appearance"]'), null);
+  const themeField = panelsElement.querySelector('[data-key="theme"]');
+  assert.ok(themeField);
+  assert.ok(themeField.closest('[data-section="general"]'));
+  assert.equal(navElement.querySelectorAll(".nav-item")[0].dataset.section, "general");
 });
 
 test("a segmented field (theme) round-trips through fillForm -> readForm and updates on click", async () => {
   const { createOptionsForm } = await loadModule();
   const { navElement, panelsElement } = makeContainers();
-  const headerElement = document.createElement("div");
-  document.body.append(headerElement);
 
   const { fillForm, readForm, controls } = createOptionsForm(SETTINGS_SCHEMA, {
     navElement,
-    panelsElement,
-    headerElement
+    panelsElement
   });
 
   const defaults = defaultsFromSchema(SETTINGS_SCHEMA);
@@ -77,7 +73,7 @@ test("a segmented field (theme) round-trips through fillForm -> readForm and upd
   assert.equal(darkButton.getAttribute("aria-checked"), "true");
 });
 
-test("the full-width segmented defaultAction field renders inside the Clipping panel", async () => {
+test("the diagram-variant defaultAction field renders inside the General panel", async () => {
   const { createOptionsForm } = await loadModule();
   const { navElement, panelsElement } = makeContainers();
 
@@ -85,8 +81,38 @@ test("the full-width segmented defaultAction field renders inside the Clipping p
 
   const field = panelsElement.querySelector('[data-key="defaultAction"]');
   assert.ok(field);
-  assert.ok(field.classList.contains("segmented-field-full"));
-  assert.ok(field.closest('[data-section="clipping"]'));
+  assert.ok(field.classList.contains("behavior-field"));
+  assert.ok(field.closest('[data-section="general"]'));
+
+  const behaviorControl = field.querySelector(".behavior-control");
+  assert.ok(behaviorControl, "renders the two-column behavior-control wrapper");
+  assert.equal(field.querySelectorAll(".behavior-option").length, 3);
+  assert.ok(field.querySelector(".behavior-diagram svg"), "renders the browser-window diagram");
+});
+
+test("selecting a defaultAction option updates the row highlight, the diagram, and the control value", async () => {
+  const { createOptionsForm } = await loadModule();
+  const { navElement, panelsElement } = makeContainers();
+
+  const { fillForm, readForm, controls } = createOptionsForm(SETTINGS_SCHEMA, {
+    navElement,
+    panelsElement
+  });
+
+  const defaults = defaultsFromSchema(SETTINGS_SCHEMA);
+  fillForm(defaults);
+  assert.equal(readForm().defaultAction, "popup");
+
+  const behaviorControl = controls.get("defaultAction").closest(".behavior-field").querySelector(".behavior-control");
+  assert.equal(behaviorControl.dataset.value, "popup");
+
+  const sidepanelRow = behaviorControl.querySelector('[data-value="sidepanel"]');
+  sidepanelRow.click();
+
+  assert.equal(readForm().defaultAction, "sidepanel");
+  assert.equal(sidepanelRow.classList.contains("is-active"), true);
+  assert.equal(sidepanelRow.getAttribute("aria-checked"), "true");
+  assert.equal(behaviorControl.dataset.value, "sidepanel");
 });
 
 test("readForm round-trips fillForm(defaults)", async () => {
@@ -119,6 +145,28 @@ test("a dependsOn field is disabled when its controller is off and enabled when 
   updateDependents();
   assert.equal(maxScrollMs.disabled, false);
   assert.equal(maxScrollMs.closest(".field").classList.contains("is-disabled"), false);
+});
+
+test("knowledgeBasePreset is disabled when vaultEnabled is off and enabled when on", async () => {
+  const { createOptionsForm } = await loadModule();
+  const { navElement, panelsElement } = makeContainers();
+  const { fillForm, controls, updateDependents } = createOptionsForm(SETTINGS_SCHEMA, {
+    navElement,
+    panelsElement
+  });
+
+  const defaults = defaultsFromSchema(SETTINGS_SCHEMA);
+  fillForm({ ...defaults, vaultEnabled: false });
+  updateDependents();
+
+  const knowledgeBasePreset = controls.get("knowledgeBasePreset");
+  assert.equal(knowledgeBasePreset.disabled, true);
+  assert.equal(knowledgeBasePreset.closest(".field").classList.contains("is-disabled"), true);
+
+  fillForm({ ...defaults, vaultEnabled: true });
+  updateDependents();
+  assert.equal(knowledgeBasePreset.disabled, false);
+  assert.equal(knowledgeBasePreset.closest(".field").classList.contains("is-disabled"), false);
 });
 
 test("unknown storage keys survive a fillForm -> readForm round trip", async () => {

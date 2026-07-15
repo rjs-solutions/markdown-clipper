@@ -10,6 +10,7 @@ import { loadRules, saveRules } from "../lib/tag-rules.js";
 import { exportSettings, importSettings } from "../lib/settings-backup.js";
 import { downloadText } from "../lib/download.js";
 import { listClips } from "../lib/clip-log.js";
+import { TASK_PRESETS, buildPrompt } from "../lib/prompt-templates.js";
 
 export function fieldId(key) {
   return `f-${key.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
@@ -36,12 +37,7 @@ const ICONS = {
 // returns { controls, fillForm, readForm, updateDependents } bound to the
 // rendered DOM. Kept as a factory (rather than module-level state) so tests
 // can render an isolated schema against throwaway containers.
-//
-// Sections flagged `header: true` (e.g. the persistent Appearance/theme
-// control) render into `headerElement` instead of the nav+panels loop, but
-// their fields still flow through the same controls map / fillForm / readForm
-// as every other field.
-export function createOptionsForm(schema, { navElement, panelsElement, headerElement, onThemeChange } = {}) {
+export function createOptionsForm(schema, { navElement, panelsElement, onThemeChange } = {}) {
   const controls = new Map();
   const allFields = schemaFields(schema);
   let loadedSettings = {};
@@ -169,6 +165,131 @@ export function createOptionsForm(schema, { navElement, panelsElement, headerEle
     return { wrapper, control };
   }
 
+  // Two-column variant of the segmented control (currently just
+  // defaultAction/"Toolbar icon click"): a vertical option list on the left,
+  // a live diagram on the right. Registers the identical hidden-input
+  // control contract as renderSegmented above (value/disabled accessors,
+  // change dispatch on click) so readForm/fillForm/dirty-state/save don't
+  // need to know this variant exists; only the DOM layout differs.
+  function renderBehaviorDiagram(field, id) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "field segmented-field behavior-field";
+    wrapper.dataset.key = field.key;
+
+    const label = document.createElement("span");
+    label.className = "segmented-label";
+    label.id = `${id}-label`;
+    label.textContent = field.label;
+    wrapper.append(label);
+
+    const behaviorControl = document.createElement("div");
+    behaviorControl.className = "behavior-control";
+
+    const group = document.createElement("div");
+    group.className = "behavior-options";
+    group.setAttribute("role", "radiogroup");
+    group.setAttribute("aria-labelledby", label.id);
+
+    const control = document.createElement("input");
+    control.type = "hidden";
+    control.id = id;
+
+    const rows = [];
+    let currentValue = field.default;
+    let currentDisabled = false;
+
+    function sync() {
+      behaviorControl.dataset.value = currentValue;
+      for (const row of rows) {
+        const active = row.dataset.value === currentValue;
+        row.classList.toggle("is-active", active);
+        row.setAttribute("aria-checked", String(active));
+        row.disabled = currentDisabled;
+      }
+    }
+
+    Object.defineProperty(control, "value", {
+      get: () => currentValue,
+      set(next) {
+        currentValue = next;
+        sync();
+      }
+    });
+    Object.defineProperty(control, "disabled", {
+      get: () => currentDisabled,
+      set(next) {
+        currentDisabled = Boolean(next);
+        sync();
+      }
+    });
+
+    for (const opt of field.options) {
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "behavior-option";
+      row.dataset.value = opt.value;
+      row.setAttribute("role", "radio");
+      row.setAttribute("aria-checked", "false");
+
+      const icon = document.createElement("span");
+      icon.className = "behavior-option-icon";
+      if (opt.icon && ICONS[opt.icon]) {
+        icon.insertAdjacentHTML("beforeend", ICONS[opt.icon]);
+      }
+
+      const text = document.createElement("span");
+      text.className = "behavior-option-text";
+      const optLabel = document.createElement("span");
+      optLabel.className = "behavior-option-label";
+      optLabel.textContent = opt.label;
+      text.append(optLabel);
+      if (opt.description) {
+        const description = document.createElement("span");
+        description.className = "behavior-option-description";
+        description.textContent = opt.description;
+        text.append(description);
+      }
+
+      row.append(icon, text);
+      row.addEventListener("click", () => {
+        if (currentDisabled) {
+          return;
+        }
+        control.value = opt.value;
+        control.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      rows.push(row);
+      group.append(row);
+    }
+
+    sync();
+    behaviorControl.append(group, renderBehaviorSchematic());
+    wrapper.append(control, behaviorControl);
+    return { wrapper, control };
+  }
+
+  // Inline SVG "browser window" schematic for the behavior diagram: a
+  // rounded window frame with a toolbar strip, plus one highlight region per
+  // defaultAction value. Which region is emphasized is driven purely by CSS
+  // off `.behavior-control[data-value]` (see options/styles.css), so `sync`
+  // above only ever needs to touch that one dataset attribute.
+  function renderBehaviorSchematic() {
+    const wrapper = document.createElement("div");
+    wrapper.className = "behavior-diagram";
+    wrapper.innerHTML =
+      '<svg viewBox="0 0 200 140" aria-hidden="true">' +
+      '<rect class="window-frame" x="4" y="4" width="192" height="132" rx="8"></rect>' +
+      '<rect class="window-toolbar" x="4" y="4" width="192" height="20" rx="8"></rect>' +
+      '<circle class="window-dot" cx="15" cy="14" r="2.5"></circle>' +
+      '<circle class="window-dot" cx="23" cy="14" r="2.5"></circle>' +
+      '<circle class="window-dot" cx="31" cy="14" r="2.5"></circle>' +
+      '<rect class="region region-popup" x="148" y="28" width="42" height="30" rx="4"></rect>' +
+      '<rect class="region region-sidepanel" x="154" y="26" width="38" height="104" rx="4"></rect>' +
+      '<rect class="region region-inpage" x="118" y="40" width="44" height="80" rx="5"></rect>' +
+      "</svg>";
+    return wrapper;
+  }
+
   function renderField(field) {
     const id = fieldId(field.key);
     const wrapper = document.createElement("div");
@@ -178,7 +299,7 @@ export function createOptionsForm(schema, { navElement, panelsElement, headerEle
     let control;
 
     if (field.type === "segmented") {
-      const segmented = renderSegmented(field, id);
+      const segmented = field.variant === "diagram" ? renderBehaviorDiagram(field, id) : renderSegmented(field, id);
       controls.set(field.key, segmented.control);
       segmented.control.addEventListener("change", () => {
         if (field.key === "theme" && onThemeChange) {
@@ -273,19 +394,6 @@ export function createOptionsForm(schema, { navElement, panelsElement, headerEle
 
   let tabIndex = 0;
   for (const section of schema) {
-    if (section.header) {
-      // Always render (so the field's control exists and fillForm/readForm
-      // keep working even in tests that don't pass a headerElement); only
-      // attach it to the DOM when there's somewhere to put it.
-      for (const field of section.fields) {
-        const rendered = renderField(field);
-        if (headerElement) {
-          headerElement.append(rendered);
-        }
-      }
-      continue;
-    }
-
     const isFirstTab = tabIndex === 0;
     tabIndex += 1;
 
@@ -375,14 +483,20 @@ function wireSectionNav(navElement, panelsElement) {
 // This is the ONE control on the options page not driven by the schema loop:
 // it triggers showDirectoryPicker() (needs a live user gesture) and stores a
 // FileSystemDirectoryHandle in IndexedDB (via vault-handle.js), not a plain
-// value in chrome.storage.sync, so it can't be a schema field.
-function renderVaultControl(panel) {
+// value in chrome.storage.sync, so it can't be a schema field. It is now a
+// nested sub-control of the vaultEnabled toggle (see initialize()): this
+// function only builds the folder-picker itself and returns an API the
+// coupling logic in initialize() drives (show/hide, prompt, read whether a
+// handle already exists). onForgotten fires after "Forget folder" so the
+// caller can turn vaultEnabled back off (on-without-folder is invalid).
+export function renderVaultControl(panel, { onForgotten } = {}) {
   if (!panel) {
-    return;
+    return null;
   }
 
   const wrapper = document.createElement("div");
   wrapper.className = "field vault-field";
+  wrapper.hidden = true;
 
   const label = document.createElement("p");
   label.className = "vault-label";
@@ -414,8 +528,11 @@ function renderVaultControl(panel) {
   wrapper.append(buttons);
   panel.append(wrapper);
 
+  let cachedHasHandle = false;
+
   async function refresh() {
     const handle = await loadHandle();
+    cachedHasHandle = Boolean(handle);
     if (!handle) {
       statusLine.textContent = "No vault folder chosen. Clips save to Downloads.";
       regrantButton.hidden = true;
@@ -430,21 +547,32 @@ function renderVaultControl(panel) {
     forgetButton.hidden = false;
   }
 
-  chooseButton.addEventListener("click", async () => {
+  // Called synchronously from a click/change handler with no awaited call
+  // ahead of window.showDirectoryPicker(), so the transient user activation
+  // that opened the picker is still live. Returns { picked } rather than
+  // throwing so callers (the vaultEnabled coupling in initialize()) can
+  // react to a cancel without a try/catch of their own.
+  async function promptForFolder() {
     if (!window.showDirectoryPicker) {
       statusLine.textContent = "This browser doesn't support choosing a folder.";
-      return;
+      return { picked: false };
     }
     try {
       const handle = await window.showDirectoryPicker();
       await saveHandle(handle);
       await refresh();
+      return { picked: true };
     } catch (error) {
       // The user cancelling the picker throws AbortError; nothing to report.
       if (error && error.name !== "AbortError") {
         console.error("Markdown Clipper vault folder pick failed:", error);
       }
+      return { picked: false };
     }
+  }
+
+  chooseButton.addEventListener("click", () => {
+    promptForFolder();
   });
 
   regrantButton.addEventListener("click", async () => {
@@ -459,9 +587,74 @@ function renderVaultControl(panel) {
   forgetButton.addEventListener("click", async () => {
     await clearHandle();
     await refresh();
+    if (onForgotten) {
+      onForgotten();
+    }
   });
 
   refresh();
+
+  return {
+    element: wrapper,
+    refresh,
+    hasHandle: () => cachedHasHandle,
+    setVisible: (visible) => {
+      wrapper.hidden = !visible;
+    },
+    promptForFolder
+  };
+}
+
+// Couples the vaultEnabled toggle to the vault folder control (returned by
+// renderVaultControl above): shows/hides the nested folder control, prompts
+// for a folder the moment the toggle turns on with none chosen yet, and
+// reverts the toggle back off if that prompt is cancelled. Kept separate
+// from initialize() so it can be exercised directly in tests without the
+// rest of the options page (chrome.storage, the About block, etc).
+export function wireVaultToggle(vaultEnabledControl, vaultControl, { updateDependents, refreshDirty }) {
+  // Reverting the toggle programmatically (picker cancelled, or the folder
+  // was forgotten while the toggle was on) must not re-trigger this same
+  // enable/prompt logic.
+  let reverting = false;
+
+  function revertToggleOff() {
+    if (!vaultEnabledControl.checked) {
+      return;
+    }
+    reverting = true;
+    vaultEnabledControl.checked = false;
+    updateDependents();
+    vaultControl.setVisible(false);
+    refreshDirty();
+    reverting = false;
+  }
+
+  // Enabling with no folder yet immediately opens the picker (transient user
+  // activation from this "change" event is what makes showDirectoryPicker()
+  // work, so promptForFolder() runs with nothing awaited ahead of it).
+  // Cancelling reverts the toggle back off.
+  vaultEnabledControl.addEventListener("change", () => {
+    if (reverting) {
+      return;
+    }
+    if (!vaultEnabledControl.checked) {
+      vaultControl.setVisible(false);
+      return;
+    }
+    if (vaultControl.hasHandle()) {
+      vaultControl.setVisible(true);
+      return;
+    }
+    vaultControl.promptForFolder().then((result) => {
+      if (result.picked) {
+        vaultControl.setVisible(true);
+        return;
+      }
+      revertToggleOff();
+    });
+  });
+
+  return { revertToggleOff };
 }
 
 // ---- Bespoke tag-rules editor ---------------------------------------------
@@ -600,40 +793,246 @@ function renderTagRulesControl(panel) {
   });
 }
 
-// ---- Bespoke prompt-generator launcher ------------------------------------
-// A third control on the options page not driven by the schema loop: it just
-// opens the prompt-generator page (extension/src/prompt/index.html) in a new
-// tab, mirroring how the popup used to open it via chrome.tabs.create. Lives
-// here rather than the popup because generating a prompt analyzes the whole
-// vault, not a single clip -- see docs/llm-vault-design.md.
-function renderPromptGeneratorControl(panel) {
+// ---- Bespoke prompt generator ----------------------------------------------
+// A third control on the options page not driven by the schema loop: it
+// builds a whole-vault LLM prompt from the clip log (lib/prompt-templates.js
+// + lib/clip-log.js). Used to live at src/prompt/index.html as a standalone
+// page opened via chrome.tabs.create; now renders inline here so it keeps the
+// left nav and there's nothing to navigate back from. Bespoke because it
+// reads the clip log and assembles a prompt string, neither of which is a
+// schema-backed setting -- see docs/llm-vault-design.md.
+
+// Friendly labels for the content types actually recorded in the clip log
+// (clip.type is the capture mode -- see popup.js's own CONTENT_TYPE_LABELS
+// for the sibling list used in the popup's preview). Any type not in this
+// map (a future site adapter, for example) still gets a readable label via
+// promptTypeLabel's capitalize fallback below.
+const PROMPT_TYPE_LABELS = {
+  article: "Article",
+  sharepoint: "SharePoint",
+  confluence: "Confluence",
+  tweet: "Tweet",
+  full: "Page",
+  selection: "Selection"
+};
+
+function promptTypeLabel(type) {
+  return PROMPT_TYPE_LABELS[type] || type.charAt(0).toUpperCase() + type.slice(1);
+}
+
+export function renderPromptGeneratorControl(panel) {
   if (!panel) {
     return;
   }
 
-  const wrapper = document.createElement("div");
-  wrapper.className = "field prompt-field";
+  const heading = document.createElement("h3");
+  heading.className = "group-heading";
+  heading.textContent = "Prompt generator";
+  panel.append(heading);
 
-  const label = document.createElement("p");
-  label.className = "prompt-label";
-  label.textContent = "Prompt generator";
-  wrapper.append(label);
+  const intro = document.createElement("p");
+  intro.className = "help-text";
+  intro.textContent = "Build a prompt to analyze your clipped vault with an LLM.";
+  panel.append(intro);
 
-  const help = document.createElement("p");
-  help.className = "help-text";
-  help.textContent = "Build a prompt to analyze your clipped vault with an LLM.";
-  wrapper.append(help);
+  const generator = document.createElement("div");
+  generator.className = "prompt-generator";
 
-  const openButton = document.createElement("button");
-  openButton.type = "button";
-  openButton.textContent = "Open prompt generator";
-  wrapper.append(openButton);
+  const taskField = document.createElement("div");
+  taskField.className = "field";
+  const taskLabel = document.createElement("label");
+  taskLabel.setAttribute("for", "prompt-task");
+  taskLabel.textContent = "What should the LLM do";
+  const taskSelect = document.createElement("select");
+  taskSelect.id = "prompt-task";
+  taskSelect.setAttribute("aria-describedby", "prompt-task-description");
+  for (const preset of TASK_PRESETS) {
+    const option = document.createElement("option");
+    option.value = preset.id;
+    option.textContent = preset.label;
+    taskSelect.append(option);
+  }
+  const taskDescription = document.createElement("p");
+  taskDescription.className = "help-text";
+  taskDescription.id = "prompt-task-description";
+  taskField.append(taskLabel, taskSelect, taskDescription);
 
-  panel.append(wrapper);
+  const filtersRow = document.createElement("div");
+  filtersRow.className = "prompt-filters-row";
 
-  openButton.addEventListener("click", () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL("src/prompt/index.html") });
+  const typeField = document.createElement("div");
+  typeField.className = "field";
+  const typeLabel = document.createElement("label");
+  typeLabel.setAttribute("for", "prompt-type-filter");
+  typeLabel.textContent = "Content type";
+  const typeSelect = document.createElement("select");
+  typeSelect.id = "prompt-type-filter";
+  const allTypesOption = document.createElement("option");
+  allTypesOption.value = "";
+  allTypesOption.textContent = "All types";
+  typeSelect.append(allTypesOption);
+  typeField.append(typeLabel, typeSelect);
+
+  const sinceField = document.createElement("div");
+  sinceField.className = "field";
+  const sinceLabel = document.createElement("label");
+  sinceLabel.setAttribute("for", "prompt-since-filter");
+  sinceLabel.textContent = "Since";
+  const sinceInput = document.createElement("input");
+  sinceInput.type = "date";
+  sinceInput.id = "prompt-since-filter";
+  sinceField.append(sinceLabel, sinceInput);
+
+  const limitField = document.createElement("div");
+  limitField.className = "field";
+  const limitLabel = document.createElement("label");
+  limitLabel.setAttribute("for", "prompt-limit-filter");
+  limitLabel.textContent = "Max items";
+  const limitInput = document.createElement("input");
+  limitInput.type = "number";
+  limitInput.id = "prompt-limit-filter";
+  limitInput.min = "1";
+  limitInput.step = "1";
+  limitInput.placeholder = "No limit";
+  limitField.append(limitLabel, limitInput);
+
+  filtersRow.append(typeField, sinceField, limitField);
+
+  const buttons = document.createElement("div");
+  buttons.className = "prompt-buttons";
+  const generateButton = document.createElement("button");
+  generateButton.type = "button";
+  generateButton.textContent = "Generate";
+  const copyButton = document.createElement("button");
+  copyButton.type = "button";
+  copyButton.textContent = "Copy";
+  copyButton.disabled = true;
+  buttons.append(generateButton, copyButton);
+
+  const summary = document.createElement("p");
+  summary.className = "help-text prompt-summary";
+  summary.setAttribute("role", "status");
+  summary.setAttribute("aria-live", "polite");
+
+  const outputField = document.createElement("div");
+  outputField.className = "field";
+  const outputLabel = document.createElement("label");
+  outputLabel.setAttribute("for", "prompt-output");
+  outputLabel.textContent = "Generated prompt";
+  const output = document.createElement("textarea");
+  output.id = "prompt-output";
+  output.rows = 14;
+  output.spellcheck = false;
+  output.readOnly = true;
+  output.setAttribute("aria-label", "Generated prompt");
+  outputField.append(outputLabel, output);
+
+  const emptyState = document.createElement("p");
+  emptyState.className = "help-text prompt-empty-state";
+  emptyState.textContent = "No clips yet. Clip some pages, then generate a prompt.";
+  emptyState.hidden = true;
+
+  generator.append(taskField, filtersRow, buttons, summary, outputField, emptyState);
+  panel.append(generator);
+
+  let vaultName = null;
+
+  function updateTaskDescription() {
+    const preset = TASK_PRESETS.find((item) => item.id === taskSelect.value);
+    taskDescription.textContent = preset ? preset.description : "";
+  }
+  taskSelect.addEventListener("change", updateTaskDescription);
+  updateTaskDescription();
+
+  function currentFilters() {
+    const filters = {};
+    if (typeSelect.value) {
+      filters.type = typeSelect.value;
+    }
+    if (sinceInput.value) {
+      filters.since = new Date(sinceInput.value).toISOString();
+    }
+    const limit = Number(limitInput.value);
+    if (limitInput.value && Number.isFinite(limit) && limit > 0) {
+      filters.limit = limit;
+    }
+    return filters;
+  }
+
+  async function generate() {
+    generateButton.disabled = true;
+    copyButton.disabled = true;
+    summary.textContent = "Loading clip log…";
+    try {
+      const records = await listClips(currentFilters());
+      const prompt = buildPrompt(taskSelect.value, records, { vaultName });
+      output.value = prompt;
+      summary.textContent = `${records.length} item${records.length === 1 ? "" : "s"} included`;
+      copyButton.disabled = false;
+    } catch (error) {
+      console.error("Markdown Clipper prompt generation failed:", error);
+      summary.textContent = "Could not generate the prompt.";
+      output.value = "";
+    } finally {
+      generateButton.disabled = false;
+    }
+  }
+
+  generateButton.addEventListener("click", generate);
+
+  copyButton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(output.value);
+      const original = copyButton.textContent;
+      copyButton.textContent = "Copied";
+      setTimeout(() => {
+        copyButton.textContent = original;
+      }, 1400);
+    } catch (error) {
+      console.error("Markdown Clipper could not copy the prompt:", error);
+    }
   });
+
+  async function setup() {
+    try {
+      const handle = await loadHandle();
+      vaultName = handle && handle.name ? handle.name : null;
+    } catch (error) {
+      console.error("Markdown Clipper could not read the vault handle:", error);
+    }
+
+    let allClips = [];
+    try {
+      allClips = await listClips();
+    } catch (error) {
+      console.error("Markdown Clipper could not read the clip log:", error);
+    }
+
+    // Content types come from the clips actually in the vault (rather than a
+    // hardcoded list) so the filter always matches what's really there,
+    // including modes like "tweet"/"full"/"selection" that the old
+    // standalone page's hardcoded article/sharepoint/confluence list missed.
+    const types = Array.from(new Set(allClips.map((clip) => clip.type).filter(Boolean))).sort();
+    for (const type of types) {
+      const option = document.createElement("option");
+      option.value = type;
+      option.textContent = promptTypeLabel(type);
+      typeSelect.append(option);
+    }
+
+    if (!allClips.length) {
+      generateButton.disabled = true;
+      copyButton.disabled = true;
+      summary.hidden = true;
+      outputField.hidden = true;
+      emptyState.hidden = false;
+      return;
+    }
+
+    await generate();
+  }
+
+  setup();
 }
 
 // ---- Bespoke Advanced-tab controls ----------------------------------------
@@ -785,45 +1184,177 @@ function renderResetControl(panel, { fillForm, statusElement }) {
   });
 }
 
+// ---- Bespoke About block ---------------------------------------------------
+// A fourth control appended to a panel outside the schema loop: it just
+// surfaces repo links, the live extension version, and license credit at the
+// bottom of General. No storage involved, so it never touches fillForm/readForm.
+const ABOUT_REPO_URL = "https://github.com/rjs-solutions/markdown-clipper";
+const ABOUT_ISSUES_URL = "https://github.com/rjs-solutions/markdown-clipper/issues";
+const ABOUT_LICENSE_URL = "https://github.com/rjs-solutions/markdown-clipper/blob/main/LICENSE.md";
+
+const ABOUT_ICONS = {
+  github:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>',
+  issue:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>'
+};
+
+function renderAboutControl(panel) {
+  if (!panel) {
+    return;
+  }
+
+  const heading = document.createElement("h3");
+  heading.className = "group-heading";
+  heading.textContent = "About";
+  panel.append(heading);
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "field about-field";
+
+  const description = document.createElement("p");
+  description.className = "help-text";
+  description.textContent =
+    "Markdown Clipper captures any web page, including SharePoint, as clean Markdown. The source is public, so you can see how it works and adapt it for your own use.";
+  wrapper.append(description);
+
+  const links = document.createElement("div");
+  links.className = "about-links";
+
+  const githubLink = document.createElement("a");
+  githubLink.className = "about-link";
+  githubLink.href = ABOUT_REPO_URL;
+  githubLink.target = "_blank";
+  githubLink.rel = "noopener noreferrer";
+  githubLink.insertAdjacentHTML("afterbegin", ABOUT_ICONS.github);
+  const githubText = document.createElement("span");
+  githubText.textContent = "GitHub";
+  githubLink.append(githubText);
+
+  const issueLink = document.createElement("a");
+  issueLink.className = "about-link";
+  issueLink.href = ABOUT_ISSUES_URL;
+  issueLink.target = "_blank";
+  issueLink.rel = "noopener noreferrer";
+  issueLink.insertAdjacentHTML("afterbegin", ABOUT_ICONS.issue);
+  const issueText = document.createElement("span");
+  issueText.textContent = "Report an issue";
+  issueLink.append(issueText);
+
+  links.append(githubLink, issueLink);
+  wrapper.append(links);
+
+  const version = document.createElement("p");
+  version.className = "about-version";
+  let versionNumber = "dev";
+  try {
+    versionNumber = chrome.runtime.getManifest().version || "dev";
+  } catch {
+    // chrome.runtime isn't available outside the extension context; keep "dev".
+  }
+  const versionLink = document.createElement("a");
+  versionLink.href = ABOUT_REPO_URL;
+  versionLink.target = "_blank";
+  versionLink.rel = "noopener noreferrer";
+  versionLink.title = "View Markdown Clipper on GitHub";
+  versionLink.textContent = `Version ${versionNumber}`;
+  version.append(versionLink);
+  wrapper.append(version);
+
+  const credit = document.createElement("p");
+  credit.className = "about-credit";
+  const licenseLink = document.createElement("a");
+  licenseLink.href = ABOUT_LICENSE_URL;
+  licenseLink.target = "_blank";
+  licenseLink.rel = "noopener noreferrer";
+  licenseLink.textContent = "PolyForm Noncommercial 1.0.0";
+  credit.append(licenseLink, document.createTextNode(" · © 2026 RJS Solutions"));
+  wrapper.append(credit);
+
+  panel.append(wrapper);
+}
+
 async function initialize() {
   const form = document.getElementById("options-form");
   const statusElement = document.getElementById("status");
+  const saveButton = document.getElementById("save");
   const navElement = document.getElementById("settings-nav");
   const panelsElement = document.getElementById("panels");
-  const headerElement = document.getElementById("appearance-control");
 
-  const { fillForm, readForm } = createOptionsForm(SETTINGS_SCHEMA, {
+  const { fillForm, readForm, controls, updateDependents } = createOptionsForm(SETTINGS_SCHEMA, {
     navElement,
     panelsElement,
-    headerElement,
     onThemeChange: applyTheme
   });
 
-  const knowledgeBasePanel = panelsElement.querySelector('[data-section="knowledgeBase"]');
-  renderVaultControl(knowledgeBasePanel);
-  // The vault folder picker sets up everything else in this tab (the preset
-  // writes into it, the index lives there), so move it right after the
-  // vaultEnabled toggle and ahead of knowledgeBasePreset, which schema order
-  // alone can't do since this is a bespoke control appended after the fields.
-  const vaultField = knowledgeBasePanel.querySelector(".vault-field");
-  const presetField = knowledgeBasePanel.querySelector('[data-key="knowledgeBasePreset"]');
-  if (vaultField && presetField) {
-    knowledgeBasePanel.insertBefore(vaultField, presetField);
+  // Baseline is the last-saved (or last-loaded) form snapshot. Save only
+  // shows once the live form diverges from it, and hides again if the user
+  // edits their way back to it. Re-synced after every programmatic fillForm
+  // (initial load, reset, import) so those don't count as unsaved changes.
+  let baseline = "";
+
+  function syncBaseline() {
+    baseline = JSON.stringify(readForm());
+    saveButton.hidden = true;
   }
+
+  function refreshDirty() {
+    saveButton.hidden = JSON.stringify(readForm()) === baseline;
+  }
+
+  function fillFormAndSync(settings) {
+    fillForm(settings);
+    syncBaseline();
+  }
+
+  const generalPanel = panelsElement.querySelector('[data-section="general"]');
+  renderAboutControl(generalPanel);
+
+  const knowledgeBasePanel = panelsElement.querySelector('[data-section="knowledgeBase"]');
+  const vaultEnabledControl = controls.get("vaultEnabled");
+
+  const vaultControl = renderVaultControl(knowledgeBasePanel, {
+    onForgotten: () => vaultCoupling.revertToggleOff()
+  });
+
+  // The vault folder picker is a nested sub-control of vaultEnabled (the
+  // preset writes into it, the index lives there), so move it right after
+  // the toggle and ahead of knowledgeBasePreset, which schema order alone
+  // can't do since this is a bespoke control appended after the fields.
+  const presetField = knowledgeBasePanel.querySelector('[data-key="knowledgeBasePreset"]');
+  if (presetField) {
+    knowledgeBasePanel.insertBefore(vaultControl.element, presetField);
+  }
+
+  const vaultCoupling = wireVaultToggle(vaultEnabledControl, vaultControl, { updateDependents, refreshDirty });
+
   renderTagRulesControl(knowledgeBasePanel);
   renderPromptGeneratorControl(knowledgeBasePanel);
 
   const advancedPanel = panelsElement.querySelector('[data-section="advanced"]');
-  renderBackupControl(advancedPanel, { fillForm });
+  renderBackupControl(advancedPanel, { fillForm: fillFormAndSync });
   renderActivityControl(advancedPanel);
-  renderResetControl(advancedPanel, { fillForm, statusElement });
+  renderResetControl(advancedPanel, { fillForm: fillFormAndSync, statusElement });
 
-  fillForm(await loadSettings());
+  fillFormAndSync(await loadSettings());
+  vaultControl.setVisible(vaultEnabledControl.checked);
+
+  form.addEventListener("input", refreshDirty);
+  form.addEventListener("change", refreshDirty);
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    await saveSettings(readForm());
+    const settings = readForm();
+    await saveSettings(settings);
+    baseline = JSON.stringify(settings);
+    saveButton.textContent = "Saved";
     flash(statusElement, "Saved");
+    setTimeout(() => {
+      saveButton.textContent = "Save";
+      // Don't force-hide: the user may have edited again during the "Saved"
+      // window, in which case the button needs to stay visible.
+      refreshDirty();
+    }, 1000);
   });
 }
 

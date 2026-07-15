@@ -6,11 +6,7 @@
 //
 // A section holds fields directly (a flat list) OR groups (an ordered list
 // of { label, fields }, rendered as labeled sub-groups inside the section's
-// panel). A section may also set `header: true`, which pulls its fields out
-// of the nav/panel loop entirely and renders them in the page header instead
-// (used for the persistent Appearance/theme control) -- it still counts for
-// DEFAULT_SETTINGS/schemaFields, so the anti-drift guarantee holds no matter
-// where a field ends up on the page.
+// panel).
 //
 // Field shape:
 //   key         storage key (must match nowhere else but here)
@@ -24,6 +20,10 @@
 //   rows        optional for "textarea"
 //   fullWidth   optional, "segmented" only: render as a full-width row
 //               instead of a narrow labeled field
+//   variant     optional, "segmented" only: "diagram" renders a vertical
+//               option list with a live diagram instead of the horizontal
+//               pill (see options.js renderBehaviorDiagram). Options can
+//               then carry a `description` shown under the option label.
 //   dependsOn   optional { key, value }: field is only enabled when another
 //               field in the same schema currently equals `value`
 
@@ -31,19 +31,56 @@ import { DEFAULT_TEMPLATE, DEFAULT_FILENAME_TEMPLATE } from "./template.js";
 
 export const SETTINGS_SCHEMA = [
   {
-    id: "appearance",
-    label: "Appearance",
-    header: true,
-    fields: [
+    id: "general",
+    label: "General",
+    groups: [
       {
-        key: "theme",
-        label: "Theme",
-        type: "segmented",
-        default: "system",
-        options: [
-          { value: "system", label: "System", icon: "system" },
-          { value: "light", label: "Light", icon: "light" },
-          { value: "dark", label: "Dark", icon: "dark" }
+        label: "Appearance",
+        fields: [
+          {
+            key: "theme",
+            label: "Theme",
+            type: "segmented",
+            default: "system",
+            fullWidth: true,
+            options: [
+              { value: "system", label: "System", icon: "system" },
+              { value: "light", label: "Light", icon: "light" },
+              { value: "dark", label: "Dark", icon: "dark" }
+            ]
+          }
+        ]
+      },
+      {
+        label: "Behavior",
+        fields: [
+          {
+            key: "defaultAction",
+            label: "Toolbar icon click",
+            type: "segmented",
+            variant: "diagram",
+            default: "popup",
+            options: [
+              {
+                value: "popup",
+                label: "Popup",
+                icon: "popup",
+                description: "Opens in a small popup from the toolbar icon."
+              },
+              {
+                value: "sidepanel",
+                label: "Side panel",
+                icon: "sidepanel",
+                description: "Docks a panel on the side of the browser window."
+              },
+              {
+                value: "inpage",
+                label: "Open in page",
+                icon: "inpage",
+                description: "Floats a movable panel over the current page."
+              }
+            ]
+          }
         ]
       }
     ]
@@ -181,23 +218,6 @@ export const SETTINGS_SCHEMA = [
             help: "Update an existing clip instead of duplicating when you re-clip the same URL (vault only)."
           }
         ]
-      },
-      {
-        label: "Behavior",
-        fields: [
-          {
-            key: "defaultAction",
-            label: "Toolbar icon click",
-            type: "segmented",
-            default: "popup",
-            fullWidth: true,
-            options: [
-              { value: "popup", label: "Popup", icon: "popup" },
-              { value: "sidepanel", label: "Side panel", icon: "sidepanel" },
-              { value: "inpage", label: "Open in page", icon: "inpage" }
-            ]
-          }
-        ]
       }
     ]
   },
@@ -219,7 +239,8 @@ export const SETTINGS_SCHEMA = [
         type: "toggle",
         default: false,
         help:
-          "Adds content-type frontmatter (article, SharePoint, Confluence), fills in a description when the page has none, and keeps an index.md manifest of every clip in your vault folder."
+          "Adds content-type frontmatter (article, SharePoint, Confluence), fills in a description when the page has none, and keeps an index.md manifest of every clip in your vault folder.",
+        dependsOn: { key: "vaultEnabled", value: true }
       }
     ]
   },
