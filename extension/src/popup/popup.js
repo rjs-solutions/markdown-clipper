@@ -195,6 +195,21 @@ async function loadPreview() {
     showEmpty("This page can’t be captured. Open a normal web page and try again.");
     return;
   }
+  // One-shot handoff from the "Clip selection with Markdown Clipper" context
+  // menu (service-worker.js's handleSelectionClip): the selection HTML was
+  // already grabbed and converted at click time, since the browser's live
+  // selection is gone by the time the panel opens. Consuming it here (and
+  // removing the key immediately) means a later, unrelated open of the panel
+  // never replays a stale selection as a normal page capture.
+  const selectionKey = `selection:${tab.id}`;
+  const stashed = await chrome.storage.session.get(selectionKey);
+  const selection = stashed[selectionKey];
+  if (selection) {
+    await chrome.storage.session.remove(selectionKey);
+    preview = selectionCaptureResult(selection);
+    populateCard(preview);
+    return;
+  }
   // Tweet fast path: a single X/Twitter status URL is served far cleaner by
   // the syndication JSON endpoint than by scraping the live DOM. This needs
   // the runtime host permission granted from Settings (chrome.permissions
@@ -259,6 +274,27 @@ function tweetCaptureResult(tweet) {
       published: tweet.createdAt,
       description: firstLine
     },
+    stats: { chars: markdown.length }
+  };
+}
+
+// Shape a stashed selection clip (from the "Clip selection" context menu)
+// into the same capture-result contract capturePage() returns, so the rest
+// of the popup (card, tags, save, clip-log, assemble) needs no
+// selection-specific handling. mode "selection" is not in MODE_LABELS, so
+// the char count just omits the mode prefix; contentTypeFromMode (assemble.js)
+// treats any non-sharepoint/confluence/tweet mode as "article".
+function selectionCaptureResult(selection) {
+  const markdown = selection.markdown || "";
+  const firstLine = markdown.split("\n").find((line) => line.trim()) || "";
+  const title = selection.title || firstLine.slice(0, 60).trim() || "Clipped selection";
+  return {
+    ok: true,
+    url: selection.url,
+    mode: "selection",
+    title,
+    markdown,
+    metadata: { url: selection.url, description: firstLine.trim() },
     stats: { chars: markdown.length }
   };
 }

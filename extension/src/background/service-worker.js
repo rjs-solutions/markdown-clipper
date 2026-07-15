@@ -30,6 +30,7 @@ import { popupPathForAction } from "../lib/action-mode.js";
 const WATCHDOG_ALARM = "crawl-watchdog";
 const MAX_LOG_LINES = 300;
 const CONTEXT_MENU_ID = "clip-page";
+const SELECTION_CONTEXT_MENU_ID = "clip-selection";
 
 const activeRuns = new Set();
 
@@ -222,10 +223,44 @@ function setupContextMenu() {
         title: "Clip with Markdown Clipper",
         contexts: ["page"]
       });
+      chrome.contextMenus.create({
+        id: SELECTION_CONTEXT_MENU_ID,
+        title: "Clip selection with Markdown Clipper",
+        contexts: ["selection"]
+      });
     });
   } catch (error) {
     console.error("Markdown Clipper failed to set up the context menu:", error);
   }
+}
+
+// Runs in the page (isolated world) at click time, while the selection made
+// by the right-click is still intact. Clones the selected ranges into a
+// detached container so its innerHTML can be handed to htmlToMarkdown --
+// this preserves links/formatting instead of collapsing the selection to
+// plain text. Returns null (no-op upstream) if there is nothing usable to
+// clip. htmlToMarkdown is a web-accessible module (manifest
+// web_accessible_resources), so a dynamic import reaches it from here even
+// though this function itself runs in the isolated world.
+async function injectedGrabSelection(moduleUrl) {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) {
+    return null;
+  }
+  const div = document.createElement("div");
+  for (let i = 0; i < sel.rangeCount; i += 1) {
+    div.appendChild(sel.getRangeAt(i).cloneContents());
+  }
+  const html = div.innerHTML;
+  if (!html.trim()) {
+    return null;
+  }
+  const mod = await import(moduleUrl);
+  return {
+    markdown: mod.htmlToMarkdown(html, { baseUrl: document.baseURI }),
+    title: document.title,
+    url: location.href
+  };
 }
 
 // The in-page overlay is the most robust surface to trigger from a
@@ -233,12 +268,40 @@ function setupContextMenu() {
 // isn't supported, and the side panel needs a user gesture context that a
 // context-menu click already satisfies less predictably across browsers.
 function handleContextMenuClicked(info, tab) {
-  if (info.menuItemId !== CONTEXT_MENU_ID) {
+  if (info.menuItemId === CONTEXT_MENU_ID) {
+    injectPanel(tab).catch((error) => {
+      console.error("Markdown Clipper context-menu clip failed:", error);
+    });
     return;
   }
-  injectPanel(tab).catch((error) => {
-    console.error("Markdown Clipper context-menu clip failed:", error);
+  if (info.menuItemId === SELECTION_CONTEXT_MENU_ID) {
+    handleSelectionClip(tab).catch((error) => {
+      console.error("Markdown Clipper selection clip failed:", error);
+    });
+  }
+}
+
+// Grabs the right-clicked selection out of the page, stashes it for the
+// panel to pick up one-shot, then opens the panel. Never throws out of the
+// context-menu handler: a page that blocks scripting, or a selection that
+// evaporated before executeScript ran, should just do nothing.
+async function handleSelectionClip(tab) {
+  if (!tab || tab.id == null) {
+    return;
+  }
+  const moduleUrl = chrome.runtime.getURL("src/lib/markdown.js");
+  const injections = await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: injectedGrabSelection,
+    args: [moduleUrl],
+    world: "ISOLATED"
   });
+  const result = injections && injections[0] && injections[0].result;
+  if (!result) {
+    return;
+  }
+  await chrome.storage.session.set({ [`selection:${tab.id}`]: result });
+  await injectPanel(tab);
 }
 
 function handleStorageChanged(changes, areaName) {
