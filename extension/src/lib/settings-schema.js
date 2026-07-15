@@ -34,6 +34,17 @@ export const SETTINGS_SCHEMA = [
           { value: "light", label: "Light" },
           { value: "dark", label: "Dark" }
         ]
+      },
+      {
+        key: "defaultAction",
+        label: "Toolbar icon click",
+        type: "select",
+        default: "popup",
+        options: [
+          { value: "popup", label: "Open the popup" },
+          { value: "sidepanel", label: "Open the side panel" },
+          { value: "inpage", label: "Open in the page" }
+        ]
       }
     ]
   },

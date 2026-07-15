@@ -24,9 +24,12 @@ import {
   resumeJob,
   savePageBody
 } from "../lib/crawl-state.js";
+import { loadSettings } from "../lib/settings.js";
+import { popupPathForAction } from "../lib/action-mode.js";
 
 const WATCHDOG_ALARM = "crawl-watchdog";
 const MAX_LOG_LINES = 300;
+const CONTEXT_MENU_ID = "clip-page";
 
 const activeRuns = new Set();
 
@@ -147,6 +150,104 @@ async function runResumedJob(id, resumable) {
   }
 }
 
+// Applies the "Toolbar icon click" setting to chrome.action's popup. Setting
+// the popup to "" is what makes chrome.action.onClicked fire at all; setting
+// it to the popup path (the default) hands the click straight to Chrome's
+// built-in popup, and onClicked never fires. default_popup in manifest.json
+// is the safety net underneath this: if this function never runs (worker
+// dead/erroring) or throws, the manifest's static default_popup still opens
+// the popup on click, so the icon can never go silently inert.
+async function applyActionMode() {
+  try {
+    const settings = await loadSettings();
+    await chrome.action.setPopup({ popup: popupPathForAction(settings.defaultAction) });
+  } catch (error) {
+    console.error("Markdown Clipper failed to apply the toolbar icon setting:", error);
+  }
+}
+
+// Injects the overlay-panel mounter into a tab. Mirrors openInPagePanel in
+// popup.js: a tiny serializable function dynamically imports the
+// web-accessible panel-host module in the page's isolated world, since
+// executeScript can't otherwise tell panel-host.js which tab it was launched
+// from.
+async function injectedTogglePanel(moduleUrl, tabId) {
+  const mod = await import(moduleUrl);
+  return mod.togglePanel(tabId);
+}
+
+async function injectPanel(tab) {
+  if (!tab || tab.id == null) {
+    return;
+  }
+  await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: injectedTogglePanel,
+    args: [chrome.runtime.getURL("src/content/panel-host.js"), tab.id]
+  });
+}
+
+async function openSidePanelForTab(tab) {
+  if (!tab || tab.id == null || !chrome.sidePanel || !chrome.sidePanel.open) {
+    return;
+  }
+  // onClicked is a user gesture, same as the popup's own side-panel button,
+  // so opening it here directly is allowed.
+  await chrome.sidePanel.open({ tabId: tab.id });
+}
+
+// Only fires when chrome.action's popup is "" -- i.e. when defaultAction is
+// "sidepanel" or "inpage" (see applyActionMode/popupPathForAction). Routes
+// the click to whichever surface the setting names.
+async function handleActionClicked(tab) {
+  try {
+    const settings = await loadSettings();
+    if (settings.defaultAction === "sidepanel") {
+      await openSidePanelForTab(tab);
+    } else if (settings.defaultAction === "inpage") {
+      await injectPanel(tab);
+    }
+    // "popup" (and any unrecognized value) leaves chrome.action's popup set,
+    // so onClicked should not fire for it -- nothing to do here defensively.
+  } catch (error) {
+    console.error("Markdown Clipper action-click handling failed:", error);
+  }
+}
+
+function setupContextMenu() {
+  try {
+    chrome.contextMenus.removeAll(() => {
+      chrome.contextMenus.create({
+        id: CONTEXT_MENU_ID,
+        title: "Clip with Markdown Clipper",
+        contexts: ["page"]
+      });
+    });
+  } catch (error) {
+    console.error("Markdown Clipper failed to set up the context menu:", error);
+  }
+}
+
+// The in-page overlay is the most robust surface to trigger from a
+// background/context-menu invocation -- opening the popup programmatically
+// isn't supported, and the side panel needs a user gesture context that a
+// context-menu click already satisfies less predictably across browsers.
+function handleContextMenuClicked(info, tab) {
+  if (info.menuItemId !== CONTEXT_MENU_ID) {
+    return;
+  }
+  injectPanel(tab).catch((error) => {
+    console.error("Markdown Clipper context-menu clip failed:", error);
+  });
+}
+
+function handleStorageChanged(changes, areaName) {
+  if (areaName !== "sync" || !("defaultAction" in changes)) {
+    return;
+  }
+  applyActionMode();
+}
+
 async function resumeRunningJobs() {
   const jobs = await listJobs();
   for (const job of jobs) {
@@ -216,6 +317,38 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 chrome.runtime.onStartup.addListener(resumeRunningJobs);
 chrome.runtime.onInstalled.addListener(resumeRunningJobs);
 
+chrome.runtime.onStartup.addListener(applyActionMode);
+chrome.runtime.onInstalled.addListener(applyActionMode);
+chrome.runtime.onInstalled.addListener(setupContextMenu);
+
+// chrome.action, chrome.contextMenus, and chrome.storage.onChanged are all
+// newer/optional surfaces from this file's point of view (and absent from
+// the lightweight fakes used in tests); guard each registration so a missing
+// API can never keep the rest of the worker -- the crawl loop above all --
+// from loading.
+try {
+  chrome.action.onClicked.addListener(handleActionClicked);
+} catch (error) {
+  console.error("Markdown Clipper failed to register the icon-click handler:", error);
+}
+
+try {
+  chrome.contextMenus.onClicked.addListener(handleContextMenuClicked);
+} catch (error) {
+  console.error("Markdown Clipper failed to register the context-menu handler:", error);
+}
+
+try {
+  chrome.storage.onChanged.addListener(handleStorageChanged);
+} catch (error) {
+  console.error("Markdown Clipper failed to register the settings-change handler:", error);
+}
+
 // Also try immediately: any reason this file was (re)loaded is a reason to
-// check for a job that got cut off mid-run.
+// check for a job that got cut off mid-run, and to make sure the icon
+// behavior and context menu match the current settings without waiting for
+// onStartup/onInstalled (which don't refire on an ordinary service-worker
+// wake-up).
 resumeRunningJobs();
+applyActionMode();
+setupContextMenu();

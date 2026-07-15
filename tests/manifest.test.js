@@ -24,9 +24,13 @@ test("no host permissions are requested at install", () => {
 test("base permissions are exactly the expected minimal set", () => {
   assert.deepEqual(
     [...manifest.permissions].sort(),
-    ["activeTab", "alarms", "downloads", "scripting", "sidePanel", "storage"].sort()
+    ["activeTab", "alarms", "contextMenus", "downloads", "scripting", "sidePanel", "storage"].sort()
   );
   assert.deepEqual(manifest.optional_permissions, ["tabs"]);
+});
+
+test("the icon always has a safe default_popup fallback, even if the worker never runs", () => {
+  assert.equal(manifest.action.default_popup, "src/popup/index.html");
 });
 
 test("a module background service worker is registered for durable crawls", () => {

@@ -34,7 +34,8 @@
     "downloads",
     "storage",
     "sidePanel",
-    "alarms"
+    "alarms",
+    "contextMenus"
   ],
   "optional_permissions": [
     "tabs"
