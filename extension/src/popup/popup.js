@@ -3,6 +3,7 @@ import { loadSettings } from "../lib/settings.js";
 import { applyTemplate, extractSelectorRefs } from "../lib/template.js";
 import { assembleOutput, parseTags } from "../lib/assemble.js";
 import { capturePage } from "../lib/capture.js";
+import { isTweetUrl, fetchTweet, buildTweetMarkdown } from "../lib/tweet.js";
 import { writeArtifact } from "../lib/vault.js";
 import { appendClip, listClips } from "../lib/clip-log.js";
 import { buildWikiIndexMarkdown } from "../lib/wiki-index.js";
@@ -34,12 +35,17 @@ const el = {
   status: document.getElementById("status")
 };
 
+// Matches the origin requested by extension/src/options/options.js's
+// tweet-permission control.
+const TWEET_PERMISSION_ORIGIN = "https://cdn.syndication.twimg.com/*";
+
 const MODE_LABELS = {
   sharepoint: "SharePoint",
   confluence: "Confluence",
   article: "Article",
   readability: "Article",
-  full: "Full page"
+  full: "Full page",
+  tweet: "Tweet"
 };
 
 let settings = null;
@@ -189,6 +195,34 @@ async function loadPreview() {
     showEmpty("This page can’t be captured. Open a normal web page and try again.");
     return;
   }
+  // Tweet fast path: a single X/Twitter status URL is served far cleaner by
+  // the syndication JSON endpoint than by scraping the live DOM. This needs
+  // the runtime host permission granted from Settings (chrome.permissions
+  // .request needs a user gesture, so it can't happen here) -- checking
+  // .contains() needs no gesture and is safe during the popup's
+  // auto-preview. Without the permission, or on a protected/unavailable
+  // tweet, fall back to the normal capture below (the tweet's own page is
+  // still clippable via DOM scraping).
+  // Carries a status message through the normal-capture fallback below,
+  // since populateCard() always clears the status line once it runs.
+  let fallbackNote = null;
+  const tweetMatch = isTweetUrl(tab.url);
+  if (tweetMatch) {
+    const permitted = await chrome.permissions.contains({ origins: [TWEET_PERMISSION_ORIGIN] });
+    if (permitted) {
+      try {
+        const tweet = await fetchTweet(tweetMatch.id);
+        preview = tweetCaptureResult(tweet);
+        populateCard(preview);
+        return;
+      } catch (error) {
+        console.error("Markdown Clipper tweet capture failed, falling back to page capture:", error);
+        fallbackNote = { message: messageFrom(error), isError: true };
+      }
+    } else {
+      fallbackNote = { message: "Tip: enable X clipping in Settings for cleaner tweet capture.", isError: false };
+    }
+  }
   try {
     // Fast preview: skip scrolling so the card appears immediately.
     preview = await withTimeout(
@@ -197,10 +231,36 @@ async function loadPreview() {
       "Timed out reading this page. It may block extension scripts (CSP)."
     );
     populateCard(preview);
+    if (fallbackNote) {
+      setStatus(fallbackNote.message, fallbackNote.isError);
+    }
   } catch (error) {
     console.error("Markdown Clipper preview capture failed:", error);
     showEmpty(messageFrom(error) || "This page could not be captured.");
   }
+}
+
+// Shape a normalized tweet (extension/src/lib/tweet.js) into the same
+// capture-result contract capturePage() returns, so the rest of the popup
+// (card, tags, save, clip-log, assemble) needs no tweet-specific handling.
+function tweetCaptureResult(tweet) {
+  const markdown = buildTweetMarkdown(tweet);
+  const firstLine = String(tweet.text || "").split("\n")[0].trim();
+  return {
+    ok: true,
+    url: tweet.permalink,
+    mode: "tweet",
+    title: `${tweet.author} on X`,
+    markdown,
+    metadata: {
+      author: tweet.author,
+      handle: tweet.handle,
+      site: "X",
+      published: tweet.createdAt,
+      description: firstLine
+    },
+    stats: { chars: markdown.length }
+  };
 }
 
 function populateCard(result) {

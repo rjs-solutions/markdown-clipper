@@ -483,6 +483,79 @@ function renderPromptGeneratorControl(panel) {
   });
 }
 
+// ---- Bespoke X/Twitter clipping permission control -----------------------
+// A fourth control on the options page not driven by the schema loop: it
+// requests/removes a runtime host permission (chrome.permissions.request
+// needs a live user gesture, just like the vault folder picker above) rather
+// than storing a plain value in chrome.storage.sync -- the granted
+// permission itself IS the state, so there is no schema field for it.
+const TWEET_ORIGIN = "https://cdn.syndication.twimg.com/*";
+
+function renderTweetPermissionControl(panel) {
+  if (!panel) {
+    return;
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "field tweet-permission-field";
+
+  const label = document.createElement("p");
+  label.className = "tweet-permission-label";
+  label.textContent = "X / Twitter clipping";
+  wrapper.append(label);
+
+  const help = document.createElement("p");
+  help.className = "help-text";
+  help.textContent =
+    "Clip X posts cleanly via X's public embed data. Requires one-time access to cdn.syndication.twimg.com.";
+  wrapper.append(help);
+
+  const statusLine = document.createElement("p");
+  statusLine.className = "help-text tweet-permission-status";
+  wrapper.append(statusLine);
+
+  const buttons = document.createElement("div");
+  buttons.className = "tweet-permission-buttons";
+
+  const enableButton = document.createElement("button");
+  enableButton.type = "button";
+  enableButton.textContent = "Enable";
+
+  const disableButton = document.createElement("button");
+  disableButton.type = "button";
+  disableButton.textContent = "Disable";
+  disableButton.hidden = true;
+
+  buttons.append(enableButton, disableButton);
+  wrapper.append(buttons);
+  panel.append(wrapper);
+
+  async function refresh() {
+    const granted = await chrome.permissions.contains({ origins: [TWEET_ORIGIN] });
+    statusLine.textContent = granted ? "Enabled (access granted)" : "Not enabled";
+    enableButton.hidden = granted;
+    disableButton.hidden = !granted;
+  }
+
+  enableButton.addEventListener("click", async () => {
+    try {
+      const granted = await chrome.permissions.request({ origins: [TWEET_ORIGIN] });
+      statusLine.textContent = granted ? "Enabled (access granted)" : "Not enabled";
+    } catch (error) {
+      console.error("Markdown Clipper tweet-permission request failed:", error);
+      statusLine.textContent = "Not enabled";
+    }
+    await refresh();
+  });
+
+  disableButton.addEventListener("click", async () => {
+    await chrome.permissions.remove({ origins: [TWEET_ORIGIN] });
+    await refresh();
+  });
+
+  refresh();
+}
+
 async function initialize() {
   const form = document.getElementById("options-form");
   const statusElement = document.getElementById("status");
@@ -498,6 +571,7 @@ async function initialize() {
   renderVaultControl(panelsElement.querySelector('[data-section="knowledgeBase"]'));
   renderTagRulesControl(panelsElement.querySelector('[data-section="knowledgeBase"]'));
   renderPromptGeneratorControl(panelsElement.querySelector('[data-section="knowledgeBase"]'));
+  renderTweetPermissionControl(panelsElement.querySelector('[data-section="knowledgeBase"]'));
 
   fillForm(await loadSettings());
 

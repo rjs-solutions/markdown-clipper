@@ -1,0 +1,170 @@
+{
+  "__typename": "Tweet",
+  "favorite_count": 118,
+  "lang": "en",
+  "possibly_sensitive": false,
+  "created_at": "2026-07-15T09:21:58.000Z",
+  "display_text_range": [
+    0,
+    279
+  ],
+  "entities": {
+    "media": [
+      {
+        "display_url": "pic.x.com/pSweG1N6wu",
+        "expanded_url": "https://x.com/Similarweb/status/2077322771260957122/photo/1",
+        "indices": [
+          278,
+          301
+        ],
+        "url": "https://t.co/pSweG1N6wu"
+      }
+    ]
+  },
+  "id_str": "2077322771260957122",
+  "text": "Gen AI website traffic share update    \n\n🗓️ 12 months ago:   \nChatGPT: 76.4%    \nGemini: 9.1%  \nDeepSeek: 4.6%  \nGrok: 3.3%   \nCopilot: 2.0% \nPerplexity: 1.8%   \nClaude: 1.6%\n\n🗓️ 6 months ago: \nChatGPT: 63.2% \nGemini: 22.6% \nDeepSeek: 3.3% \nGrok: 4.1% \nClaude: 2.2%\nPerplexity: https://t.co/pSweG1N6wu",
+  "user": {
+    "id_str": "24683972",
+    "name": "Similarweb",
+    "screen_name": "Similarweb",
+    "is_blue_verified": true,
+    "profile_image_shape": "Square",
+    "verified": false,
+    "verified_type": "Business",
+    "profile_image_url_https": "https://pbs.twimg.com/profile_images/1796148234060021760/iq5AA2vD_normal.jpg"
+  },
+  "edit_control": {
+    "edit_tweet_ids": [
+      "2077322771260957122"
+    ],
+    "editable_until_msecs": "1784110918000",
+    "edits_remaining": "5",
+    "is_edit_eligible": false
+  },
+  "mediaDetails": [
+    {
+      "display_url": "pic.x.com/pSweG1N6wu",
+      "expanded_url": "https://x.com/Similarweb/status/2077322771260957122/photo/1",
+      "ext_media_availability": {
+        "status": "Available"
+      },
+      "indices": [
+        278,
+        301
+      ],
+      "media_url_https": "https://pbs.twimg.com/media/HNQfWBbXcAA2x-W.png",
+      "original_info": {
+        "focus_rects": [
+          {
+            "h": 392,
+            "w": 700,
+            "x": 0,
+            "y": 0
+          },
+          {
+            "h": 615,
+            "w": 615,
+            "x": 85,
+            "y": 0
+          },
+          {
+            "h": 615,
+            "w": 539,
+            "x": 161,
+            "y": 0
+          },
+          {
+            "h": 615,
+            "w": 308,
+            "x": 283,
+            "y": 0
+          },
+          {
+            "h": 615,
+            "w": 700,
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "height": 615,
+        "width": 700
+      },
+      "sizes": {
+        "large": {
+          "h": 615,
+          "resize": "fit",
+          "w": 700
+        },
+        "medium": {
+          "h": 615,
+          "resize": "fit",
+          "w": 700
+        },
+        "small": {
+          "h": 597,
+          "resize": "fit",
+          "w": 680
+        },
+        "thumb": {
+          "h": 150,
+          "resize": "crop",
+          "w": 150
+        }
+      },
+      "type": "photo",
+      "url": "https://t.co/pSweG1N6wu"
+    }
+  ],
+  "photos": [
+    {
+      "backgroundColor": {
+        "red": 204,
+        "green": 214,
+        "blue": 221
+      },
+      "cropCandidates": [
+        {
+          "h": 392,
+          "w": 700,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "h": 615,
+          "w": 615,
+          "x": 85,
+          "y": 0
+        },
+        {
+          "h": 615,
+          "w": 539,
+          "x": 161,
+          "y": 0
+        },
+        {
+          "h": 615,
+          "w": 308,
+          "x": 283,
+          "y": 0
+        },
+        {
+          "h": 615,
+          "w": 700,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "expandedUrl": "https://x.com/Similarweb/status/2077322771260957122/photo/1",
+      "url": "https://pbs.twimg.com/media/HNQfWBbXcAA2x-W.png",
+      "width": 700,
+      "height": 615
+    }
+  ],
+  "conversation_count": 14,
+  "news_action_type": "conversation",
+  "isEdited": false,
+  "isStaleEdit": false,
+  "note_tweet": {
+    "id": "Tm90ZVR3ZWV0UmVzdWx0czoyMDc3MzIyNzcxMTYwMzAxNTY4"
+  }
+}

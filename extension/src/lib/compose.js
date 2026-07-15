@@ -27,6 +27,9 @@ export function contentTypeFromMode(mode) {
   if (mode === "confluence") {
     return "confluence";
   }
+  if (mode === "tweet") {
+    return "tweet";
+  }
   return "article";
 }
 
@@ -106,6 +109,17 @@ function buildKnowledgeBaseProperties(metadata, options) {
       captured: m.capturedAt,
       author: m.author,
       type
+    };
+  } else if (type === "tweet") {
+    props = {
+      title: m.title,
+      source_url: m.url,
+      author: m.author,
+      handle: m.handle,
+      posted: m.published,
+      type,
+      tags: m.tags,
+      description
     };
   } else {
     props = {
