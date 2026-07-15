@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { sitePagesQueryUrl, normalizeDiscoveredPages } from "../extension/src/lib/sharepoint-discover.js";
+import { sitePagesQueryUrl, normalizeDiscoveredPages, extractPageItems } from "../extension/src/lib/sharepoint-discover.js";
 
 test("sitePagesQueryUrl builds the expected REST query string", () => {
   const url = sitePagesQueryUrl("https://contoso.sharepoint.com/sites/x/_api");
@@ -45,4 +45,38 @@ test("normalizeDiscoveredPages skips rows lacking FileRef and tolerates non-arra
   assert.equal(pages[0].id, 4);
 
   assert.deepEqual(normalizeDiscoveredPages(undefined, "https://contoso.sharepoint.com"), []);
+});
+
+test("extractPageItems unwraps the nometadata shape", () => {
+  const json = {
+    value: [{ Id: 1, Title: "Home" }],
+    "odata.nextLink": "https://contoso.sharepoint.com/_api/web/lists/getByTitle('Site%20Pages')/items?$skiptoken=1"
+  };
+  const { items, nextLink } = extractPageItems(json);
+  assert.deepEqual(items, [{ Id: 1, Title: "Home" }]);
+  assert.equal(nextLink, "https://contoso.sharepoint.com/_api/web/lists/getByTitle('Site%20Pages')/items?$skiptoken=1");
+});
+
+test("extractPageItems unwraps the verbose shape", () => {
+  const json = {
+    d: {
+      results: [{ Id: 2, Title: "Plan" }],
+      __next: "https://contoso.sharepoint.com/_api/web/lists/getByTitle('Site%20Pages')/items?$skiptoken=2"
+    }
+  };
+  const { items, nextLink } = extractPageItems(json);
+  assert.deepEqual(items, [{ Id: 2, Title: "Plan" }]);
+  assert.equal(nextLink, "https://contoso.sharepoint.com/_api/web/lists/getByTitle('Site%20Pages')/items?$skiptoken=2");
+});
+
+test("extractPageItems returns empty items and null nextLink when neither shape nor link is present", () => {
+  assert.deepEqual(extractPageItems({ value: [{ Id: 1 }] }), { items: [{ Id: 1 }], nextLink: null });
+  assert.deepEqual(extractPageItems({}), { items: [], nextLink: null });
+});
+
+test("extractPageItems tolerates null and garbage input", () => {
+  assert.deepEqual(extractPageItems(null), { items: [], nextLink: null });
+  assert.deepEqual(extractPageItems(undefined), { items: [], nextLink: null });
+  assert.deepEqual(extractPageItems("not an object"), { items: [], nextLink: null });
+  assert.deepEqual(extractPageItems({ value: "not an array" }), { items: [], nextLink: null });
 });

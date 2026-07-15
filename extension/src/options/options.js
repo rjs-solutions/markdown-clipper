@@ -9,6 +9,7 @@ import { saveHandle, loadHandle, clearHandle, ensurePermission } from "../lib/va
 import { loadRules, saveRules } from "../lib/tag-rules.js";
 import { loadSites, saveSites, generateSiteId } from "../lib/sharepoint-sites.js";
 import { parseSharePointSite } from "../lib/sharepoint-site.js";
+import { discoverSitePages } from "../lib/sharepoint-fetch.js";
 import { exportSettings, importSettings } from "../lib/settings-backup.js";
 import { downloadText } from "../lib/download.js";
 import { listClips } from "../lib/clip-log.js";
@@ -753,8 +754,10 @@ function renderTagRulesControl(panel) {
 // A saved-sites list for the upcoming "sync a SharePoint site" feature. Like
 // tag-rules and the vault folder, it persists under its own chrome.storage.sync
 // key ("sharepointSites", via sharepoint-sites.js) rather than a schema field,
-// and auto-saves on every edit. Phase 1a only: add/list/remove a site. No
-// discovery or capture wiring yet.
+// and auto-saves on every edit. Phase 1a: add/list/remove a site. Phase 1b
+// adds a per-row "Discover pages" probe (sharepoint-fetch.js) that opens the
+// site in a background tab and reads its Site Pages list. No capture wiring
+// yet.
 function renderSharePointSitesControl(panel) {
   if (!panel) {
     return;
@@ -810,6 +813,9 @@ function renderSharePointSitesControl(panel) {
     const row = document.createElement("div");
     row.className = "site-row";
 
+    const top = document.createElement("div");
+    top.className = "site-row-top";
+
     const info = document.createElement("div");
     info.className = "site-info";
     const name = document.createElement("span");
@@ -820,18 +826,75 @@ function renderSharePointSitesControl(panel) {
     url.textContent = site.webUrl || site.url;
     info.append(name, url);
 
+    const actions = document.createElement("div");
+    actions.className = "site-actions";
+
+    const discoverButton = document.createElement("button");
+    discoverButton.type = "button";
+    discoverButton.textContent = "Discover pages";
+    discoverButton.setAttribute("aria-label", `Discover pages on ${site.name}`);
+
     const removeButton = document.createElement("button");
     removeButton.type = "button";
     removeButton.textContent = "Remove";
     removeButton.setAttribute("aria-label", `Remove ${site.name}`);
 
-    row.append(info, removeButton);
+    actions.append(discoverButton, removeButton);
+    top.append(info, actions);
+    row.append(top);
+
+    const discoverStatus = document.createElement("p");
+    discoverStatus.className = "site-discover-status";
+    row.append(discoverStatus);
+
+    const discoverResults = document.createElement("ul");
+    discoverResults.className = "site-discover-results";
+    row.append(discoverResults);
+
     list.append(row);
 
     removeButton.addEventListener("click", () => {
       sites = sites.filter((existing) => existing !== site);
       row.remove();
       persist();
+    });
+
+    discoverButton.addEventListener("click", async () => {
+      discoverStatus.textContent = "Discovering...";
+      discoverResults.replaceChildren();
+      discoverButton.disabled = true;
+
+      // Request host permission as the very first async op, before any other
+      // await, so the click's user activation is still valid when
+      // chrome.permissions.request runs (it requires a user gesture). The
+      // synchronous status/disable updates above don't consume the gesture.
+      let granted = false;
+      try {
+        granted = await chrome.permissions.request({ origins: [`${new URL(site.webUrl).origin}/*`] });
+      } catch {
+        granted = false;
+      }
+      if (!granted) {
+        discoverStatus.textContent = "Permission needed to read this site.";
+        discoverButton.disabled = false;
+        return;
+      }
+
+      try {
+        const result = await discoverSitePages(site);
+        if (result.ok) {
+          discoverStatus.textContent = result.count
+            ? `Found ${result.count} page${result.count === 1 ? "" : "s"}.`
+            : "No pages found (the site may have no modern pages, or the list is named differently).";
+          renderDiscoveredPages(discoverResults, result.pages || []);
+        } else {
+          discoverStatus.textContent = describeDiscoveryError(result);
+        }
+      } catch (error) {
+        discoverStatus.textContent = describeDiscoveryError({ reason: "fetch-failed", message: error && error.message ? error.message : String(error) });
+      } finally {
+        discoverButton.disabled = false;
+      }
     });
   }
 
@@ -862,6 +925,34 @@ function renderSharePointSitesControl(panel) {
       renderRow(site);
     }
   });
+}
+
+// Show up to 10 discovered pages: title (or FileRef basename) plus a
+// readable Modified date, if present.
+function renderDiscoveredPages(list, pages) {
+  list.replaceChildren();
+  for (const page of pages.slice(0, 10)) {
+    const item = document.createElement("li");
+    const modified = page.modified ? new Date(page.modified) : null;
+    const modifiedText = modified && !Number.isNaN(modified.getTime()) ? ` (${modified.toLocaleDateString()})` : "";
+    item.textContent = `${page.title}${modifiedText}`;
+    list.append(item);
+  }
+}
+
+// Translate a discoverSitePages() failure into a message a non-technical
+// reader can act on.
+function describeDiscoveryError(result) {
+  if (result.status === 401 || result.status === 403) {
+    return "Could not read this site. Make sure you are signed in to it in this browser.";
+  }
+  if (result.status === 404) {
+    return "Could not find the Site Pages list. It may be named differently on this tenant.";
+  }
+  if (result.reason === "not-json") {
+    return "Got a sign-in page instead of data. Open the site and sign in, then try again.";
+  }
+  return `Discovery failed${result.status ? ` (status ${result.status})` : ""}. Try again.`;
 }
 
 // ---- Bespoke prompt generator ----------------------------------------------
