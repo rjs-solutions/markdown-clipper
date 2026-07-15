@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="t d">
   <title id="t">Markdown Clipper icon</title>
-  <desc id="d">A blue-teal gradient Markdown "M" inside a soft rounded frame whose right side opens, with a violet-gradient paperclip clipping through that opening.</desc>
+  <desc id="d">A blue-teal gradient Markdown "M" inside a soft rounded frame whose right side opens, with a violet-gradient paperclip clipping through that opening. Sized to fill the icon canvas.</desc>
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2563eb"/><stop offset="1" stop-color="#14b8a6"/></linearGradient>
     <linearGradient id="vg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#c4b5fd"/></linearGradient>
   </defs>
-  <path d="M36 12 L92 12 Q116 12 116 36 M116 92 Q116 116 92 116 L36 116 Q12 116 12 92 L12 36 Q12 12 36 12" fill="none" stroke="url(#g)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M40 90 L40 40 L64 72 L88 40 L88 90" fill="none" stroke="url(#g)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-  <path transform="translate(116,63) scale(0.052,-0.052) translate(-470,480)" fill="url(#vg)" d="M720-330q0 104-73 177T470-80q-104 0-177-73t-73-177v-370q0-75 52.5-127.5T400-880q75 0 127.5 52.5T580-700v350q0 46-32 78t-78 32q-46 0-78-32t-32-78v-370h80v370q0 13 8.5 21.5T470-320q13 0 21.5-8.5T500-350v-350q-1-42-29.5-71T400-800q-42 0-71 29t-29 71v370q-1 71 49 120.5T470-160q70 0 119-49.5T640-330v-390h80v390Z"/>
+  <path d="M31 7 L91 7 Q115 7 115 31 M115 97 Q115 121 91 121 L31 121 Q7 121 7 97 L7 31 Q7 7 31 7" fill="none" stroke="url(#g)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 100 L24 28 L60 74 L96 28 L96 100" fill="none" stroke="url(#g)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path transform="translate(114,64) scale(0.054,-0.054) translate(-470,480)" fill="url(#vg)" d="M720-330q0 104-73 177T470-80q-104 0-177-73t-73-177v-370q0-75 52.5-127.5T400-880q75 0 127.5 52.5T580-700v350q0 46-32 78t-78 32q-46 0-78-32t-32-78v-370h80v370q0 13 8.5 21.5T470-320q13 0 21.5-8.5T500-350v-350q-1-42-29.5-71T400-800q-42 0-71 29t-29 71v370q-1 71 49 120.5T470-160q70 0 119-49.5T640-330v-390h80v390Z"/>
 </svg>
