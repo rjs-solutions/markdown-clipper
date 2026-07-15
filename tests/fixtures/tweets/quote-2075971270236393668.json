@@ -1,0 +1,175 @@
+{
+  "__typename": "Tweet",
+  "favorite_count": 19,
+  "in_reply_to_screen_name": "ilblackdragon",
+  "in_reply_to_status_id_str": "2075928575748837532",
+  "in_reply_to_user_id_str": "81185431",
+  "lang": "en",
+  "possibly_sensitive": false,
+  "created_at": "2026-07-11T15:51:35.000Z",
+  "display_text_range": [
+    15,
+    227
+  ],
+  "entities": {
+    "urls": [
+      {
+        "display_url": "omnigent.ai",
+        "expanded_url": "https://omnigent.ai/",
+        "indices": [
+          80,
+          103
+        ],
+        "url": "https://t.co/24VS1cTAXm"
+      },
+      {
+        "display_url": "x.com/alighodsi/stat…",
+        "expanded_url": "https://x.com/alighodsi/status/2074996561306955958?s=20",
+        "indices": [
+          204,
+          227
+        ],
+        "url": "https://t.co/chdi7S0mF5"
+      }
+    ],
+    "user_mentions": [
+      {
+        "id_str": "81185431",
+        "indices": [
+          0,
+          14
+        ],
+        "name": "Illia (root.near) (🇺🇦, ⋈)",
+        "screen_name": "ilblackdragon"
+      }
+    ]
+  },
+  "id_str": "2075971270236393668",
+  "text": "@ilblackdragon The meta harness Databricks is building will have smart routing: https://t.co/24VS1cTAXm\n\nalso \"we find that for the SAME mdoel, the choice of harness can significantly save costs (~2x).\"\n\nhttps://t.co/chdi7S0mF5",
+  "user": {
+    "id_str": "800854096219471872",
+    "name": "Yuchen Jin",
+    "screen_name": "Yuchenj_UW",
+    "is_blue_verified": true,
+    "profile_image_shape": "Circle",
+    "verified": false,
+    "profile_image_url_https": "https://pbs.twimg.com/profile_images/1319081238439751681/kCcqnwoF_normal.jpg"
+  },
+  "edit_control": {
+    "edit_tweet_ids": [
+      "2075971270236393668"
+    ],
+    "editable_until_msecs": "1783788695000",
+    "edits_remaining": "5",
+    "is_edit_eligible": false
+  },
+  "conversation_count": 3,
+  "news_action_type": "conversation",
+  "parent": {
+    "favorite_count": 66,
+    "in_reply_to_screen_name": "Yuchenj_UW",
+    "in_reply_to_status_id_str": "2075627844412264796",
+    "in_reply_to_user_id_str": "800854096219471872",
+    "lang": "en",
+    "reply_count": 6,
+    "retweet_count": 2,
+    "created_at": "2026-07-11T13:01:56.000Z",
+    "display_text_range": [
+      12,
+      285
+    ],
+    "entities": {
+      "user_mentions": [
+        {
+          "id_str": "800854096219471872",
+          "indices": [
+            0,
+            11
+          ],
+          "name": "Yuchen Jin",
+          "screen_name": "Yuchenj_UW"
+        }
+      ]
+    },
+    "id_str": "2075928575748837532",
+    "text": "@Yuchenj_UW I think routing needs to happen on the harness level - you just can’t do too much with simple completions api. \n\nWhat is useful is ability to spin up sub agents with different models, doing a pass of validation or planning with smarter model and etc.\n\nHarness should have a",
+    "user": {
+      "id_str": "81185431",
+      "name": "Illia (root.near) (🇺🇦, ⋈)",
+      "screen_name": "ilblackdragon",
+      "is_blue_verified": true,
+      "profile_image_shape": "Circle",
+      "verified": false,
+      "profile_image_url_https": "https://pbs.twimg.com/profile_images/2039769323028537344/FWV-VCY-_normal.jpg",
+      "highlighted_label": {
+        "badge": {
+          "url": "https://pbs.twimg.com/profile_images/1970880320103985152/SAMA6Vh0_bigger.jpg"
+        },
+        "description": "NEAR Protocol",
+        "url": {
+          "url": "https://twitter.com/NEARProtocol",
+          "url_type": "DeepLink"
+        },
+        "user_label_display_type": "Badge",
+        "user_label_type": "BusinessLabel"
+      }
+    },
+    "edit_control": {
+      "edit_tweet_ids": [
+        "2075928575748837532"
+      ],
+      "editable_until_msecs": "1783778516000",
+      "edits_remaining": "5",
+      "is_edit_eligible": false
+    },
+    "isEdited": false,
+    "isStaleEdit": false
+  },
+  "quoted_tweet": {
+    "favorite_count": 1577,
+    "lang": "en",
+    "reply_count": 111,
+    "retweet_count": 207,
+    "created_at": "2026-07-08T23:18:26.000Z",
+    "display_text_range": [
+      0,
+      283
+    ],
+    "entities": {},
+    "id_str": "2074996561306955958",
+    "text": "At 11k employees, our AI costs are going up. Which model &amp; harness should we use to lower cost but also retain great quality? \n\nWe didn't want to blindly trust public benchmarks. So we ran a comprehensive evaluation on our tasks, code base, infra. It's been produced by more than",
+    "user": {
+      "id_str": "105020773",
+      "name": "Ali Ghodsi",
+      "screen_name": "alighodsi",
+      "is_blue_verified": true,
+      "profile_image_shape": "Circle",
+      "verified": false,
+      "profile_image_url_https": "https://pbs.twimg.com/profile_images/1322594648703950849/5PGee6_a_normal.jpg",
+      "highlighted_label": {
+        "badge": {
+          "url": "https://pbs.twimg.com/profile_images/2070268421615333376/SZUvhQiQ_bigger.jpg"
+        },
+        "description": "Databricks",
+        "url": {
+          "url": "https://twitter.com/databricks",
+          "url_type": "DeepLink"
+        },
+        "user_label_display_type": "Badge",
+        "user_label_type": "BusinessLabel"
+      }
+    },
+    "edit_control": {
+      "edit_tweet_ids": [
+        "2074996561306955958"
+      ],
+      "editable_until_msecs": "1783556306000",
+      "edits_remaining": "5",
+      "is_edit_eligible": true
+    },
+    "isEdited": false,
+    "isStaleEdit": false
+  },
+  "isEdited": false,
+  "isStaleEdit": false
+}

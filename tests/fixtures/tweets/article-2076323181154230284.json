@@ -1,0 +1,65 @@
+{
+  "__typename": "Tweet",
+  "favorite_count": 15318,
+  "lang": "zxx",
+  "possibly_sensitive": false,
+  "created_at": "2026-07-12T15:09:57.000Z",
+  "display_text_range": [
+    0,
+    23
+  ],
+  "entities": {
+    "urls": [
+      {
+        "display_url": "x.com/i/article/2076…",
+        "expanded_url": "http://x.com/i/article/2076319195718090753",
+        "indices": [
+          0,
+          23
+        ],
+        "url": "https://t.co/xv6csf1SbV"
+      }
+    ]
+  },
+  "id_str": "2076323181154230284",
+  "text": "https://t.co/xv6csf1SbV",
+  "user": {
+    "id_str": "20571756",
+    "name": "Satya Nadella",
+    "screen_name": "satyanadella",
+    "is_blue_verified": true,
+    "profile_image_shape": "Circle",
+    "verified": false,
+    "profile_image_url_https": "https://pbs.twimg.com/profile_images/1221837516816306177/_Ld4un5A_normal.jpg",
+    "highlighted_label": {
+      "badge": {
+        "url": "https://pbs.twimg.com/profile_images/1917930887674531840/MRgAH1cv_bigger.jpg"
+      },
+      "description": "Microsoft",
+      "url": {
+        "url": "https://twitter.com/Microsoft",
+        "url_type": "DeepLink"
+      },
+      "user_label_display_type": "Badge",
+      "user_label_type": "BusinessLabel"
+    }
+  },
+  "edit_control": {
+    "edit_tweet_ids": [
+      "2076323181154230284"
+    ],
+    "editable_until_msecs": "1783872597000",
+    "edits_remaining": "5",
+    "is_edit_eligible": false
+  },
+  "conversation_count": 941,
+  "news_action_type": "conversation",
+  "article": {
+    "id": "QXJ0aWNsZUVudGl0eToyMDc2MzE5MTk1NzE4MDkwNzUz",
+    "preview_text": "In the age of intelligence, how should firms protect their core IP?  \nNobel Prize winning economist Kenneth Arrow famously described a paradox in the market for information. “Its value for the",
+    "rest_id": "2076319195718090753",
+    "title": "The Reverse Information Paradox "
+  },
+  "isEdited": false,
+  "isStaleEdit": false
+}

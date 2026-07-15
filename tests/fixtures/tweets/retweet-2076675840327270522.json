@@ -1,0 +1,179 @@
+{
+  "__typename": "Tweet",
+  "favorite_count": 5707,
+  "lang": "zxx",
+  "possibly_sensitive": false,
+  "created_at": "2026-07-13T14:31:17.000Z",
+  "display_text_range": [
+    0,
+    0
+  ],
+  "entities": {
+    "media": [
+      {
+        "display_url": "pic.x.com/eHXLdZRmJQ",
+        "expanded_url": "https://x.com/RapidResponse47/status/2076675840327270522/photo/1",
+        "indices": [
+          0,
+          23
+        ],
+        "url": "https://t.co/eHXLdZRmJQ"
+      }
+    ]
+  },
+  "id_str": "2076675840327270522",
+  "text": "https://t.co/eHXLdZRmJQ",
+  "user": {
+    "id_str": "1881451105454002176",
+    "name": "Rapid Response 47",
+    "screen_name": "RapidResponse47",
+    "is_blue_verified": true,
+    "profile_image_shape": "Square",
+    "verified": false,
+    "verified_type": "Government",
+    "profile_image_url_https": "https://pbs.twimg.com/profile_images/2062578057836142592/IYAK6I1p_normal.jpg",
+    "highlighted_label": {
+      "badge": {
+        "url": "https://pbs.twimg.com/profile_images/2062605835256127489/atNMwHxg_bigger.jpg"
+      },
+      "description": "The White House",
+      "url": {
+        "url": "https://twitter.com/WhiteHouse",
+        "url_type": "DeepLink"
+      },
+      "user_label_display_type": "Badge",
+      "user_label_type": "BusinessLabel"
+    }
+  },
+  "edit_control": {
+    "edit_tweet_ids": [
+      "2076675840327270522"
+    ],
+    "editable_until_msecs": "1783956677000",
+    "edits_remaining": "5",
+    "is_edit_eligible": true
+  },
+  "mediaDetails": [
+    {
+      "display_url": "pic.x.com/eHXLdZRmJQ",
+      "expanded_url": "https://x.com/RapidResponse47/status/2076675840327270522/photo/1",
+      "ext_media_availability": {
+        "status": "Available"
+      },
+      "indices": [
+        0,
+        23
+      ],
+      "media_url_https": "https://pbs.twimg.com/media/HNHVq7nXsAAZEmf.jpg",
+      "original_info": {
+        "focus_rects": [
+          {
+            "h": 660,
+            "w": 1179,
+            "x": 0,
+            "y": 53
+          },
+          {
+            "h": 915,
+            "w": 915,
+            "x": 264,
+            "y": 0
+          },
+          {
+            "h": 915,
+            "w": 803,
+            "x": 376,
+            "y": 0
+          },
+          {
+            "h": 915,
+            "w": 458,
+            "x": 625,
+            "y": 0
+          },
+          {
+            "h": 915,
+            "w": 1179,
+            "x": 0,
+            "y": 0
+          }
+        ],
+        "height": 915,
+        "width": 1179
+      },
+      "sizes": {
+        "large": {
+          "h": 915,
+          "resize": "fit",
+          "w": 1179
+        },
+        "medium": {
+          "h": 915,
+          "resize": "fit",
+          "w": 1179
+        },
+        "small": {
+          "h": 528,
+          "resize": "fit",
+          "w": 680
+        },
+        "thumb": {
+          "h": 150,
+          "resize": "crop",
+          "w": 150
+        }
+      },
+      "type": "photo",
+      "url": "https://t.co/eHXLdZRmJQ"
+    }
+  ],
+  "photos": [
+    {
+      "backgroundColor": {
+        "red": 204,
+        "green": 214,
+        "blue": 221
+      },
+      "cropCandidates": [
+        {
+          "h": 660,
+          "w": 1179,
+          "x": 0,
+          "y": 53
+        },
+        {
+          "h": 915,
+          "w": 915,
+          "x": 264,
+          "y": 0
+        },
+        {
+          "h": 915,
+          "w": 803,
+          "x": 376,
+          "y": 0
+        },
+        {
+          "h": 915,
+          "w": 458,
+          "x": 625,
+          "y": 0
+        },
+        {
+          "h": 915,
+          "w": 1179,
+          "x": 0,
+          "y": 0
+        }
+      ],
+      "expandedUrl": "https://x.com/RapidResponse47/status/2076675840327270522/photo/1",
+      "url": "https://pbs.twimg.com/media/HNHVq7nXsAAZEmf.jpg",
+      "width": 1179,
+      "height": 915
+    }
+  ],
+  "conversation_count": 136,
+  "news_action_type": "conversation",
+  "isEdited": false,
+  "isStaleEdit": false
+}

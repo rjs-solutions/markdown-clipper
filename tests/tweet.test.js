@@ -8,9 +8,27 @@ import { isTweetUrl, tweetToken, normalizeTweet, buildTweetMarkdown, fetchTweet 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_PATH = path.join(__dirname, "fixtures", "tweets", "similarweb-2077322771260957122.json");
 const GOLDEN_PATH = path.join(__dirname, "fixtures", "tweets", "similarweb.golden.md");
+const QUOTE_FIXTURE_PATH = path.join(__dirname, "fixtures", "tweets", "quote-2075971270236393668.json");
+const QUOTE_GOLDEN_PATH = path.join(__dirname, "fixtures", "tweets", "quote.golden.md");
+const ARTICLE_FIXTURE_PATH = path.join(__dirname, "fixtures", "tweets", "article-2076323181154230284.json");
+const ARTICLE_GOLDEN_PATH = path.join(__dirname, "fixtures", "tweets", "article.golden.md");
+const RETWEET_FIXTURE_PATH = path.join(__dirname, "fixtures", "tweets", "retweet-2076675840327270522.json");
 const UPDATE_GOLDENS = process.env.UPDATE_GOLDENS === "1";
 
 const fixtureJson = JSON.parse(fs.readFileSync(FIXTURE_PATH, "utf8"));
+const quoteFixtureJson = JSON.parse(fs.readFileSync(QUOTE_FIXTURE_PATH, "utf8"));
+const articleFixtureJson = JSON.parse(fs.readFileSync(ARTICLE_FIXTURE_PATH, "utf8"));
+const retweetFixtureJson = JSON.parse(fs.readFileSync(RETWEET_FIXTURE_PATH, "utf8"));
+
+function assertMatchesGolden(markdown, goldenPath) {
+  if (UPDATE_GOLDENS) {
+    fs.writeFileSync(goldenPath, markdown);
+    return;
+  }
+  assert.ok(fs.existsSync(goldenPath), `missing golden file: ${goldenPath} (run with UPDATE_GOLDENS=1)`);
+  const golden = fs.readFileSync(goldenPath, "utf8");
+  assert.equal(markdown, golden);
+}
 
 test("isTweetUrl matches x.com, twitter.com, and mobile.twitter.com status URLs", () => {
   assert.deepEqual(isTweetUrl("https://x.com/Similarweb/status/2077322771260957122"), { id: "2077322771260957122" });
@@ -89,4 +107,87 @@ test("fetchTweet throws a clear error on a non-200 response", async () => {
 test("fetchTweet throws a clear error on a tombstone (unavailable/protected) response", async () => {
   const fetchImpl = async () => ({ ok: true, json: async () => ({ __typename: "TweetTombstone" }) });
   await assert.rejects(() => fetchTweet("123", { fetchImpl }), /Tweet unavailable or protected/);
+});
+
+test("normalizeTweet expands an inline t.co link using entities.urls", () => {
+  const json = {
+    id_str: "1",
+    created_at: "2026-01-01T00:00:00.000Z",
+    display_text_range: [0, 40],
+    text: "check this out https://t.co/abc123 more",
+    user: { name: "Someone", screen_name: "someone" },
+    entities: {
+      urls: [
+        { url: "https://t.co/abc123", expanded_url: "https://example.com/page", display_url: "example.com/page" }
+      ]
+    }
+  };
+  const tweet = normalizeTweet(json);
+  assert.equal(tweet.text.includes("t.co"), false);
+  assert.equal(tweet.text.includes("https://example.com/page"), true);
+});
+
+test("normalizeTweet + buildTweetMarkdown matches the quote golden and nests the quoted tweet cleanly", () => {
+  const tweet = normalizeTweet(quoteFixtureJson);
+  const markdown = buildTweetMarkdown(tweet);
+
+  assertMatchesGolden(markdown, QUOTE_GOLDEN_PATH);
+
+  assert.equal(markdown.includes("t.co"), false);
+  assert.match(markdown, /Quoting \*\*Ali Ghodsi\*\* \(@alighodsi\)/);
+  assert.match(markdown, />> At 11k employees, our AI costs are going up\./);
+  assert.match(markdown, /\[View quoted tweet on X\]\(https:\/\/x\.com\/alighodsi\/status\/2074996561306955958\)/);
+});
+
+test("normalizeTweet + buildTweetMarkdown matches the article golden and links the real article URL", () => {
+  const tweet = normalizeTweet(articleFixtureJson);
+  const markdown = buildTweetMarkdown(tweet);
+
+  assertMatchesGolden(markdown, ARTICLE_GOLDEN_PATH);
+
+  assert.equal(tweet.article.title, "The Reverse Information Paradox");
+  assert.match(markdown, /\*\*The Reverse Information Paradox\*\*/);
+  assert.match(markdown, /Nobel Prize winning economist Kenneth Arrow/);
+  assert.match(
+    markdown,
+    /\[Read the full article on X\]\(http:\/\/x\.com\/i\/article\/2076319195718090753\)/
+  );
+  assert.equal(markdown.includes("t.co"), false);
+});
+
+test("normalizeTweet renders the real retweet fixture as a normal photo tweet (no retweeted_status present)", () => {
+  assert.equal(retweetFixtureJson.retweeted_status, undefined);
+  const tweet = normalizeTweet(retweetFixtureJson);
+  const markdown = buildTweetMarkdown(tweet);
+
+  assert.equal(tweet.repostedBy, undefined);
+  assert.equal(tweet.author, "Rapid Response 47");
+  assert.deepEqual(tweet.media, [{ type: "photo", url: "https://pbs.twimg.com/media/HNHVq7nXsAAZEmf.jpg" }]);
+  assert.match(markdown, /!\[tweet image\]\(https:\/\/pbs\.twimg\.com\/media\/HNHVq7nXsAAZEmf\.jpg\)/);
+});
+
+test("normalizeTweet unwraps a synthetic retweeted_status and buildTweetMarkdown prefixes the reposter", () => {
+  const json = {
+    id_str: "999",
+    created_at: "2026-02-02T00:00:00.000Z",
+    user: { name: "Reposter", screen_name: "reposter_handle" },
+    retweeted_status: {
+      id_str: "111",
+      created_at: "2026-01-01T00:00:00.000Z",
+      display_text_range: [0, 13],
+      text: "Original text",
+      user: { name: "Original Author", screen_name: "original_author" }
+    }
+  };
+
+  const tweet = normalizeTweet(json);
+  assert.equal(tweet.author, "Original Author");
+  assert.equal(tweet.handle, "original_author");
+  assert.equal(tweet.repostedBy, "reposter_handle");
+  assert.equal(tweet.permalink, "https://x.com/original_author/status/111");
+
+  const markdown = buildTweetMarkdown(tweet);
+  assert.match(markdown, /^> Reposted by \*\*@reposter_handle\*\*/);
+  assert.match(markdown, /\*\*Original Author\*\* \(@original_author\)/);
+  assert.match(markdown, /Original text/);
 });
