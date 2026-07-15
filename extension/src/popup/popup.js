@@ -30,7 +30,6 @@ const el = {
   copy: document.getElementById("do-copy"),
   open: document.getElementById("do-open"),
   export: document.getElementById("do-export"),
-  prompt: document.getElementById("do-prompt"),
   status: document.getElementById("status")
 };
 
@@ -102,7 +101,6 @@ function wireEvents() {
   el.copy.addEventListener("click", () => run("copy"));
   el.open.addEventListener("click", () => run("open"));
   el.export.addEventListener("click", exportWholeSite);
-  el.prompt.addEventListener("click", openPromptPage);
 
   // Keep the filename in sync with the title until the user edits it directly.
   el.title.addEventListener("input", () => {
@@ -257,15 +255,12 @@ function deriveFilename(result) {
   return slugify(result.title, { fallback: "page" });
 }
 
+// Popup shows only the Source (URL) row -- author/published/modified/site are
+// still collected in result.metadata and flow into the clip log, saved
+// frontmatter, and the full editor unchanged (see editor.js's populateForm);
+// they're just not rendered in this compact card.
 function renderProps(result) {
-  const m = result.metadata || {};
-  const rows = [
-    ["Source", result.url, true],
-    ["Author", m.author],
-    ["Published", m.published || m.pageDate],
-    ["Modified", m.modified && m.modified !== m.published ? m.modified : ""],
-    ["Site", m.site]
-  ];
+  const rows = [["Source", result.url, true]];
   el.props.replaceChildren();
   for (const [label, value, isLink] of rows) {
     if (!value) {
@@ -508,14 +503,6 @@ async function exportWholeSite() {
     width: 560,
     height: 760
   });
-  if (!inIframe) {
-    window.close();
-  }
-}
-
-// Open the prompt-generator page in a tab, mirroring openEditor/openInTab.
-async function openPromptPage() {
-  await chrome.tabs.create({ url: chrome.runtime.getURL("src/prompt/index.html") });
   if (!inIframe) {
     window.close();
   }

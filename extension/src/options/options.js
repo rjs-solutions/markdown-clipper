@@ -447,6 +447,42 @@ function renderTagRulesControl(panel) {
   });
 }
 
+// ---- Bespoke prompt-generator launcher ------------------------------------
+// A third control on the options page not driven by the schema loop: it just
+// opens the prompt-generator page (extension/src/prompt/index.html) in a new
+// tab, mirroring how the popup used to open it via chrome.tabs.create. Lives
+// here rather than the popup because generating a prompt analyzes the whole
+// vault, not a single clip -- see docs/llm-vault-design.md.
+function renderPromptGeneratorControl(panel) {
+  if (!panel) {
+    return;
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "field prompt-field";
+
+  const label = document.createElement("p");
+  label.className = "prompt-label";
+  label.textContent = "Prompt generator";
+  wrapper.append(label);
+
+  const help = document.createElement("p");
+  help.className = "help-text";
+  help.textContent = "Build a prompt to analyze your clipped vault with an LLM.";
+  wrapper.append(help);
+
+  const openButton = document.createElement("button");
+  openButton.type = "button";
+  openButton.textContent = "Open prompt generator";
+  wrapper.append(openButton);
+
+  panel.append(wrapper);
+
+  openButton.addEventListener("click", () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL("src/prompt/index.html") });
+  });
+}
+
 async function initialize() {
   const form = document.getElementById("options-form");
   const statusElement = document.getElementById("status");
@@ -461,6 +497,7 @@ async function initialize() {
 
   renderVaultControl(panelsElement.querySelector('[data-section="knowledgeBase"]'));
   renderTagRulesControl(panelsElement.querySelector('[data-section="knowledgeBase"]'));
+  renderPromptGeneratorControl(panelsElement.querySelector('[data-section="knowledgeBase"]'));
 
   fillForm(await loadSettings());
 
