@@ -31,6 +31,9 @@ const WATCHDOG_ALARM = "crawl-watchdog";
 const MAX_LOG_LINES = 300;
 const CONTEXT_MENU_ID = "clip-page";
 const SELECTION_CONTEXT_MENU_ID = "clip-selection";
+// Must match manifest.json's side_panel.default_path and the ?panel=1
+// convention popup.js reads to know it's rendering inside the side panel.
+const SIDE_PANEL_PATH = "src/popup/index.html?panel=1";
 
 const activeRuns = new Set();
 
@@ -162,6 +165,18 @@ async function applyActionMode() {
   try {
     const settings = await loadSettings();
     await chrome.action.setPopup({ popup: popupPathForAction(settings.defaultAction) });
+    const wantsSidePanel = settings.defaultAction === "sidepanel";
+    // Letting Chrome open the side panel on the action click (instead of this
+    // worker calling sidePanel.open() from inside onClicked) is what keeps
+    // this gesture-safe: setPanelBehavior is configured here, ahead of any
+    // click, not inside the click handler after an async settings load has
+    // already consumed the click's transient user activation.
+    if (chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
+      await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: wantsSidePanel });
+    }
+    if (wantsSidePanel && chrome.sidePanel && chrome.sidePanel.setOptions) {
+      await chrome.sidePanel.setOptions({ path: SIDE_PANEL_PATH, enabled: true });
+    }
   } catch (error) {
     console.error("Markdown Clipper failed to apply the toolbar icon setting:", error);
   }
@@ -199,7 +214,11 @@ async function openSidePanelForTab(tab) {
 
 // Only fires when chrome.action's popup is "" -- i.e. when defaultAction is
 // "sidepanel" or "inpage" (see applyActionMode/popupPathForAction). Routes
-// the click to whichever surface the setting names.
+// the click to whichever surface the setting names. In practice
+// applyActionMode's setPanelBehavior({ openPanelOnActionClick }) makes Chrome
+// open the side panel itself for "sidepanel", and onClicked doesn't fire for
+// that click -- the sidepanel branch below only matters as a fallback on
+// browsers old enough to lack chrome.sidePanel.setPanelBehavior.
 async function handleActionClicked(tab) {
   try {
     const settings = await loadSettings();

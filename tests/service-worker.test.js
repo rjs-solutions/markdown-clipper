@@ -140,6 +140,104 @@ function installFakeChrome() {
   return { store, createCalls };
 }
 
+// Fake enough of chrome.storage.sync + chrome.action + chrome.sidePanel for
+// applyActionMode (called at module import time, bottom of
+// service-worker.js) to run against a preset defaultAction and record what
+// it configured. action.onClicked/contextMenus/storage.onChanged are left
+// out: their registrations are individually try/catch-guarded in the module,
+// so a missing API there is swallowed rather than thrown.
+function installFakeChromeForActionMode(defaultAction) {
+  const syncStore = { defaultAction };
+  const setPopupCalls = [];
+  const setPanelBehaviorCalls = [];
+  const setOptionsCalls = [];
+
+  globalThis.chrome = {
+    runtime: {
+      getURL: (path) => `chrome-extension://test/${path}`,
+      onMessage: { addListener() {} },
+      onStartup: { addListener() {} },
+      onInstalled: { addListener() {} }
+    },
+    alarms: {
+      create() {},
+      onAlarm: { addListener() {} }
+    },
+    storage: {
+      local: {
+        async get() {
+          return {};
+        },
+        async set() {},
+        async remove() {}
+      },
+      sync: {
+        async get(keys) {
+          const out = {};
+          for (const key of Object.keys(keys)) {
+            out[key] = key in syncStore ? syncStore[key] : keys[key];
+          }
+          return out;
+        }
+      }
+    },
+    action: {
+      setPopup: async (opts) => {
+        setPopupCalls.push(opts);
+      },
+      onClicked: { addListener() {} }
+    },
+    sidePanel: {
+      open: async () => {},
+      setPanelBehavior: async (opts) => {
+        setPanelBehaviorCalls.push(opts);
+      },
+      setOptions: async (opts) => {
+        setOptionsCalls.push(opts);
+      }
+    },
+    tabs: {
+      onUpdated: { addListener() {}, removeListener() {} }
+    },
+    scripting: {
+      async executeScript() {
+        return [{ result: [] }];
+      }
+    }
+  };
+
+  return { setPopupCalls, setPanelBehaviorCalls, setOptionsCalls };
+}
+
+// applyActionMode isn't exported (it's an internal, module-load-time side
+// effect -- see the bottom of service-worker.js), so this observes it the
+// same way the real extension does: import the module and inspect the
+// chrome.* spy calls it made, after letting its async work settle.
+async function flushMicrotasks() {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+test("applyActionMode enables openPanelOnActionClick only when defaultAction is sidepanel", async () => {
+  const sidepanelSpies = installFakeChromeForActionMode("sidepanel");
+  await import(`../extension/src/background/service-worker.js?case=action-mode-sidepanel`);
+  await flushMicrotasks();
+
+  assert.deepEqual(sidepanelSpies.setPopupCalls.at(-1), { popup: "" });
+  assert.deepEqual(sidepanelSpies.setPanelBehaviorCalls.at(-1), { openPanelOnActionClick: true });
+  assert.deepEqual(sidepanelSpies.setOptionsCalls.at(-1), {
+    path: "src/popup/index.html?panel=1",
+    enabled: true
+  });
+
+  const popupSpies = installFakeChromeForActionMode("popup");
+  await import(`../extension/src/background/service-worker.js?case=action-mode-popup`);
+  await flushMicrotasks();
+
+  assert.deepEqual(popupSpies.setPopupCalls.at(-1), { popup: "src/popup/index.html" });
+  assert.deepEqual(popupSpies.setPanelBehaviorCalls.at(-1), { openPanelOnActionClick: false });
+  assert.equal(popupSpies.setOptionsCalls.length, 0);
+});
+
 test("runJob claims the job id synchronously: two concurrent calls run the crawl body exactly once", async () => {
   installFakeIndexedDb();
   const { createCalls } = installFakeChrome();
