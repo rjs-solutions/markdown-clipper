@@ -14,30 +14,30 @@ body {
 .crawl {
   max-width: 760px;
   margin: 0 auto;
-  padding: 24px 20px 60px;
+  padding: 16px 20px 32px;
 }
 
 h1 {
-  font-size: 20px;
-  margin: 0 0 6px;
+  font-size: 18px;
+  margin: 0 0 4px;
 }
 
 .lead {
   color: var(--text-muted);
-  margin: 0 0 20px;
+  margin: 0 0 12px;
 }
 
 .group {
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 14px 16px;
-  margin: 0 0 16px;
+  padding: 10px 14px;
+  margin: 0 0 10px;
   background: var(--surface);
   box-shadow: var(--shadow);
 }
 
 .group-title {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   font-size: 15px;
   font-weight: 500;
   color: var(--text);
@@ -46,18 +46,18 @@ h1 {
 .modes {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 4px;
+  margin-bottom: 8px;
 }
 
 .field {
   display: block;
-  margin: 10px 0;
+  margin: 6px 0;
 }
 
 .field > span {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   color: var(--text-muted);
 }
 
@@ -81,7 +81,7 @@ input[type="url"],
 input[type="number"],
 select {
   width: 100%;
-  padding: 8px 10px;
+  padding: 6px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
@@ -97,6 +97,7 @@ textarea {
 .buttons {
   display: flex;
   gap: 10px;
+  margin-top: 4px;
 }
 
 button {
@@ -131,17 +132,17 @@ button:disabled {
 
 .summary {
   font-weight: 600;
-  margin: 18px 0 6px;
+  margin: 12px 0 6px;
 }
 
 .log {
   list-style: none;
   margin: 0;
-  padding: 12px 14px;
+  padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface-muted);
-  max-height: 320px;
+  max-height: 200px;
   overflow: auto;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12.5px;
