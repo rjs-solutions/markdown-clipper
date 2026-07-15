@@ -3,7 +3,7 @@ import { loadSettings } from "../lib/settings.js";
 import { applyTemplate, extractSelectorRefs } from "../lib/template.js";
 import { assembleOutput, parseTags } from "../lib/assemble.js";
 import { capturePage } from "../lib/capture.js";
-import { isTweetUrl, fetchTweet, buildTweetMarkdown } from "../lib/tweet.js";
+import { isTweetUrl, fetchTweet, fetchTweetThread, buildTweetMarkdown } from "../lib/tweet.js";
 import { writeArtifact } from "../lib/vault.js";
 import { appendClip, updateClip, findClipByUrl, listClips } from "../lib/clip-log.js";
 import { buildWikiIndexMarkdown } from "../lib/wiki-index.js";
@@ -226,7 +226,7 @@ async function loadPreview() {
     const permitted = await chrome.permissions.contains({ origins: [TWEET_PERMISSION_ORIGIN] });
     if (permitted) {
       try {
-        const tweet = await fetchTweet(tweetMatch.id);
+        const tweet = await fetchTweetForTab(tweetMatch.id, tab);
         preview = tweetCaptureResult(tweet);
         populateCard(preview);
         return;
@@ -253,6 +253,62 @@ async function loadPreview() {
     console.error("Markdown Clipper preview capture failed:", error);
     showEmpty(messageFrom(error) || "This page could not be captured.");
   }
+}
+
+// Runs in the host page (isolated world) to find the focal author's
+// follow-up reply ids in the live, rendered DOM -- syndication JSON can't
+// see replies, only the page itself can. extractAuthorReplyIds is pure and
+// jsdom-tested on its own; this wrapper is just how it reaches a real page,
+// mirroring injectedGrabSelection's dynamic-import-in-page pattern.
+async function injectedExtractReplyIds(moduleUrl, focalId, focalHandle) {
+  const mod = await import(moduleUrl);
+  return mod.extractAuthorReplyIds(document, focalId, focalHandle);
+}
+
+// Best-effort handle out of a tweet's own URL (isTweetUrl only returns the
+// status id, since the handle isn't needed to fetch the focal tweet itself).
+function tweetHandleFromUrl(url) {
+  try {
+    return new URL(url).pathname.split("/").filter(Boolean)[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+// The thread is strictly additive: any failure here (setting off, DOM shape
+// changed, executeScript blocked by the page's CSP) just yields no reply
+// ids, and the caller falls back to the plain focal tweet.
+async function findAuthorReplyIds(focalId, tab) {
+  if (!settings.includeTweetThread) {
+    return [];
+  }
+  try {
+    const focalHandle = tweetHandleFromUrl(tab.url);
+    if (!focalHandle) {
+      return [];
+    }
+    const injections = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: injectedExtractReplyIds,
+      args: [chrome.runtime.getURL("src/lib/tweet.js"), focalId, focalHandle],
+      world: "ISOLATED"
+    });
+    const result = injections && injections[0] && injections[0].result;
+    return Array.isArray(result) ? result : [];
+  } catch (error) {
+    console.error("Markdown Clipper thread reply extraction failed, clipping the tweet alone:", error);
+    return [];
+  }
+}
+
+// Fetch the focal tweet, plus its author's follow-up replies as a thread
+// when the setting is on and the page's DOM yields any reply ids.
+async function fetchTweetForTab(focalId, tab) {
+  const replyIds = await findAuthorReplyIds(focalId, tab);
+  if (replyIds.length) {
+    return fetchTweetThread(focalId, replyIds);
+  }
+  return fetchTweet(focalId);
 }
 
 // Shape a normalized tweet (extension/src/lib/tweet.js) into the same

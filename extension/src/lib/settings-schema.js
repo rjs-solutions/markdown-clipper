@@ -99,6 +99,12 @@ export const SETTINGS_SCHEMA = [
         step: 50,
         unit: "ms",
         dependsOn: { key: "scrollBeforeCapture", value: true }
+      },
+      {
+        key: "includeTweetThread",
+        label: "Include the author's follow-up replies when clipping a tweet",
+        type: "toggle",
+        default: true
       }
     ]
   },

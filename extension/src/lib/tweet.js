@@ -1,7 +1,10 @@
 // Clip a single X/Twitter post via X's public syndication JSON endpoint (the
 // same feed the official embed widgets use). Pure functions except
-// fetchTweet, which takes an injectable fetchImpl so tests never touch the
-// network. Author self-reply threads are out of scope here (Phase B).
+// fetchTweet/fetchTweetThread, which take an injectable fetchImpl so tests
+// never touch the network. extractAuthorReplyIds is the one DOM-facing
+// function, but it stays pure (takes a document) so it is jsdom-testable
+// without a browser; the popup is responsible for getting it a live document
+// via executeScript.
 
 const TWEET_HOSTS = new Set(["x.com", "twitter.com", "mobile.twitter.com"]);
 
@@ -139,6 +142,66 @@ export function normalizeTweet(json) {
   return tweet;
 }
 
+// From a live page's DOM (the tweet's own page, already rendered), find the
+// focal author's OTHER tweets on the page -- i.e. their self-reply thread.
+// X's syndication endpoint only ever returns the one tweet asked for, so the
+// only way to discover a thread's follow-up ids is to read them off the
+// rendered timeline. Each rendered tweet is a [data-testid="tweet"] block;
+// its author's @handle and its own status id both live inside that block's
+// [data-testid="User-Name"] header (the handle from the profile link text,
+// the status id from the timestamp permalink, e.g.
+// href="/Similarweb/status/2077322774423421089"). Matching on the header
+// keeps this from also matching a quoted tweet's own permalink further down
+// inside the same block.
+//
+// Deliberately defensive: X's markup churns, so any shape we don't expect
+// (missing header, no matching link) is simply skipped rather than thrown --
+// worst case this returns [] and the caller falls back to the focal tweet
+// alone.
+export function extractAuthorReplyIds(doc, focalId, focalHandle) {
+  try {
+    const wantedHandle = String(focalHandle || "")
+      .replace(/^@/, "")
+      .toLowerCase();
+    if (!doc || !wantedHandle) {
+      return [];
+    }
+
+    const seen = new Set();
+    const ids = [];
+    const tweetBlocks = doc.querySelectorAll('[data-testid="tweet"]');
+
+    for (const block of tweetBlocks) {
+      const header = block.querySelector('[data-testid="User-Name"]');
+      if (!header) {
+        continue;
+      }
+      const handleMatch = header.textContent.match(/@(\w+)/);
+      if (!handleMatch || handleMatch[1].toLowerCase() !== wantedHandle) {
+        continue;
+      }
+
+      const statusLink = Array.from(header.querySelectorAll("a[href]")).find((anchor) =>
+        new RegExp(`^/${handleMatch[1]}/status/\\d+$`, "i").test(anchor.getAttribute("href") || "")
+      );
+      if (!statusLink) {
+        continue;
+      }
+      const idMatch = statusLink.getAttribute("href").match(/\/status\/(\d+)$/);
+      const id = idMatch && idMatch[1];
+      if (!id || id === focalId || seen.has(id)) {
+        continue;
+      }
+      seen.add(id);
+      ids.push(id);
+    }
+
+    return ids;
+  } catch {
+    return [];
+  }
+}
+
 function quotePrefix(depth) {
   return ">".repeat(depth);
 }
@@ -195,6 +258,13 @@ export function buildTweetMarkdown(tweet) {
     lines.push(">>", `>> [View quoted tweet on X](${quoted.permalink})`);
   }
 
+  if (Array.isArray(tweet.thread)) {
+    for (const followUp of tweet.thread) {
+      lines.push(">", "> --- Author's follow-up ---", ">");
+      pushTweetBody(lines, followUp, 1, { includeHeader: true });
+    }
+  }
+
   lines.push(">", `> [View on X](${tweet.permalink})`);
   return lines.join("\n");
 }
@@ -213,4 +283,23 @@ export async function fetchTweet(id, { fetchImpl = fetch } = {}) {
     throw new Error("Tweet unavailable or protected");
   }
   return normalizeTweet(json);
+}
+
+// Fetch the focal tweet plus its author's follow-up replies (found via
+// extractAuthorReplyIds) and assemble them into one normalized tweet with a
+// `.thread` array. Each reply is fetched the same clean way as the focal
+// tweet; a reply that fails to fetch (deleted, protected, transient error)
+// is simply skipped so one bad reply never breaks the whole thread.
+export async function fetchTweetThread(focalId, replyIds, { fetchImpl = fetch } = {}) {
+  const focal = await fetchTweet(focalId, { fetchImpl });
+  const thread = [];
+  for (const replyId of replyIds || []) {
+    try {
+      thread.push(await fetchTweet(replyId, { fetchImpl }));
+    } catch (error) {
+      console.error("Markdown Clipper thread reply fetch failed, skipping:", error);
+    }
+  }
+  focal.thread = thread;
+  return focal;
 }
