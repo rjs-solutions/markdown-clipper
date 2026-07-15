@@ -16,6 +16,7 @@ const el = {
   sidepanel: document.getElementById("do-sidepanel"),
   panel: document.getElementById("do-panel"),
   closePanel: document.getElementById("do-close-panel"),
+  closeDivider: document.getElementById("close-divider"),
   loading: document.getElementById("loading"),
   empty: document.getElementById("empty"),
   emptyMessage: document.getElementById("empty-message"),
@@ -55,11 +56,13 @@ async function initialize() {
   if (inPanel) {
     document.body.classList.add("in-panel");
     el.closePanel.hidden = false;
+    el.closeDivider.hidden = false;
     el.closePanel.addEventListener("click", () => window.close());
   }
   if (inIframe) {
     document.body.classList.add("in-iframe");
     el.closePanel.hidden = false;
+    el.closeDivider.hidden = false;
     // The in-page overlay is a same-origin iframe hosted by panel-host.js,
     // which removes itself on this message. There is no direct handle to the
     // host element from inside the iframe, so postMessage is the bridge.
@@ -70,6 +73,18 @@ async function initialize() {
   try {
     settings = await loadSettings();
     applyTheme(settings.theme);
+    if (inIframe) {
+      // Report the concrete resolved scheme (not just the setting) so
+      // panel-host.js can match the shadow host's chrome exactly, even when
+      // the setting is "system".
+      const resolvedScheme =
+        settings.theme === "dark" || settings.theme === "light"
+          ? settings.theme
+          : window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+      window.parent.postMessage({ type: "mc-panel-color-scheme", scheme: resolvedScheme }, "*");
+    }
     try {
       tagRules = await loadRules();
     } catch (error) {
@@ -83,6 +98,11 @@ async function initialize() {
     // surfaces from the plain popup, but each still offers a one-way switch
     // to the other: the overlay can hand off to the side panel, and the side
     // panel can hand off back to the overlay. The plain popup offers both.
+    //
+    // Neither surface offers a switch back to the plain popup. Chrome only
+    // opens an extension's action popup from a real toolbar-icon gesture
+    // when defaultAction is "popup"; chrome.action.openPopup is unreliable
+    // and gated, so there is no dependable API to reopen it from here.
     if (!inPanel) {
       try {
         await setupSidePanel();

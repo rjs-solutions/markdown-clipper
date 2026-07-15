@@ -93,6 +93,26 @@ async function saveGeometry(geometry) {
   }
 }
 
+// Resolves the saved theme setting the same way popup.js does (loadSettings,
+// then applyTheme's "system" handling), but without touching document.dataset
+// -- this host lives in an arbitrary host page, not an extension page, so the
+// result is only used to force the shadow host's own color-scheme. Returns
+// "light" or "dark" when the user picked one explicitly, or null when they
+// chose "system" (or the setting couldn't be read), meaning the host should
+// keep following the OS scheme like it already does.
+async function resolveColorScheme() {
+  try {
+    const { loadSettings } = await import(chrome.runtime.getURL("src/lib/settings.js"));
+    const settings = await loadSettings();
+    if (settings.theme === "light" || settings.theme === "dark") {
+      return settings.theme;
+    }
+  } catch (error) {
+    console.error("Markdown Clipper panel: could not read saved theme:", error);
+  }
+  return null;
+}
+
 async function mount(tabId) {
   const host = document.createElement("div");
   host.id = HOST_ID;
@@ -106,6 +126,11 @@ async function mount(tabId) {
 
   const shadow = host.attachShadow({ mode: "open" });
   shadow.innerHTML = template();
+
+  const colorScheme = await resolveColorScheme();
+  if (colorScheme) {
+    host.style.colorScheme = colorScheme;
+  }
 
   const container = shadow.getElementById("container");
   const dragHandle = shadow.getElementById("drag-handle");
@@ -125,6 +150,10 @@ async function mount(tabId) {
   host.mcMessageHandler = (event) => {
     if (event.data && event.data.type === "mc-panel-close") {
       removeHost(host);
+    } else if (event.data && event.data.type === "mc-panel-color-scheme") {
+      if (event.data.scheme === "light" || event.data.scheme === "dark") {
+        host.style.colorScheme = event.data.scheme;
+      }
     }
   };
   window.addEventListener("message", host.mcMessageHandler);
@@ -245,7 +274,6 @@ function template() {
         flex: 0 0 auto;
         height: 6px;
         background: light-dark(#dde3ea, #2a2f38);
-        border-bottom: 1px solid light-dark(#cdd5de, #3a4150);
         cursor: move;
         touch-action: none;
         user-select: none;
