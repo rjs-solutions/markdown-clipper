@@ -65,6 +65,21 @@ body {
   scroll-margin-top: 24px;
 }
 
+/* Quiet uppercase subhead for a section's sub-groups (e.g. Clipping's
+   Capture / Format & save / Behavior groups). */
+.group-heading {
+  margin: 8px 0 -4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.group-heading:first-of-type {
+  margin-top: 2px;
+}
+
 @media (max-width: 680px) {
   .settings {
     grid-template-columns: 1fr;
@@ -79,8 +94,17 @@ body {
 }
 
 h1 {
-  margin: 0 0 18px;
+  margin: 0;
   font-size: 22px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 18px;
 }
 
 .page-title {
@@ -99,6 +123,20 @@ h1 {
 .page-title-sub {
   font-weight: 500;
   color: var(--text-muted);
+}
+
+/* Persistent Appearance (theme) control, visible in every tab. Reuses the
+   segmented-field styles below but without a wrapping .field so it sits
+   compactly in the header instead of stacking with a full label row. */
+.appearance-control .segmented-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+
+.appearance-control .segmented-label {
+  font-size: 13px;
 }
 
 form {
@@ -141,6 +179,80 @@ legend {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* Icon-segmented control (theme in the header, toolbar-icon action in
+   Clipping > Behavior). */
+.segmented-field {
+  gap: 6px;
+}
+
+.segmented-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.segmented-field-full {
+  width: 100%;
+}
+
+.segmented {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-muted);
+}
+
+.segmented-field-full .segmented {
+  width: 100%;
+}
+
+.segmented-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.segmented-field-full .segmented-option {
+  flex: 1;
+}
+
+.segmented-option svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.segmented-option:hover {
+  color: var(--text);
+}
+
+.segmented-option.is-active {
+  background: var(--surface);
+  color: var(--accent-hover);
+  font-weight: 500;
+  box-shadow: var(--shadow);
+}
+
+.segmented-option:disabled {
+  cursor: default;
+  opacity: 0.55;
 }
 
 /* Bespoke vault folder-picker control (not schema-driven, see options.js). */
@@ -212,6 +324,29 @@ legend {
 
 .checkbox-field > span {
   color: var(--text);
+}
+
+/* Bespoke Advanced-tab controls (not schema-driven, see options.js): backup
+   export/import, the activity clip count, and reset-to-defaults. */
+.backup-field,
+.activity-field,
+.reset-field {
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.backup-label,
+.activity-label,
+.reset-label {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.backup-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 input,

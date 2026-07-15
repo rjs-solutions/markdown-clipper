@@ -7,16 +7,41 @@ import { SETTINGS_SCHEMA, schemaFields, findField } from "../lib/settings-schema
 import { applyTheme } from "../lib/theme.js";
 import { saveHandle, loadHandle, clearHandle, ensurePermission } from "../lib/vault-handle.js";
 import { loadRules, saveRules } from "../lib/tag-rules.js";
+import { exportSettings, importSettings } from "../lib/settings-backup.js";
+import { downloadText } from "../lib/download.js";
+import { listClips } from "../lib/clip-log.js";
 
 export function fieldId(key) {
   return `f-${key.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
 }
 
+// Small inline icon set for "segmented" fields (theme + toolbar-icon action).
+// Stroke-only, currentColor, so they follow the button's text color in every
+// theme. Keyed by the `icon` name a schema option declares.
+const ICONS = {
+  system:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="1.5"></rect><path d="M8 20h8M12 17v3"></path></svg>',
+  light:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2.5v2.5M12 19v2.5M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2.5 12H5M19 12h2.5M4.2 19.8L6 18M18 6l1.8-1.8"></path></svg>',
+  dark: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13.5A8.5 8.5 0 1 1 10.5 4a6.5 6.5 0 0 0 9.5 9.5Z"></path></svg>',
+  popup:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="7" width="12" height="10" rx="1.5"></rect></svg>',
+  sidepanel:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M15 4v16"></path></svg>',
+  inpage:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><rect x="12" y="12" width="7" height="5" rx="1"></rect></svg>'
+};
+
 // Builds nav items + panels for `schema` inside the given containers and
 // returns { controls, fillForm, readForm, updateDependents } bound to the
 // rendered DOM. Kept as a factory (rather than module-level state) so tests
 // can render an isolated schema against throwaway containers.
-export function createOptionsForm(schema, { navElement, panelsElement, onThemeChange } = {}) {
+//
+// Sections flagged `header: true` (e.g. the persistent Appearance/theme
+// control) render into `headerElement` instead of the nav+panels loop, but
+// their fields still flow through the same controls map / fillForm / readForm
+// as every other field.
+export function createOptionsForm(schema, { navElement, panelsElement, headerElement, onThemeChange } = {}) {
   const controls = new Map();
   const allFields = schemaFields(schema);
   let loadedSettings = {};
@@ -31,6 +56,11 @@ export function createOptionsForm(schema, { navElement, panelsElement, onThemeCh
     }
     return control.value;
   }
+
+  // Segmented controls store their selected value on a hidden input (via
+  // overridden value/disabled accessors, see renderField below), so they
+  // round-trip through the same generic getFieldValue/setFieldValue path as
+  // every other field type.
 
   function setFieldValue(field, value) {
     const control = controls.get(field.key);
@@ -57,6 +87,88 @@ export function createOptionsForm(schema, { navElement, panelsElement, onThemeCh
     }
   }
 
+  function renderSegmented(field, id) {
+    const wrapper = document.createElement("div");
+    wrapper.className = field.fullWidth ? "field segmented-field segmented-field-full" : "field segmented-field";
+    wrapper.dataset.key = field.key;
+
+    const label = document.createElement("span");
+    label.className = "segmented-label";
+    label.id = `${id}-label`;
+    label.textContent = field.label;
+    wrapper.append(label);
+
+    const group = document.createElement("div");
+    group.className = "segmented";
+    group.setAttribute("role", "radiogroup");
+    group.setAttribute("aria-labelledby", label.id);
+
+    // A hidden input is the "control" every other field type already uses:
+    // its value/disabled accessors are overridden below so the generic
+    // getFieldValue/setFieldValue/updateDependents code (which just reads and
+    // writes `control.value` / `control.disabled`) also drives the visible
+    // segmented buttons.
+    const control = document.createElement("input");
+    control.type = "hidden";
+    control.id = id;
+
+    const buttons = [];
+    let currentValue = field.default;
+    let currentDisabled = false;
+
+    function sync() {
+      for (const button of buttons) {
+        const active = button.dataset.value === currentValue;
+        button.classList.toggle("is-active", active);
+        button.setAttribute("aria-checked", String(active));
+        button.disabled = currentDisabled;
+      }
+    }
+
+    Object.defineProperty(control, "value", {
+      get: () => currentValue,
+      set(next) {
+        currentValue = next;
+        sync();
+      }
+    });
+    Object.defineProperty(control, "disabled", {
+      get: () => currentDisabled,
+      set(next) {
+        currentDisabled = Boolean(next);
+        sync();
+      }
+    });
+
+    for (const opt of field.options) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "segmented-option";
+      button.dataset.value = opt.value;
+      button.setAttribute("role", "radio");
+      button.setAttribute("aria-checked", "false");
+      if (opt.icon && ICONS[opt.icon]) {
+        button.insertAdjacentHTML("beforeend", ICONS[opt.icon]);
+      }
+      const optLabel = document.createElement("span");
+      optLabel.textContent = opt.label;
+      button.append(optLabel);
+      button.addEventListener("click", () => {
+        if (currentDisabled) {
+          return;
+        }
+        control.value = opt.value;
+        control.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      buttons.push(button);
+      group.append(button);
+    }
+
+    sync();
+    wrapper.append(control, group);
+    return { wrapper, control };
+  }
+
   function renderField(field) {
     const id = fieldId(field.key);
     const wrapper = document.createElement("div");
@@ -64,6 +176,18 @@ export function createOptionsForm(schema, { navElement, panelsElement, onThemeCh
     wrapper.dataset.key = field.key;
 
     let control;
+
+    if (field.type === "segmented") {
+      const segmented = renderSegmented(field, id);
+      controls.set(field.key, segmented.control);
+      segmented.control.addEventListener("change", () => {
+        if (field.key === "theme" && onThemeChange) {
+          onThemeChange(getFieldValue(field));
+        }
+        updateDependents();
+      });
+      return segmented.wrapper;
+    }
 
     if (field.type === "toggle") {
       const label = document.createElement("label");
@@ -147,11 +271,28 @@ export function createOptionsForm(schema, { navElement, panelsElement, onThemeCh
     return wrapper;
   }
 
-  schema.forEach((section, index) => {
+  let tabIndex = 0;
+  for (const section of schema) {
+    if (section.header) {
+      // Always render (so the field's control exists and fillForm/readForm
+      // keep working even in tests that don't pass a headerElement); only
+      // attach it to the DOM when there's somewhere to put it.
+      for (const field of section.fields) {
+        const rendered = renderField(field);
+        if (headerElement) {
+          headerElement.append(rendered);
+        }
+      }
+      continue;
+    }
+
+    const isFirstTab = tabIndex === 0;
+    tabIndex += 1;
+
     if (navElement) {
       const navButton = document.createElement("button");
       navButton.type = "button";
-      navButton.className = index === 0 ? "nav-item is-active" : "nav-item";
+      navButton.className = isFirstTab ? "nav-item is-active" : "nav-item";
       navButton.dataset.section = section.id;
       navButton.textContent = section.label;
       navElement.append(navButton);
@@ -161,18 +302,30 @@ export function createOptionsForm(schema, { navElement, panelsElement, onThemeCh
       const panel = document.createElement("section");
       panel.className = "group panel";
       panel.dataset.section = section.id;
-      panel.hidden = index !== 0;
+      panel.hidden = !isFirstTab;
 
       const heading = document.createElement("h2");
       heading.textContent = section.label;
       panel.append(heading);
 
-      for (const field of section.fields) {
-        panel.append(renderField(field));
+      if (section.groups) {
+        for (const group of section.groups) {
+          const groupHeading = document.createElement("h3");
+          groupHeading.className = "group-heading";
+          groupHeading.textContent = group.label;
+          panel.append(groupHeading);
+          for (const field of group.fields) {
+            panel.append(renderField(field));
+          }
+        }
+      } else {
+        for (const field of section.fields) {
+          panel.append(renderField(field));
+        }
       }
       panelsElement.append(panel);
     }
-  });
+  }
 
   if (navElement && panelsElement) {
     wireSectionNav(navElement, panelsElement);
@@ -483,15 +636,166 @@ function renderPromptGeneratorControl(panel) {
   });
 }
 
+// ---- Bespoke Advanced-tab controls ----------------------------------------
+
+// Export/import all settings + tag rules as one JSON file. Not schema-driven:
+// it reads/writes several storage keys at once via settings-backup.js and
+// needs to refill the whole form after an import.
+function renderBackupControl(panel, { fillForm }) {
+  if (!panel) {
+    return;
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "field backup-field";
+
+  const label = document.createElement("p");
+  label.className = "backup-label";
+  label.textContent = "Backup";
+  wrapper.append(label);
+
+  const help = document.createElement("p");
+  help.className = "help-text";
+  help.textContent = "Export every setting and tag rule to a file, or restore them from one.";
+  wrapper.append(help);
+
+  const buttons = document.createElement("div");
+  buttons.className = "backup-buttons";
+
+  const exportButton = document.createElement("button");
+  exportButton.type = "button";
+  exportButton.textContent = "Export";
+
+  const importButton = document.createElement("button");
+  importButton.type = "button";
+  importButton.textContent = "Import";
+
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = "application/json";
+  fileInput.hidden = true;
+
+  const statusLine = document.createElement("p");
+  statusLine.className = "help-text backup-status";
+  statusLine.setAttribute("role", "status");
+  statusLine.setAttribute("aria-live", "polite");
+
+  buttons.append(exportButton, importButton, fileInput);
+  wrapper.append(buttons, statusLine);
+  panel.append(wrapper);
+
+  exportButton.addEventListener("click", async () => {
+    const backup = await exportSettings();
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadText(JSON.stringify(backup, null, 2), `markdown-clipper-settings-${stamp}.json`, {
+      type: "application/json"
+    });
+    statusLine.textContent = "Exported";
+  });
+
+  importButton.addEventListener("click", () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files && fileInput.files[0];
+    fileInput.value = "";
+    if (!file) {
+      return;
+    }
+    try {
+      const text = await file.text();
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        throw new Error("That file isn't valid JSON.");
+      }
+      await importSettings(parsed);
+      fillForm(await loadSettings());
+      statusLine.textContent = "Imported";
+    } catch (error) {
+      statusLine.textContent = `Import failed: ${error.message}`;
+    }
+  });
+}
+
+// Read-only clip count from the clip-history log (clip-log.js), so the
+// Advanced tab shows how much has accumulated without opening the vault.
+function renderActivityControl(panel) {
+  if (!panel) {
+    return;
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "field activity-field";
+
+  const label = document.createElement("p");
+  label.className = "activity-label";
+  label.textContent = "Activity";
+  wrapper.append(label);
+
+  const statusLine = document.createElement("p");
+  statusLine.className = "help-text activity-status";
+  statusLine.textContent = "Loading clip history…";
+  wrapper.append(statusLine);
+
+  panel.append(wrapper);
+
+  listClips()
+    .then((clips) => {
+      const count = clips.length;
+      statusLine.textContent = count === 1 ? "1 clip saved" : `${count} clips saved`;
+    })
+    .catch(() => {
+      statusLine.textContent = "Clip history isn't available.";
+    });
+}
+
+// Reset to defaults, moved here from the page-wide footer since it now reads
+// as an Advanced-tab action rather than something visible from every tab.
+function renderResetControl(panel, { fillForm, statusElement }) {
+  if (!panel) {
+    return;
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "field reset-field";
+
+  const label = document.createElement("p");
+  label.className = "reset-label";
+  label.textContent = "Reset";
+  wrapper.append(label);
+
+  const help = document.createElement("p");
+  help.className = "help-text";
+  help.textContent = "Restore every setting on this page to its default value.";
+  wrapper.append(help);
+
+  const resetButton = document.createElement("button");
+  resetButton.type = "button";
+  resetButton.textContent = "Reset to defaults";
+  wrapper.append(resetButton);
+
+  panel.append(wrapper);
+
+  resetButton.addEventListener("click", async () => {
+    fillForm(await resetSettings());
+    flash(statusElement, "Reset");
+  });
+}
+
 async function initialize() {
   const form = document.getElementById("options-form");
   const statusElement = document.getElementById("status");
   const navElement = document.getElementById("settings-nav");
   const panelsElement = document.getElementById("panels");
+  const headerElement = document.getElementById("appearance-control");
 
   const { fillForm, readForm } = createOptionsForm(SETTINGS_SCHEMA, {
     navElement,
     panelsElement,
+    headerElement,
     onThemeChange: applyTheme
   });
 
@@ -499,17 +803,17 @@ async function initialize() {
   renderTagRulesControl(panelsElement.querySelector('[data-section="knowledgeBase"]'));
   renderPromptGeneratorControl(panelsElement.querySelector('[data-section="knowledgeBase"]'));
 
+  const advancedPanel = panelsElement.querySelector('[data-section="advanced"]');
+  renderBackupControl(advancedPanel, { fillForm });
+  renderActivityControl(advancedPanel);
+  renderResetControl(advancedPanel, { fillForm, statusElement });
+
   fillForm(await loadSettings());
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     await saveSettings(readForm());
     flash(statusElement, "Saved");
-  });
-
-  document.getElementById("reset").addEventListener("click", async () => {
-    fillForm(await resetSettings());
-    flash(statusElement, "Reset");
   });
 }
 

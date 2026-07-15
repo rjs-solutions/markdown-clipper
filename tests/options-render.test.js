@@ -28,14 +28,65 @@ function makeContainers() {
   return { navElement, panelsElement };
 }
 
-test("renderSchema builds one nav item and one panel per section", async () => {
+test("renderSchema builds one nav item and one panel per non-header section", async () => {
   const { createOptionsForm } = await loadModule();
   const { navElement, panelsElement } = makeContainers();
 
   createOptionsForm(SETTINGS_SCHEMA, { navElement, panelsElement });
 
-  assert.equal(navElement.querySelectorAll(".nav-item").length, SETTINGS_SCHEMA.length);
-  assert.equal(panelsElement.querySelectorAll(".panel").length, SETTINGS_SCHEMA.length);
+  const tabSections = SETTINGS_SCHEMA.filter((section) => !section.header);
+  assert.equal(navElement.querySelectorAll(".nav-item").length, tabSections.length);
+  assert.equal(panelsElement.querySelectorAll(".panel").length, tabSections.length);
+});
+
+test("a header-flagged section's fields render into headerElement, not the nav/panels", async () => {
+  const { createOptionsForm } = await loadModule();
+  const { navElement, panelsElement } = makeContainers();
+  const headerElement = document.createElement("div");
+  document.body.append(headerElement);
+
+  createOptionsForm(SETTINGS_SCHEMA, { navElement, panelsElement, headerElement });
+
+  assert.ok(headerElement.querySelector('[data-key="theme"]'));
+  assert.equal(panelsElement.querySelector('[data-key="theme"]'), null);
+  assert.equal(navElement.querySelector('[data-section="appearance"]'), null);
+});
+
+test("a segmented field (theme) round-trips through fillForm -> readForm and updates on click", async () => {
+  const { createOptionsForm } = await loadModule();
+  const { navElement, panelsElement } = makeContainers();
+  const headerElement = document.createElement("div");
+  document.body.append(headerElement);
+
+  const { fillForm, readForm, controls } = createOptionsForm(SETTINGS_SCHEMA, {
+    navElement,
+    panelsElement,
+    headerElement
+  });
+
+  const defaults = defaultsFromSchema(SETTINGS_SCHEMA);
+  fillForm(defaults);
+  assert.equal(readForm().theme, "system");
+
+  const themeControl = controls.get("theme");
+  const darkButton = themeControl.closest(".segmented-field").querySelector('[data-value="dark"]');
+  darkButton.click();
+
+  assert.equal(readForm().theme, "dark");
+  assert.equal(darkButton.classList.contains("is-active"), true);
+  assert.equal(darkButton.getAttribute("aria-checked"), "true");
+});
+
+test("the full-width segmented defaultAction field renders inside the Clipping panel", async () => {
+  const { createOptionsForm } = await loadModule();
+  const { navElement, panelsElement } = makeContainers();
+
+  createOptionsForm(SETTINGS_SCHEMA, { navElement, panelsElement });
+
+  const field = panelsElement.querySelector('[data-key="defaultAction"]');
+  assert.ok(field);
+  assert.ok(field.classList.contains("segmented-field-full"));
+  assert.ok(field.closest('[data-section="clipping"]'));
 });
 
 test("readForm round-trips fillForm(defaults)", async () => {

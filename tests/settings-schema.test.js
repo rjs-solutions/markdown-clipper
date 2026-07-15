@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { SETTINGS_SCHEMA, schemaFields, defaultsFromSchema } from "../extension/src/lib/settings-schema.js";
 import { DEFAULT_SETTINGS } from "../extension/src/lib/settings.js";
 
-const VALID_TYPES = new Set(["select", "toggle", "number", "text", "textarea"]);
+const VALID_TYPES = new Set(["select", "toggle", "number", "text", "textarea", "segmented"]);
 
 test("every DEFAULT_SETTINGS key appears in exactly one schema field, and vice versa", () => {
   const fields = schemaFields(SETTINGS_SCHEMA);
@@ -53,11 +53,42 @@ test("mode option list preserves confluence alongside the other capture modes", 
   assert.deepEqual(values, ["auto", "sharepoint", "confluence", "article", "full"]);
 });
 
-test("each section descriptor has an id, a label, and a non-empty fields array", () => {
+test("each section descriptor has an id, a label, and either a fields array or a groups array", () => {
   for (const section of SETTINGS_SCHEMA) {
     assert.ok(section.id, "section missing id");
     assert.ok(section.label, "section missing label");
-    assert.ok(Array.isArray(section.fields) && section.fields.length > 0, `${section.id} has no fields`);
+    if (section.groups) {
+      assert.ok(section.groups.length > 0, `${section.id} has no groups`);
+      for (const group of section.groups) {
+        assert.ok(group.label, `${section.id} has a group missing a label`);
+        assert.ok(Array.isArray(group.fields) && group.fields.length > 0, `${section.id} has a group with no fields`);
+      }
+    } else {
+      assert.ok(Array.isArray(section.fields), `${section.id} has no fields array`);
+    }
+  }
+});
+
+test("the Advanced section has no schema fields (it's entirely bespoke controls)", () => {
+  const advanced = SETTINGS_SCHEMA.find((section) => section.id === "advanced");
+  assert.ok(advanced, "Advanced section missing");
+  assert.deepEqual(advanced.fields, []);
+});
+
+test("theme is rendered as a header field, outside the tab nav/panels", () => {
+  const appearance = SETTINGS_SCHEMA.find((section) => section.id === "appearance");
+  assert.ok(appearance, "Appearance section missing");
+  assert.equal(appearance.header, true);
+  assert.ok(appearance.fields.some((field) => field.key === "theme"));
+});
+
+test("segmented fields' default is one of their own options", () => {
+  for (const field of schemaFields(SETTINGS_SCHEMA)) {
+    if (field.type !== "segmented") {
+      continue;
+    }
+    const values = field.options.map((opt) => opt.value);
+    assert.ok(values.includes(field.default), `${field.key} default "${field.default}" not in its options`);
   }
 });
 
