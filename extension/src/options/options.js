@@ -799,9 +799,19 @@ async function initialize() {
     onThemeChange: applyTheme
   });
 
-  renderVaultControl(panelsElement.querySelector('[data-section="knowledgeBase"]'));
-  renderTagRulesControl(panelsElement.querySelector('[data-section="knowledgeBase"]'));
-  renderPromptGeneratorControl(panelsElement.querySelector('[data-section="knowledgeBase"]'));
+  const knowledgeBasePanel = panelsElement.querySelector('[data-section="knowledgeBase"]');
+  renderVaultControl(knowledgeBasePanel);
+  // The vault folder picker sets up everything else in this tab (the preset
+  // writes into it, the index lives there), so move it right after the
+  // vaultEnabled toggle and ahead of knowledgeBasePreset, which schema order
+  // alone can't do since this is a bespoke control appended after the fields.
+  const vaultField = knowledgeBasePanel.querySelector(".vault-field");
+  const presetField = knowledgeBasePanel.querySelector('[data-key="knowledgeBasePreset"]');
+  if (vaultField && presetField) {
+    knowledgeBasePanel.insertBefore(vaultField, presetField);
+  }
+  renderTagRulesControl(knowledgeBasePanel);
+  renderPromptGeneratorControl(knowledgeBasePanel);
 
   const advancedPanel = panelsElement.querySelector('[data-section="advanced"]');
   renderBackupControl(advancedPanel, { fillForm });

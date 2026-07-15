@@ -65,15 +65,20 @@ body {
   scroll-margin-top: 24px;
 }
 
-/* Quiet uppercase subhead for a section's sub-groups (e.g. Clipping's
-   Capture / Format & save / Behavior groups). */
+/* Subhead for a section's sub-groups (e.g. Clipping's Capture / Format &
+   save / Behavior groups). Deliberately stronger than a field label or
+   description (weight + var(--text), not --text-muted) with a hairline
+   rule underneath, so the hierarchy heading > label > description stays
+   obvious in both themes. */
 .group-heading {
-  margin: 8px 0 -4px;
-  font-size: 11px;
-  font-weight: 600;
+  margin: 20px 0 2px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text);
 }
 
 .group-heading:first-of-type {
@@ -123,6 +128,24 @@ h1 {
 .page-title-sub {
   font-weight: 500;
   color: var(--text-muted);
+}
+
+/* Groups Appearance and Save together on the right of the header, so the
+   header reads as title, then Appearance, then Save without either control
+   getting pushed to a far edge. */
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+/* Save button + status, always visible at the top-right of the header. */
+.page-header-save {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* Persistent Appearance (theme) control, visible in every tab. Reuses the
@@ -264,7 +287,8 @@ legend {
 .vault-label {
   margin: 0;
   font-size: 13px;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--text);
 }
 
 .vault-status {
@@ -286,7 +310,8 @@ legend {
 .rules-label {
   margin: 0;
   font-size: 13px;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--text);
 }
 
 .rules-list {
@@ -319,7 +344,8 @@ legend {
 .prompt-label {
   margin: 0;
   font-size: 13px;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--text);
 }
 
 .checkbox-field > span {
@@ -340,7 +366,8 @@ legend {
 .reset-label {
   margin: 0;
   font-size: 13px;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--text);
 }
 
 .backup-buttons {
@@ -414,12 +441,6 @@ textarea {
   padding: 1px 4px;
   border-radius: 4px;
   background: var(--surface-muted);
-}
-
-.buttons {
-  display: flex;
-  gap: 8px;
-  margin-top: 4px;
 }
 
 button {

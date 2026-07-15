@@ -11,7 +11,13 @@
     <main class="options">
       <div class="page-header">
         <h1 class="page-title"><img class="brand-mark" src="../../assets/icons/icon-48.png" alt="">Markdown Clipper <span class="page-title-sub">Options</span></h1>
-        <div id="appearance-control" class="appearance-control"></div>
+        <div class="page-header-actions">
+          <div id="appearance-control" class="appearance-control"></div>
+          <div class="page-header-save">
+            <span id="status" role="status" aria-live="polite"></span>
+            <button id="save" type="submit" form="options-form">Save</button>
+          </div>
+        </div>
       </div>
 
       <div class="settings">
@@ -19,11 +25,6 @@
 
         <form id="options-form" class="settings-content">
           <div id="panels"></div>
-
-          <div class="buttons">
-            <button id="save" type="submit">Save</button>
-            <span id="status" role="status" aria-live="polite"></span>
-          </div>
         </form>
       </div>
     </main>
