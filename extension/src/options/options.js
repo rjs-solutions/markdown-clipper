@@ -7,6 +7,8 @@ import { SETTINGS_SCHEMA, schemaFields, findField } from "../lib/settings-schema
 import { applyTheme } from "../lib/theme.js";
 import { saveHandle, loadHandle, clearHandle, ensurePermission } from "../lib/vault-handle.js";
 import { loadRules, saveRules } from "../lib/tag-rules.js";
+import { loadSites, saveSites, generateSiteId } from "../lib/sharepoint-sites.js";
+import { parseSharePointSite } from "../lib/sharepoint-site.js";
 import { exportSettings, importSettings } from "../lib/settings-backup.js";
 import { downloadText } from "../lib/download.js";
 import { listClips } from "../lib/clip-log.js";
@@ -747,6 +749,121 @@ function renderTagRulesControl(panel) {
   });
 }
 
+// ---- Bespoke SharePoint sites editor ---------------------------------------
+// A saved-sites list for the upcoming "sync a SharePoint site" feature. Like
+// tag-rules and the vault folder, it persists under its own chrome.storage.sync
+// key ("sharepointSites", via sharepoint-sites.js) rather than a schema field,
+// and auto-saves on every edit. Phase 1a only: add/list/remove a site. No
+// discovery or capture wiring yet.
+function renderSharePointSitesControl(panel) {
+  if (!panel) {
+    return;
+  }
+
+  const heading = document.createElement("h3");
+  heading.className = "group-heading";
+  heading.textContent = "Sites";
+  panel.append(heading);
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "field sites-field";
+
+  const help = document.createElement("p");
+  help.className = "help-text";
+  help.textContent = "Save a SharePoint site to sync its pages into your vault. Discovery comes next.";
+  wrapper.append(help);
+
+  const list = document.createElement("div");
+  list.className = "sites-list";
+  wrapper.append(list);
+
+  const addRow = document.createElement("div");
+  addRow.className = "sites-add-row";
+
+  const urlInput = document.createElement("input");
+  urlInput.type = "text";
+  urlInput.placeholder = "https://tenant.sharepoint.com/sites/YourSite";
+  urlInput.setAttribute("aria-label", "SharePoint site URL");
+
+  const addButton = document.createElement("button");
+  addButton.type = "button";
+  addButton.textContent = "Add";
+
+  addRow.append(urlInput, addButton);
+  wrapper.append(addRow);
+
+  const status = document.createElement("p");
+  status.className = "sites-status";
+  wrapper.append(status);
+
+  panel.append(wrapper);
+
+  let sites = [];
+
+  function persist() {
+    saveSites(sites).catch((error) => {
+      console.error("Markdown Clipper sharepoint sites save failed:", error);
+    });
+  }
+
+  function renderRow(site) {
+    const row = document.createElement("div");
+    row.className = "site-row";
+
+    const info = document.createElement("div");
+    info.className = "site-info";
+    const name = document.createElement("span");
+    name.className = "site-name";
+    name.textContent = site.name;
+    const url = document.createElement("span");
+    url.className = "site-url";
+    url.textContent = site.webUrl || site.url;
+    info.append(name, url);
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.textContent = "Remove";
+    removeButton.setAttribute("aria-label", `Remove ${site.name}`);
+
+    row.append(info, removeButton);
+    list.append(row);
+
+    removeButton.addEventListener("click", () => {
+      sites = sites.filter((existing) => existing !== site);
+      row.remove();
+      persist();
+    });
+  }
+
+  addButton.addEventListener("click", () => {
+    const result = parseSharePointSite(urlInput.value);
+    if (!result.ok) {
+      status.textContent = result.reason;
+      return;
+    }
+    status.textContent = "";
+    const site = {
+      id: generateSiteId(),
+      name: result.name,
+      url: result.webUrl,
+      webUrl: result.webUrl,
+      apiBase: result.apiBase,
+      addedAt: Date.now()
+    };
+    sites.push(site);
+    renderRow(site);
+    persist();
+    urlInput.value = "";
+  });
+
+  loadSites().then((loaded) => {
+    sites = loaded;
+    for (const site of sites) {
+      renderRow(site);
+    }
+  });
+}
+
 // ---- Bespoke prompt generator ----------------------------------------------
 // A third control on the options page not driven by the schema loop: it
 // builds a whole-vault LLM prompt from the clip log (lib/prompt-templates.js
@@ -1292,6 +1409,9 @@ async function initialize() {
 
   renderTagRulesControl(knowledgeBasePanel);
   renderPromptGeneratorControl(knowledgeBasePanel);
+
+  const sharepointPanel = panelsElement.querySelector('[data-section="sharepoint"]');
+  renderSharePointSitesControl(sharepointPanel);
 
   const advancedPanel = panelsElement.querySelector('[data-section="advanced"]');
   renderBackupControl(advancedPanel, { fillForm: fillFormAndSync });

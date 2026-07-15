@@ -20,7 +20,15 @@ test("host permissions stay limited to the one owner-approved exception", () => 
   // opt-in step. This is a deliberate, owner-approved exception -- any other
   // host_permissions entry is unapproved scope creep and should fail here.
   assert.deepEqual(manifest.host_permissions, ["https://cdn.syndication.twimg.com/*"]);
-  assert.deepEqual(manifest.optional_host_permissions, ["http://*/*", "https://*/*"]);
+  // optional_host_permissions are requested at runtime, never at install. The
+  // *.sharepoint.com entry is an owner-approved narrowing so the SharePoint
+  // sites feature can prompt for just SharePoint instead of the broad
+  // https://*/*. Any entry beyond this approved set is scope creep.
+  assert.deepEqual(manifest.optional_host_permissions, [
+    "http://*/*",
+    "https://*/*",
+    "https://*.sharepoint.com/*"
+  ]);
 });
 
 test("base permissions are exactly the expected minimal set", () => {

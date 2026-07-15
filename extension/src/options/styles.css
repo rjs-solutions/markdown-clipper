@@ -493,6 +493,60 @@ legend {
   color: var(--text);
 }
 
+/* Bespoke SharePoint sites editor (not schema-driven, see options.js). */
+.sites-field {
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.sites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sites-add-row {
+  display: flex;
+  gap: 8px;
+}
+
+.sites-add-row input {
+  flex: 1;
+}
+
+.sites-status {
+  margin: 0;
+  color: var(--text-muted);
+  min-height: 1em;
+}
+
+.site-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.site-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.site-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.site-url {
+  color: var(--text-muted);
+  font-size: 0.85em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Bespoke prompt generator (not schema-driven, see options.js). Rendered
    inline under its own group-heading bar, so (like .about-field) it needs no
    extra top border/padding of its own. */
