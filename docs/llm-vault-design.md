@@ -104,3 +104,21 @@ giving any MCP client (Claude Desktop, Cowork, ChatGPT connectors) access to the
    generation (per-crawl now; living cross-clip once vault mode exists).
 3. **Prompt generator** — inventory-from-log + vault path + task presets.
 4. **MCP server** — read-the-vault, then clip-public-URL.
+
+## Clip routing — tags over folders (decided 2026-07-15)
+
+Deterministic keyword→FOLDER routing was considered and rejected as the primary
+mechanism: folders force a single home, but clips are routinely multi-topic ("AI
+visibility in nature" is both). Folders can't hold that without duplication or loss.
+
+Decision: route to TAGS, not folders. A small deterministic rule layer
+(scope: domain|url|title|text|any, pattern, isRegex, tags) auto-applies tags at clip
+time; ALL matching rules contribute (tags union + dedupe), so overlap is additive, not a
+conflict. Rules are transparent — matched tags pre-fill an editable tags field in the
+popup before saving. A wrong tag is cheap; a misfiled folder hides the clip.
+
+The vault stays flat (or folders by SOURCE — /sharepoint/<site>/, /web/ — which is
+orthogonal to topic and genuinely single-home). The LLM does the hard thematic sort later
+via the prompt generator / MCP, starting from the capture-time tags. Clip-time LLM/embedding
+classification was rejected: non-deterministic, per-clip API cost, and worse than a
+later LLM pass with full context.

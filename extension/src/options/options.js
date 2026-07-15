@@ -6,6 +6,7 @@ import { DEFAULT_SETTINGS, loadSettings, saveSettings, resetSettings, clampNumbe
 import { SETTINGS_SCHEMA, schemaFields, findField } from "../lib/settings-schema.js";
 import { applyTheme } from "../lib/theme.js";
 import { saveHandle, loadHandle, clearHandle, ensurePermission } from "../lib/vault-handle.js";
+import { loadRules, saveRules } from "../lib/tag-rules.js";
 
 export function fieldId(key) {
   return `f-${key.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
@@ -310,6 +311,142 @@ function renderVaultControl(panel) {
   refresh();
 }
 
+// ---- Bespoke tag-rules editor ---------------------------------------------
+// A second control on the options page not driven by the schema loop: the
+// rules list persists under its own chrome.storage.sync key ("tagRules", via
+// tag-rules.js) rather than a schema field, exactly like the vault folder
+// control above -- see docs/llm-vault-design.md ("Clip routing -- tags over
+// folders"). Auto-saves on every edit (mirrors the folder control's
+// immediate persistence; no separate Save-rules button). This never touches
+// the schema form's own Save/Reset, which keeps ignoring tagRules entirely.
+const RULE_SCOPES = ["domain", "url", "title", "text", "any"];
+
+function generateRuleId() {
+  return `rule-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function renderTagRulesControl(panel) {
+  if (!panel) {
+    return;
+  }
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "field rules-field";
+
+  const label = document.createElement("p");
+  label.className = "rules-label";
+  label.textContent = "Tag rules";
+  wrapper.append(label);
+
+  const help = document.createElement("p");
+  help.className = "help-text";
+  help.textContent =
+    "Deterministic rules that pre-fill tags at clip time. Every matching rule adds its tags (nothing is exclusive), and the popup always shows the result before saving so you can edit it. Rules never choose folders.";
+  wrapper.append(help);
+
+  const list = document.createElement("div");
+  list.className = "rules-list";
+  wrapper.append(list);
+
+  const addButton = document.createElement("button");
+  addButton.type = "button";
+  addButton.textContent = "Add rule";
+  wrapper.append(addButton);
+
+  panel.append(wrapper);
+
+  let rules = [];
+
+  function persist() {
+    saveRules(rules).catch((error) => {
+      console.error("Markdown Clipper tag rules save failed:", error);
+    });
+  }
+
+  function renderRow(rule) {
+    const row = document.createElement("div");
+    row.className = "rule-row";
+
+    const scopeSelect = document.createElement("select");
+    scopeSelect.setAttribute("aria-label", "Rule scope");
+    for (const scope of RULE_SCOPES) {
+      const option = document.createElement("option");
+      option.value = scope;
+      option.textContent = scope;
+      scopeSelect.append(option);
+    }
+    scopeSelect.value = RULE_SCOPES.includes(rule.scope) ? rule.scope : "domain";
+
+    const patternInput = document.createElement("input");
+    patternInput.type = "text";
+    patternInput.placeholder = "Pattern";
+    patternInput.setAttribute("aria-label", "Rule pattern");
+    patternInput.value = rule.pattern || "";
+
+    const regexLabel = document.createElement("label");
+    regexLabel.className = "rule-regex";
+    const regexCheckbox = document.createElement("input");
+    regexCheckbox.type = "checkbox";
+    regexCheckbox.checked = Boolean(rule.isRegex);
+    const regexSpan = document.createElement("span");
+    regexSpan.textContent = "Regex";
+    regexLabel.append(regexCheckbox, regexSpan);
+
+    const tagsInput = document.createElement("input");
+    tagsInput.type = "text";
+    tagsInput.placeholder = "Tags, comma-separated";
+    tagsInput.setAttribute("aria-label", "Rule tags");
+    tagsInput.value = Array.isArray(rule.tags) ? rule.tags.join(", ") : "";
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.textContent = "Remove";
+    removeButton.setAttribute("aria-label", "Remove this rule");
+
+    row.append(scopeSelect, patternInput, regexLabel, tagsInput, removeButton);
+    list.append(row);
+
+    scopeSelect.addEventListener("change", () => {
+      rule.scope = scopeSelect.value;
+      persist();
+    });
+    patternInput.addEventListener("input", () => {
+      rule.pattern = patternInput.value;
+      persist();
+    });
+    regexCheckbox.addEventListener("change", () => {
+      rule.isRegex = regexCheckbox.checked;
+      persist();
+    });
+    tagsInput.addEventListener("input", () => {
+      rule.tags = tagsInput.value
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+      persist();
+    });
+    removeButton.addEventListener("click", () => {
+      rules = rules.filter((existing) => existing !== rule);
+      row.remove();
+      persist();
+    });
+  }
+
+  addButton.addEventListener("click", () => {
+    const rule = { id: generateRuleId(), scope: "domain", pattern: "", isRegex: false, tags: [] };
+    rules.push(rule);
+    renderRow(rule);
+    persist();
+  });
+
+  loadRules().then((loaded) => {
+    rules = loaded;
+    for (const rule of rules) {
+      renderRow(rule);
+    }
+  });
+}
+
 async function initialize() {
   const form = document.getElementById("options-form");
   const statusElement = document.getElementById("status");
@@ -323,6 +460,7 @@ async function initialize() {
   });
 
   renderVaultControl(panelsElement.querySelector('[data-section="knowledgeBase"]'));
+  renderTagRulesControl(panelsElement.querySelector('[data-section="knowledgeBase"]'));
 
   fillForm(await loadSettings());
 

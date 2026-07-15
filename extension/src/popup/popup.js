@@ -7,6 +7,7 @@ import { writeArtifact } from "../lib/vault.js";
 import { appendClip, listClips } from "../lib/clip-log.js";
 import { buildWikiIndexMarkdown } from "../lib/wiki-index.js";
 import { applyTheme } from "../lib/theme.js";
+import { applyTagRules, loadRules } from "../lib/tag-rules.js";
 
 const el = {
   optionsButton: document.getElementById("open-options"),
@@ -42,6 +43,7 @@ const MODE_LABELS = {
 };
 
 let settings = null;
+let tagRules = [];
 let tab = null;
 let inPanel = false; // shown in the native side panel (manifest ?panel=1)
 let inIframe = false; // shown in the in-page overlay panel (?context=iframe)
@@ -66,6 +68,14 @@ async function initialize() {
   try {
     settings = await loadSettings();
     applyTheme(settings.theme);
+    try {
+      tagRules = await loadRules();
+    } catch (error) {
+      // Tag rules are a convenience layer; a storage read failure should
+      // never take down the clipper.
+      console.error("Markdown Clipper tag rules failed to load:", error);
+      tagRules = [];
+    }
     await loadPreview();
     // The native side panel and the in-page overlay are separate, mutually
     // exclusive surfaces from the plain popup. Neither offers the other.
@@ -108,6 +118,63 @@ function wireEvents() {
     el.previewBody.dataset.edited = "1";
     el.charCount.textContent = `${el.previewBody.value.length.toLocaleString()} chars`;
   });
+  // Mirror the same guard for tags: once the user edits the pre-filled tags,
+  // a later full-capture refresh must not clobber their edit.
+  el.tags.addEventListener("input", () => {
+    el.tags.dataset.edited = "1";
+  });
+}
+
+// Union any number of tag arrays, deduped, first-seen order preserved.
+function unionTags(...lists) {
+  const seen = new Set();
+  const out = [];
+  for (const list of lists) {
+    for (const raw of list || []) {
+      const tag = String(raw || "").trim();
+      if (!tag || seen.has(tag)) {
+        continue;
+      }
+      seen.add(tag);
+      out.push(tag);
+    }
+  }
+  return out;
+}
+
+// Best-effort domain from the capture result's url (falls back to the tab's
+// url on the very first, pre-metadata pass).
+function tagContext(result) {
+  const url = (result && result.url) || (tab && tab.url) || "";
+  let domain = "";
+  try {
+    domain = url ? new URL(url).hostname : "";
+  } catch {
+    domain = "";
+  }
+  return {
+    url,
+    domain,
+    title: (result && result.title) || "",
+    text: (result && result.markdown) || ""
+  };
+}
+
+// suggestedTags = union(existing metadata tags, deterministic rule matches).
+// Rules only ever ADD tags -- see docs/llm-vault-design.md ("Clip routing").
+function computeSuggestedTags(result) {
+  const existing = Array.isArray(result.metadata && result.metadata.tags) ? result.metadata.tags : [];
+  const ruleTags = applyTagRules(tagRules, tagContext(result));
+  return unionTags(existing, ruleTags);
+}
+
+// Once a later capture (full SharePoint scroll, or just the preview itself)
+// lands, refresh the tags field -- unless the user has already started
+// editing it. Mirrors syncBodyFromFull.
+function syncTagsFromResult(result) {
+  if (!el.tags.dataset.edited) {
+    el.tags.value = computeSuggestedTags(result).join(", ");
+  }
 }
 
 async function loadPreview() {
@@ -142,12 +209,13 @@ function populateCard(result) {
   el.actions.hidden = false;
 
   el.title.value = result.title || "";
-  el.tags.value = Array.isArray(result.metadata.tags) ? result.metadata.tags.join(", ") : "";
+  el.tags.value = computeSuggestedTags(result).join(", ");
   el.description.value = result.metadata.description || "";
   el.filename.value = deriveFilename(result);
   el.previewBody.value = result.markdown || "";
   delete el.filename.dataset.edited;
   delete el.previewBody.dataset.edited;
+  delete el.tags.dataset.edited;
 
   renderProps(result);
   updateCharCount(result);
@@ -252,6 +320,7 @@ async function run(action) {
     if (!el.previewBody.dataset.edited) {
       syncBodyFromFull(result);
     }
+    syncTagsFromResult(result);
     const payload = buildPayload(result);
 
     if (action === "copy") {
@@ -324,6 +393,7 @@ async function openEditor() {
     if (!el.previewBody.dataset.edited) {
       syncBodyFromFull(result);
     }
+    syncTagsFromResult(result);
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     await chrome.storage.session.set({
       [`edit:${id}`]: { result, fields: currentFields(), settings }

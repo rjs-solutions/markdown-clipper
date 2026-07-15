@@ -165,6 +165,39 @@ legend {
   flex-wrap: wrap;
 }
 
+/* Bespoke tag-rules editor (not schema-driven, see options.js). */
+.rules-field {
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.rules-label {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rule-row {
+  display: grid;
+  grid-template-columns: 110px 1fr auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.rule-regex {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  color: var(--text);
+}
+
 .checkbox-field > span {
   color: var(--text);
 }

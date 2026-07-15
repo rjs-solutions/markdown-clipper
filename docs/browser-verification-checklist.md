@@ -1,6 +1,6 @@
 # Browser verification checklist — feature/clipper-expansion
 
-Everything on this branch passes 192 automated tests and a static load-safety audit
+Everything on this branch passes 200 automated tests and a static load-safety audit
 (service worker has no load-fatal DOM globals, no `createObjectURL` in the worker tree,
 all manifest-referenced files exist). What remains can only be checked in a real Chrome
 because it needs the extension loaded, the File System Access API, real IndexedDB, or a
@@ -47,6 +47,12 @@ independent once the extension is loaded.
 - [ ] Copy → paste elsewhere → matches the textarea.
 - [ ] Change the type filter / since date / limit → the count and rows change.
 - [ ] With an empty clip log → the page shows an "empty vault" prompt, not a broken table.
+
+## 7. Tag rules  *(deterministic auto-tagging)*
+- [ ] Options -> Knowledge Base -> Tag rules -> Add rule: scope `domain`, pattern a site you will visit, tags `test-tag`. It auto-saves.
+- [ ] Visit a matching page, open the popup -> the Tags field pre-fills with `test-tag` (plus any page tags) before you click anything.
+- [ ] Add a tag by hand, then save the clip -> the file frontmatter `tags:` has both the rule tag and your manual one; the clip log / index shows the same set.
+- [ ] A rule with a deliberately broken regex (e.g. `(unterminated[`, regex checked) does NOT break tagging on other rules or the clip.
 
 ---
 Anything that fails, paste me the symptom (and console text if any) and I'll route a fix. Items 1-card, 3-close/reopen, 3-file-content, and 4-toggle are the four I'd most want confirmed.
