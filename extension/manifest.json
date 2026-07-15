@@ -4,7 +4,6 @@
   "short_name": "MarkdownClip",
   "version": "1.1.0",
   "description": "Capture any web page - including SharePoint - as clean Markdown. Copy, download, open, or export a whole site.",
-  "author": "RJS Solutions",
   "homepage_url": "https://github.com/rjs-solutions/markdown-clipper",
   "icons": {
     "16": "assets/icons/icon-16.png",
