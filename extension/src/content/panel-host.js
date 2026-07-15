@@ -139,6 +139,9 @@ function wireDrag(container, handle) {
     if (event.button !== 0) {
       return;
     }
+    if (event.target && event.target.closest && event.target.closest("#close-button")) {
+      return;
+    }
     event.preventDefault();
     const start = currentGeometry(container);
     const startX = event.clientX;
