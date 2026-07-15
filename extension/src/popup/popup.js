@@ -79,17 +79,21 @@ async function initialize() {
       tagRules = [];
     }
     await loadPreview();
-    // The native side panel and the in-page overlay are separate, mutually
-    // exclusive surfaces from the plain popup. Neither offers the other.
-    if (!inPanel && !inIframe) {
-      el.panel.hidden = false;
-      el.panel.addEventListener("click", openInPagePanel);
+    // The native side panel and the in-page overlay are mutually exclusive
+    // surfaces from the plain popup, but each still offers a one-way switch
+    // to the other: the overlay can hand off to the side panel, and the side
+    // panel can hand off back to the overlay. The plain popup offers both.
+    if (!inPanel) {
       try {
         await setupSidePanel();
       } catch (error) {
         // Side-panel setup is optional; never take down the main clipper UI.
         console.error("Markdown Clipper side-panel setup failed:", error);
       }
+    }
+    if (!inIframe) {
+      el.panel.hidden = false;
+      el.panel.addEventListener("click", openInPagePanel);
     }
   } catch (error) {
     console.error("Markdown Clipper popup failed to initialize:", error);
@@ -643,11 +647,24 @@ function openSidePanel() {
   }
   // sidePanel.open() must be invoked directly from the click gesture.
   chrome.sidePanel.open({ tabId: tab.id }).then(() => {
-    window.close();
+    closeSelf();
   }).catch((error) => {
     console.error("Markdown Clipper open-side-panel failed:", error);
     setStatus(messageFrom(error), true);
   });
+}
+
+// Closes this surface once it has handed off to another one. The plain popup
+// and the native side panel are real windows, so window.close() works; the
+// in-page overlay is an iframe with no window of its own to close, so it has
+// to ask panel-host.js to remove the host element instead, same bridge
+// do-close-panel uses.
+function closeSelf() {
+  if (inIframe) {
+    window.parent.postMessage({ type: "mc-panel-close" }, "*");
+  } else {
+    window.close();
+  }
 }
 
 async function exportWholeSite() {

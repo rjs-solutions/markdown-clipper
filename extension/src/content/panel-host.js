@@ -235,9 +235,9 @@ function template() {
         flex-direction: column;
         background: light-dark(#ffffff, #1b1e25);
         color: light-dark(#162028, #e8eaed);
-        border: 1px solid light-dark(#cdd5de, #3a4150);
         border-radius: 10px;
-        box-shadow: 0 8px 28px light-dark(rgba(16, 32, 40, 0.25), rgba(0, 0, 0, 0.6));
+        box-shadow: 0 2px 10px light-dark(rgba(16, 32, 40, 0.14), rgba(0, 0, 0, 0.5)),
+          0 10px 32px light-dark(rgba(16, 32, 40, 0.16), rgba(0, 0, 0, 0.45));
         overflow: hidden;
         font: 12px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
@@ -292,9 +292,9 @@ function template() {
         <iframe id="frame"></iframe>
         <div id="resize-handle" title="Drag to resize">
           <svg viewBox="0 0 14 14" aria-hidden="true">
-            <path d="M2 2L12 12"></path>
-            <path d="M2 6L8 12"></path>
-            <path d="M2 10L4 12"></path>
+            <path d="M9 9L11 11"></path>
+            <path d="M8 10L10 12"></path>
+            <path d="M7 11L9 13"></path>
           </svg>
         </div>
       </div>
