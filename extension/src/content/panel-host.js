@@ -10,9 +10,9 @@
 const HOST_ID = "mwc-panel-host";
 const STORAGE_KEY = "mwcPanelGeometry";
 const DEFAULT_WIDTH = 480;
-const DEFAULT_HEIGHT = 780;
-const DEFAULT_HEIGHT_VIEWPORT_RATIO = 0.85;
-const DEFAULT_HEIGHT_MAX = 780;
+const DEFAULT_HEIGHT = 860;
+const DEFAULT_HEIGHT_VIEWPORT_RATIO = 0.9;
+const DEFAULT_HEIGHT_MAX = 860;
 const MIN_WIDTH = 300;
 const MIN_HEIGHT = 220;
 const MARGIN = 12;
@@ -169,9 +169,9 @@ function wireDrag(container, handle) {
   });
 }
 
-// The resize handle sits in the bottom-left corner (the panel defaults to the
-// top-right), so dragging it moves the left edge and grows/shrinks height
-// from the bottom, keeping the top-right corner anchored.
+// The resize handle sits in the bottom-right corner, so dragging it keeps the
+// panel's top-left corner anchored and grows/shrinks width and height from
+// the pointer's position relative to that anchored corner.
 function wireResize(container, handle) {
   handle.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) {
@@ -179,20 +179,17 @@ function wireResize(container, handle) {
     }
     event.preventDefault();
     const start = currentGeometry(container);
-    const startX = event.clientX;
-    const startY = event.clientY;
     handle.setPointerCapture(event.pointerId);
 
     function onMove(moveEvent) {
-      const dx = moveEvent.clientX - startX;
-      const dy = moveEvent.clientY - startY;
-      const width = start.width - dx;
+      const width = moveEvent.clientX - start.left;
+      const height = moveEvent.clientY - start.top;
       const geometry = clampGeometry(
         {
-          left: start.left + dx,
+          left: start.left,
           top: start.top,
           width,
-          height: start.height + dy
+          height
         },
         viewportSize()
       );
@@ -283,14 +280,14 @@ function template() {
       }
       #resize-handle {
         position: absolute;
-        left: 0;
+        right: 0;
         bottom: 0;
         width: 20px;
         height: 20px;
-        cursor: nesw-resize;
+        cursor: nwse-resize;
         touch-action: none;
         display: grid;
-        place-items: end start;
+        place-items: end end;
         padding: 3px;
       }
       #resize-handle svg {
@@ -319,9 +316,9 @@ function template() {
         <iframe id="frame"></iframe>
         <div id="resize-handle" title="Drag to resize">
           <svg viewBox="0 0 14 14" aria-hidden="true">
-            <path d="M2 12L12 2"></path>
-            <path d="M6 12L12 6"></path>
-            <path d="M10 12L12 10"></path>
+            <path d="M2 2L12 12"></path>
+            <path d="M2 6L8 12"></path>
+            <path d="M2 10L4 12"></path>
           </svg>
         </div>
       </div>

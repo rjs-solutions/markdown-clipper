@@ -19,7 +19,15 @@ body.in-iframe {
   width: 100%;
   max-width: none;
   min-width: 0;
+  height: 100vh;
   overflow-x: hidden;
+}
+
+body.in-panel .popup,
+body.in-iframe .popup {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 button,
@@ -177,7 +185,7 @@ input {
 }
 
 .field textarea {
-  resize: vertical;
+  resize: none;
 }
 
 .field input:focus,
@@ -305,7 +313,7 @@ input {
   padding: 8px 12px;
   border: 0;
   border-radius: 0;
-  resize: vertical;
+  resize: none;
   overflow: auto;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -320,15 +328,38 @@ input {
 }
 
 /* The side panel and in-page overlay have real height to spare, so let the
-   description and markdown preview breathe instead of staying popup-sized. */
+   card become a flex column with the markdown preview growing to fill it,
+   instead of staying popup-sized. The normal popup keeps its fixed heights. */
+body.in-panel .card,
+body.in-iframe .card {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+body.in-panel .card > *:not(.preview),
+body.in-iframe .card > *:not(.preview) {
+  flex: 0 0 auto;
+}
+
 body.in-panel .field-description textarea,
 body.in-iframe .field-description textarea {
-  min-height: 64px;
+  min-height: 96px;
+}
+
+body.in-panel .preview,
+body.in-iframe .preview {
+  flex: 1 1 auto;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
 }
 
 body.in-panel .preview-body,
 body.in-iframe .preview-body {
-  height: 320px;
+  flex: 1 1 auto;
+  height: auto;
 }
 
 /* Actions ------------------------------------------------------------------
@@ -414,7 +445,7 @@ body.in-iframe .preview-body {
   min-height: 30px;
   margin-top: 6px;
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text);
   background: var(--surface-muted);
   border-color: var(--border);
 }

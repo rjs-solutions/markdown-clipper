@@ -39,15 +39,6 @@ const el = {
 // tweet-permission control.
 const TWEET_PERMISSION_ORIGIN = "https://cdn.syndication.twimg.com/*";
 
-const MODE_LABELS = {
-  sharepoint: "SharePoint",
-  confluence: "Confluence",
-  article: "Article",
-  readability: "Article",
-  full: "Full page",
-  tweet: "Tweet"
-};
-
 let settings = null;
 let tagRules = [];
 let tab = null;
@@ -123,7 +114,7 @@ function wireEvents() {
   // Mark the body as user-edited so background/full captures stop overwriting it.
   el.previewBody.addEventListener("input", () => {
     el.previewBody.dataset.edited = "1";
-    el.charCount.textContent = `${el.previewBody.value.length.toLocaleString()} chars`;
+    el.charCount.textContent = `Markdown · ${el.previewBody.value.length.toLocaleString()} chars`;
   });
   // Mirror the same guard for tags: once the user edits the pre-filled tags,
   // a later full-capture refresh must not clobber their edit.
@@ -337,9 +328,8 @@ function tweetCaptureResult(tweet) {
 // Shape a stashed selection clip (from the "Clip selection" context menu)
 // into the same capture-result contract capturePage() returns, so the rest
 // of the popup (card, tags, save, clip-log, assemble) needs no
-// selection-specific handling. mode "selection" is not in MODE_LABELS, so
-// the char count just omits the mode prefix; contentTypeFromMode (assemble.js)
-// treats any non-sharepoint/confluence/tweet mode as "article".
+// selection-specific handling. contentTypeFromMode (assemble.js) treats any
+// non-sharepoint/confluence/tweet mode as "article".
 function selectionCaptureResult(selection) {
   const markdown = selection.markdown || "";
   const firstLine = markdown.split("\n").find((line) => line.trim()) || "";
@@ -370,16 +360,14 @@ function populateCard(result) {
   delete el.previewBody.dataset.edited;
   delete el.tags.dataset.edited;
 
-  renderProps(result);
-  updateCharCount(result);
+  updateCharCount();
   setStatus("");
 
 }
 
-function updateCharCount(result) {
-  const mode = MODE_LABELS[result.mode];
+function updateCharCount() {
   const length = el.previewBody.value.length;
-  el.charCount.textContent = `${mode ? `${mode} · ` : ""}${length.toLocaleString()} chars`;
+  el.charCount.textContent = `Markdown · ${length.toLocaleString()} chars`;
 }
 
 // Scrolling to load lazy content only helps virtualized SharePoint pages; for
@@ -393,7 +381,7 @@ function needsFullCapture(result) {
 function syncBodyFromFull(result) {
   if (!el.previewBody.dataset.edited) {
     el.previewBody.value = result.markdown || "";
-    updateCharCount(result);
+    updateCharCount();
   }
 }
 
@@ -408,40 +396,6 @@ function deriveFilename(result) {
     }
   }
   return slugify(result.title, { fallback: "page" });
-}
-
-// Popup shows only the Source (URL) row -- author/published/modified/site are
-// still collected in result.metadata and flow into the clip log, saved
-// frontmatter, and the full editor unchanged (see editor.js's populateForm);
-// they're just not rendered in this compact card.
-function renderProps(result) {
-  const rows = [["Source", result.url, true]];
-  el.props.replaceChildren();
-  for (const [label, value, isLink] of rows) {
-    if (!value) {
-      continue;
-    }
-    const row = document.createElement("div");
-    row.className = "prop-row";
-    const key = document.createElement("span");
-    key.className = "prop-label";
-    key.textContent = label;
-    const val = document.createElement("span");
-    val.className = "prop-value";
-    val.title = value;
-    if (isLink) {
-      const a = document.createElement("a");
-      a.href = value;
-      a.target = "_blank";
-      a.rel = "noreferrer";
-      a.textContent = value;
-      val.appendChild(a);
-    } else {
-      val.textContent = value;
-    }
-    row.append(key, val);
-    el.props.append(row);
-  }
 }
 
 // Fields currently entered in the card.
