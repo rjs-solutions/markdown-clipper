@@ -2,17 +2,18 @@
 // appended to the page holding an <iframe> whose src is the extension's own
 // popup page (?context=iframe). The iframe therefore runs at the extension
 // origin with full extension privileges (chrome.downloads, chrome.storage,
-// chrome.scripting) exactly like the popup or side panel — no message bridge
-// is needed. This module is dynamically imported from the popup via
-// chrome.scripting.executeScript, the same pattern capture.js uses for
-// collect.js.
+// chrome.scripting) exactly like the popup or side panel. The only bridge
+// back to this host is a postMessage close signal, since the iframe's own
+// header carries the close control (see popup.js's #do-close-panel). This
+// module is dynamically imported from the popup via chrome.scripting.executeScript,
+// the same pattern capture.js uses for collect.js.
 
 const HOST_ID = "mwc-panel-host";
 const STORAGE_KEY = "mwcPanelGeometry";
 const DEFAULT_WIDTH = 480;
-const DEFAULT_HEIGHT = 860;
+const DEFAULT_HEIGHT = 900;
 const DEFAULT_HEIGHT_VIEWPORT_RATIO = 0.9;
-const DEFAULT_HEIGHT_MAX = 860;
+const DEFAULT_HEIGHT_MAX = 900;
 const MIN_WIDTH = 300;
 const MIN_HEIGHT = 220;
 const MARGIN = 12;
@@ -23,11 +24,21 @@ const MARGIN = 12;
 export async function togglePanel(tabId) {
   const existing = document.getElementById(HOST_ID);
   if (existing) {
-    existing.remove();
+    removeHost(existing);
     return { mounted: false };
   }
   await mount(tabId);
   return { mounted: true };
+}
+
+// Single teardown path for the host: also drops the window message listener
+// mount() installs, so toggling the panel on and off repeatedly on the same
+// page never accumulates listeners.
+function removeHost(host) {
+  if (host.mcMessageHandler) {
+    window.removeEventListener("message", host.mcMessageHandler);
+  }
+  host.remove();
 }
 
 // Clamps a stored/default geometry into the current viewport so a panel
@@ -99,7 +110,6 @@ async function mount(tabId) {
   const container = shadow.getElementById("container");
   const dragHandle = shadow.getElementById("drag-handle");
   const resizeHandle = shadow.getElementById("resize-handle");
-  const closeButton = shadow.getElementById("close-button");
   const frame = shadow.getElementById("frame");
 
   const geometry = clampGeometry(await loadGeometry(), viewportSize());
@@ -109,7 +119,15 @@ async function mount(tabId) {
     `src/popup/index.html?context=iframe&tabId=${encodeURIComponent(tabId)}`
   );
 
-  closeButton.addEventListener("click", () => host.remove());
+  // The iframe's own sleek header carries the close control now (see
+  // popup.js's #do-close-panel in the in-iframe context); this is the other
+  // side of that bridge, since the iframe has no direct handle to this host.
+  host.mcMessageHandler = (event) => {
+    if (event.data && event.data.type === "mc-panel-close") {
+      removeHost(host);
+    }
+  };
+  window.addEventListener("message", host.mcMessageHandler);
   wireDrag(container, dragHandle);
   wireResize(container, resizeHandle);
 }
@@ -137,9 +155,6 @@ function currentGeometry(container) {
 function wireDrag(container, handle) {
   handle.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) {
-      return;
-    }
-    if (event.target && event.target.closest && event.target.closest("#close-button")) {
       return;
     }
     event.preventDefault();
@@ -227,45 +242,13 @@ function template() {
         font: 12px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
       #drag-handle {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
         flex: 0 0 auto;
-        padding: 6px 6px 6px 10px;
+        height: 6px;
         background: light-dark(#dde3ea, #2a2f38);
         border-bottom: 1px solid light-dark(#cdd5de, #3a4150);
         cursor: move;
         touch-action: none;
         user-select: none;
-      }
-      #drag-title {
-        font-weight: 600;
-        letter-spacing: 0.01em;
-        color: light-dark(#5f6d79, #a3a9b3);
-      }
-      #close-button {
-        display: inline-grid;
-        place-items: center;
-        width: 22px;
-        height: 22px;
-        padding: 0;
-        border: 0;
-        border-radius: 6px;
-        color: light-dark(#5f6d79, #a3a9b3);
-        background: transparent;
-        cursor: pointer;
-      }
-      #close-button:hover {
-        background: light-dark(#cdd5de, #3a4150);
-        color: light-dark(#162028, #e8eaed);
-      }
-      #close-button svg {
-        width: 14px;
-        height: 14px;
-        fill: none;
-        stroke: currentColor;
-        stroke-linecap: round;
-        stroke-width: 2;
       }
       #frame-wrap {
         position: relative;
@@ -304,14 +287,7 @@ function template() {
       }
     </style>
     <div id="container">
-      <div id="drag-handle">
-        <span id="drag-title">Markdown Clipper</span>
-        <button id="close-button" type="button" title="Close" aria-label="Close">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M5 5l14 14M19 5L5 19"></path>
-          </svg>
-        </button>
-      </div>
+      <div id="drag-handle" title="Drag to move"></div>
       <div id="frame-wrap">
         <iframe id="frame"></iframe>
         <div id="resize-handle" title="Drag to resize">

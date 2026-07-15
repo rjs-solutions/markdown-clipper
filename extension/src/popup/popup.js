@@ -59,6 +59,13 @@ async function initialize() {
   }
   if (inIframe) {
     document.body.classList.add("in-iframe");
+    el.closePanel.hidden = false;
+    // The in-page overlay is a same-origin iframe hosted by panel-host.js,
+    // which removes itself on this message. There is no direct handle to the
+    // host element from inside the iframe, so postMessage is the bridge.
+    el.closePanel.addEventListener("click", () => {
+      window.parent.postMessage({ type: "mc-panel-close" }, "*");
+    });
   }
   try {
     settings = await loadSettings();

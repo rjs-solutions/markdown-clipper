@@ -70,20 +70,37 @@ test("togglePanel mounting twice toggles it off instead of stacking", async () =
   assert.equal(document.querySelectorAll("#mwc-panel-host").length, 0);
 });
 
-test("closing the panel removes the host entirely, leaving no residue", async () => {
+test("an mc-panel-close message removes the host entirely, leaving no residue", async () => {
   installDom();
   installFakeChrome(undefined);
   const { togglePanel } = await import(
-    `../extension/src/content/panel-host.js?case=close-button`
+    `../extension/src/content/panel-host.js?case=close-message`
   );
 
   await togglePanel(1);
-  const host = document.getElementById("mwc-panel-host");
-  const closeButton = host.shadowRoot.getElementById("close-button");
-  closeButton.click();
+  assert.ok(document.getElementById("mwc-panel-host"), "host should be mounted before closing");
+
+  window.dispatchEvent(
+    new window.MessageEvent("message", { data: { type: "mc-panel-close" } })
+  );
 
   assert.equal(document.getElementById("mwc-panel-host"), null);
   assert.equal(document.documentElement.querySelector("#mwc-panel-host"), null);
+});
+
+test("an unrelated message is ignored and leaves the panel mounted", async () => {
+  installDom();
+  installFakeChrome(undefined);
+  const { togglePanel } = await import(
+    `../extension/src/content/panel-host.js?case=ignore-message`
+  );
+
+  await togglePanel(1);
+  window.dispatchEvent(
+    new window.MessageEvent("message", { data: { type: "something-else" } })
+  );
+
+  assert.ok(document.getElementById("mwc-panel-host"), "unrelated messages must not close the panel");
 });
 
 test("clampGeometry pulls an off-screen-restored panel back into the viewport", async () => {

@@ -76,7 +76,20 @@ input {
 
 .header-actions {
   display: flex;
+  align-items: center;
   gap: 1px;
+}
+
+.header-actions-group {
+  display: flex;
+  gap: 1px;
+}
+
+.header-actions-divider {
+  width: 1px;
+  height: 16px;
+  margin: 0 5px;
+  background: var(--border);
 }
 
 .icon-button {
@@ -352,7 +365,7 @@ body.in-iframe .field-description textarea {
 body.in-panel .preview,
 body.in-iframe .preview {
   flex: 1 1 auto;
-  min-height: 200px;
+  min-height: 260px;
   display: flex;
   flex-direction: column;
 }

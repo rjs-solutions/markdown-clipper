@@ -12,31 +12,36 @@
       <header class="header">
         <h1 class="wordmark"><img class="brand-mark" src="../../assets/icons/icon-48.png" alt="">Markdown Clipper</h1>
         <div class="header-actions">
-          <button class="icon-button" id="do-sidepanel" type="button" title="Open in side panel" aria-label="Open in side panel" hidden>
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-              <rect x="3" y="4" width="18" height="16" rx="2"></rect>
-              <path d="M15 4v16"></path>
-            </svg>
-          </button>
-          <button class="icon-button" id="do-panel" type="button" title="Open in page" aria-label="Open in page" hidden>
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-              <rect x="3" y="5" width="18" height="14" rx="2"></rect>
-              <rect x="12" y="12" width="7" height="5" rx="1"></rect>
-            </svg>
-          </button>
-          <button class="icon-button" id="do-export" type="button" title="Export a collection" aria-label="Export a collection">
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-              <rect x="4" y="3" width="16" height="6" rx="1.5"></rect>
-              <rect x="4" y="10.5" width="16" height="6" rx="1.5"></rect>
-              <rect x="4" y="18" width="16" height="3" rx="1.5"></rect>
-            </svg>
-          </button>
-          <button class="icon-button" id="open-options" type="button" title="Options" aria-label="Options">
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
-              <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.05.05a2 2 0 0 1-2.83 2.83l-.05-.05a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 0 1-4 0v-.08A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.88.34l-.05.05a2 2 0 0 1-2.83-2.83l.05-.05A1.7 1.7 0 0 0 4.63 15 1.7 1.7 0 0 0 3.07 14H3a2 2 0 0 1 0-4h.08a1.7 1.7 0 0 0 1.56-1 1.7 1.7 0 0 0-.34-1.88l-.05-.05a2 2 0 0 1 2.83-2.83l.05.05A1.7 1.7 0 0 0 9 4.63a1.7 1.7 0 0 0 1-1.56V3a2 2 0 0 1 4 0v.08a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.05-.05a2 2 0 0 1 2.83 2.83l-.05.05A1.7 1.7 0 0 0 19.37 9c.18.6.74 1 1.56 1H21a2 2 0 0 1 0 4h-.08a1.7 1.7 0 0 0-1.52 1Z"></path>
-            </svg>
-          </button>
+          <div class="header-actions-group">
+            <button class="icon-button" id="do-sidepanel" type="button" title="Open in side panel" aria-label="Open in side panel" hidden>
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                <path d="M15 4v16"></path>
+              </svg>
+            </button>
+            <button class="icon-button" id="do-panel" type="button" title="Open in page" aria-label="Open in page" hidden>
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                <rect x="12" y="12" width="7" height="5" rx="1"></rect>
+              </svg>
+            </button>
+          </div>
+          <div class="header-actions-divider" aria-hidden="true"></div>
+          <div class="header-actions-group">
+            <button class="icon-button" id="do-export" type="button" title="Export a collection" aria-label="Export a collection">
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <rect x="4" y="3" width="16" height="6" rx="1.5"></rect>
+                <rect x="4" y="10.5" width="16" height="6" rx="1.5"></rect>
+                <rect x="4" y="18" width="16" height="3" rx="1.5"></rect>
+              </svg>
+            </button>
+            <button class="icon-button" id="open-options" type="button" title="Options" aria-label="Options">
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>
+                <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.05.05a2 2 0 0 1-2.83 2.83l-.05-.05a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 0 1-4 0v-.08A1.7 1.7 0 0 0 9 19.36a1.7 1.7 0 0 0-1.88.34l-.05.05a2 2 0 0 1-2.83-2.83l.05-.05A1.7 1.7 0 0 0 4.63 15 1.7 1.7 0 0 0 3.07 14H3a2 2 0 0 1 0-4h.08a1.7 1.7 0 0 0 1.56-1 1.7 1.7 0 0 0-.34-1.88l-.05-.05a2 2 0 0 1 2.83-2.83l.05.05A1.7 1.7 0 0 0 9 4.63a1.7 1.7 0 0 0 1-1.56V3a2 2 0 0 1 4 0v.08a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.05-.05a2 2 0 0 1 2.83 2.83l-.05.05A1.7 1.7 0 0 0 19.37 9c.18.6.74 1 1.56 1H21a2 2 0 0 1 0 4h-.08a1.7 1.7 0 0 0-1.52 1Z"></path>
+              </svg>
+            </button>
+          </div>
           <button class="icon-button icon-button-close" id="do-close-panel" type="button" title="Close panel" aria-label="Close panel" hidden>
             <svg aria-hidden="true" viewBox="0 0 24 24">
               <path d="M5 5l14 14M19 5L5 19"></path>
