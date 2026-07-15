@@ -30,7 +30,6 @@ const el = {
   actions: document.getElementById("actions"),
   download: document.getElementById("do-download"),
   copy: document.getElementById("do-copy"),
-  open: document.getElementById("do-open"),
   export: document.getElementById("do-export"),
   status: document.getElementById("status")
 };
@@ -99,7 +98,6 @@ function wireEvents() {
   el.expand.addEventListener("click", openEditor);
   el.download.addEventListener("click", () => run("download"));
   el.copy.addEventListener("click", () => run("copy"));
-  el.open.addEventListener("click", () => run("open"));
   el.export.addEventListener("click", exportWholeSite);
 
   // Keep the filename in sync with the title until the user edits it directly.
@@ -449,9 +447,6 @@ async function run(action) {
     if (action === "copy") {
       await navigator.clipboard.writeText(payload.markdown);
       setStatus(`Copied ${payload.markdown.length.toLocaleString()} characters`);
-    } else if (action === "open") {
-      await openInTab(payload);
-      setStatus("Opened Markdown tab");
     } else {
       // Reuse the existing record's path on a matched re-clip so the write
       // overwrites the same file instead of creating a new one; otherwise
@@ -681,14 +676,6 @@ async function openInPagePanel() {
   }
 }
 
-async function openInTab(payload) {
-  const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  await chrome.storage.session.set({ [`export:${id}`]: payload });
-  await chrome.tabs.create({
-    url: chrome.runtime.getURL(`src/report/index.html?id=${encodeURIComponent(id)}`)
-  });
-}
-
 function withTimeout(promise, ms, message) {
   let timer;
   const timeout = new Promise((_, reject) => {
@@ -724,7 +711,7 @@ function showEmpty(message) {
 }
 
 function setBusy(isBusy) {
-  for (const button of [el.download, el.copy, el.open, el.expand]) {
+  for (const button of [el.download, el.copy, el.expand]) {
     button.disabled = isBusy;
   }
 }
