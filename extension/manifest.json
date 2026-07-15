@@ -37,6 +37,9 @@
     "alarms",
     "contextMenus"
   ],
+  "host_permissions": [
+    "https://cdn.syndication.twimg.com/*"
+  ],
   "optional_permissions": [
     "tabs"
   ],

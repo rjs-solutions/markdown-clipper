@@ -35,10 +35,6 @@ const el = {
   status: document.getElementById("status")
 };
 
-// Matches the origin requested by extension/src/options/options.js's
-// tweet-permission control.
-const TWEET_PERMISSION_ORIGIN = "https://cdn.syndication.twimg.com/*";
-
 let settings = null;
 let tagRules = [];
 let tab = null;
@@ -201,11 +197,9 @@ async function loadPreview() {
     return;
   }
   // Tweet fast path: a single X/Twitter status URL is served far cleaner by
-  // the syndication JSON endpoint than by scraping the live DOM. This needs
-  // the runtime host permission granted from Settings (chrome.permissions
-  // .request needs a user gesture, so it can't happen here) -- checking
-  // .contains() needs no gesture and is safe during the popup's
-  // auto-preview. Without the permission, or on a protected/unavailable
+  // the syndication JSON endpoint than by scraping the live DOM. The host
+  // permission for cdn.syndication.twimg.com is now static (manifest.json),
+  // so this always runs with no opt-in step. On a protected/unavailable
   // tweet, fall back to the normal capture below (the tweet's own page is
   // still clippable via DOM scraping).
   // Carries a status message through the normal-capture fallback below,
@@ -213,19 +207,14 @@ async function loadPreview() {
   let fallbackNote = null;
   const tweetMatch = isTweetUrl(tab.url);
   if (tweetMatch) {
-    const permitted = await chrome.permissions.contains({ origins: [TWEET_PERMISSION_ORIGIN] });
-    if (permitted) {
-      try {
-        const tweet = await fetchTweetForTab(tweetMatch.id, tab);
-        preview = tweetCaptureResult(tweet);
-        populateCard(preview);
-        return;
-      } catch (error) {
-        console.error("Markdown Clipper tweet capture failed, falling back to page capture:", error);
-        fallbackNote = { message: messageFrom(error), isError: true };
-      }
-    } else {
-      fallbackNote = { message: "Tip: enable X clipping in Settings for cleaner tweet capture.", isError: false };
+    try {
+      const tweet = await fetchTweetForTab(tweetMatch.id, tab);
+      preview = tweetCaptureResult(tweet);
+      populateCard(preview);
+      return;
+    } catch (error) {
+      console.error("Markdown Clipper tweet capture failed, falling back to page capture:", error);
+      fallbackNote = { message: messageFrom(error), isError: true };
     }
   }
   try {

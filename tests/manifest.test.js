@@ -13,11 +13,13 @@ test("manifest is MV3 and named Markdown Clipper", () => {
   assert.equal(manifest.name, "Markdown Clipper");
 });
 
-test("no host permissions are requested at install", () => {
-  assert.ok(
-    !("host_permissions" in manifest) || manifest.host_permissions.length === 0,
-    "should not declare install-time host_permissions"
-  );
+test("host permissions stay limited to the one owner-approved exception", () => {
+  // Guardrail: the extension should not accumulate install-time host
+  // permissions. The single exception is cdn.syndication.twimg.com, needed
+  // so X/Twitter posts clip via the public embed endpoint with no user
+  // opt-in step. This is a deliberate, owner-approved exception -- any other
+  // host_permissions entry is unapproved scope creep and should fail here.
+  assert.deepEqual(manifest.host_permissions, ["https://cdn.syndication.twimg.com/*"]);
   assert.deepEqual(manifest.optional_host_permissions, ["http://*/*", "https://*/*"]);
 });
 
