@@ -163,7 +163,7 @@ test("the vault control starts hidden and setVisible shows/hides it", async () =
   assert.equal(vaultControl.element.hidden, true);
 });
 
-test("turning vaultEnabled on with no folder yet prompts, and a successful pick shows the control", async () => {
+test("turning vaultEnabled on just shows the control, with no folder chosen yet", async () => {
   await clearHandle();
   const { renderVaultControl, wireVaultToggle } = await loadModule();
   const panel = document.createElement("section");
@@ -178,110 +178,82 @@ test("turning vaultEnabled on with no folder yet prompts, and a successful pick 
   };
 
   const vaultEnabled = makeVaultEnabledCheckbox();
-  let dependentsRun = 0;
-  let dirtyRuns = 0;
-  wireVaultToggle(vaultEnabled, vaultControl, {
-    updateDependents: () => {
-      dependentsRun += 1;
-    },
-    refreshDirty: () => {
-      dirtyRuns += 1;
-    }
-  });
-
-  assert.equal(vaultControl.hasHandle(), false);
+  wireVaultToggle(vaultEnabled, vaultControl);
 
   vaultEnabled.checked = true;
   vaultEnabled.dispatchEvent(new Event("change"));
   await flushMicrotasks();
 
-  assert.equal(promptCalls, 1, "the picker opens as soon as the toggle turns on with no folder");
-  assert.equal(vaultEnabled.checked, true, "a successful pick keeps the toggle on");
-  assert.equal(vaultControl.element.hidden, false, "the folder control shows after a successful pick");
-  assert.equal(dependentsRun, 0, "no revert happened, so updateDependents was never called by the coupling");
-  assert.equal(dirtyRuns, 0);
-});
-
-test("cancelling the picker (AbortError) reverts the toggle to off and hides the control", async () => {
-  await clearHandle();
-  const { renderVaultControl, wireVaultToggle } = await loadModule();
-  const panel = document.createElement("section");
-  document.body.append(panel);
-  const vaultControl = renderVaultControl(panel);
-  await flushMicrotasks();
-
-  window.showDirectoryPicker = async () => {
-    const error = new Error("The user aborted a request.");
-    error.name = "AbortError";
-    throw error;
-  };
-
-  const vaultEnabled = makeVaultEnabledCheckbox();
-  let dependentsRun = 0;
-  let dirtyRuns = 0;
-  wireVaultToggle(vaultEnabled, vaultControl, {
-    updateDependents: () => {
-      dependentsRun += 1;
-    },
-    refreshDirty: () => {
-      dirtyRuns += 1;
-    }
-  });
-
-  vaultEnabled.checked = true;
-  vaultEnabled.dispatchEvent(new Event("change"));
-  await flushMicrotasks();
-
-  assert.equal(vaultEnabled.checked, false, "cancelling the picker reverts the toggle back off");
-  assert.equal(vaultControl.element.hidden, true, "the folder control stays hidden after a cancel");
-  assert.equal(dependentsRun, 1, "updateDependents runs once so the frontmatter toggle re-disables");
-  assert.equal(dirtyRuns, 1, "the dirty-state check re-runs after the programmatic revert");
-});
-
-test("turning vaultEnabled on with an existing handle just shows the control, no re-prompt", async () => {
-  await clearHandle();
-  const { renderVaultControl, wireVaultToggle } = await loadModule();
-  const panel = document.createElement("section");
-  document.body.append(panel);
-  const vaultControl = renderVaultControl(panel);
-
-  let promptCalls = 0;
-  window.showDirectoryPicker = async () => {
-    promptCalls += 1;
-    return { name: "notes", kind: "directory", queryPermission: async () => "granted" };
-  };
-
-  // Pick a folder once up front so a handle already exists.
-  await vaultControl.promptForFolder();
-  await flushMicrotasks();
-  assert.equal(vaultControl.hasHandle(), true);
-  promptCalls = 0;
-
-  const vaultEnabled = makeVaultEnabledCheckbox();
-  wireVaultToggle(vaultEnabled, vaultControl, { updateDependents: () => {}, refreshDirty: () => {} });
-
-  vaultEnabled.checked = true;
-  vaultEnabled.dispatchEvent(new Event("change"));
-  await flushMicrotasks();
-
-  assert.equal(promptCalls, 0, "an existing handle means the picker never re-opens");
+  assert.equal(promptCalls, 0, "turning the toggle on never opens the picker itself");
   assert.equal(vaultEnabled.checked, true);
-  assert.equal(vaultControl.element.hidden, false);
+  assert.equal(vaultControl.element.hidden, false, "the folder control shows as soon as the toggle turns on");
+  assert.match(
+    vaultControl.element.querySelector(".vault-status").textContent,
+    /No folder chosen yet/,
+    "the status line makes the Downloads fallback clear until a folder is chosen"
+  );
 });
 
-test("forgetting the folder while vaultEnabled is on turns the toggle off and hides the control", async () => {
+test("turning vaultEnabled off hides the control without touching the stored folder", async () => {
   await clearHandle();
   const { renderVaultControl, wireVaultToggle } = await loadModule();
   const panel = document.createElement("section");
   document.body.append(panel);
+  const vaultControl = renderVaultControl(panel);
+  await flushMicrotasks();
 
-  // Wires renderVaultControl's onForgotten to the coupling's revertToggleOff,
-  // exactly like initialize() does (the coupling object is created after the
-  // control, so onForgotten closes over a `let` assigned afterward).
-  let coupling;
-  const vaultControl = renderVaultControl(panel, {
-    onForgotten: () => coupling.revertToggleOff()
-  });
+  const vaultEnabled = makeVaultEnabledCheckbox();
+  wireVaultToggle(vaultEnabled, vaultControl);
+
+  vaultEnabled.checked = true;
+  vaultEnabled.dispatchEvent(new Event("change"));
+  await flushMicrotasks();
+  assert.equal(vaultControl.element.hidden, false);
+
+  vaultEnabled.checked = false;
+  vaultEnabled.dispatchEvent(new Event("change"));
+  await flushMicrotasks();
+  assert.equal(vaultControl.element.hidden, true);
+});
+
+test("the Choose folder button opens the picker and a successful pick updates the status", async () => {
+  await clearHandle();
+  const { renderVaultControl, wireVaultToggle } = await loadModule();
+  const panel = document.createElement("section");
+  document.body.append(panel);
+  const vaultControl = renderVaultControl(panel);
+  await flushMicrotasks();
+
+  let promptCalls = 0;
+  window.showDirectoryPicker = async () => {
+    promptCalls += 1;
+    return { name: "notes", kind: "directory", queryPermission: async () => "granted" };
+  };
+
+  const vaultEnabled = makeVaultEnabledCheckbox();
+  wireVaultToggle(vaultEnabled, vaultControl);
+  vaultEnabled.checked = true;
+  vaultEnabled.dispatchEvent(new Event("change"));
+  await flushMicrotasks();
+
+  const chooseButton = Array.from(panel.querySelectorAll(".vault-buttons button")).find(
+    (button) => button.textContent === "Choose folder"
+  );
+  assert.ok(chooseButton);
+  chooseButton.click();
+  await flushMicrotasks();
+
+  assert.equal(promptCalls, 1);
+  assert.match(vaultControl.element.querySelector(".vault-status").textContent, /notes/);
+  assert.equal(vaultEnabled.checked, true, "picking a folder never touches the toggle");
+});
+
+test("forgetting the folder while vaultEnabled is on leaves the toggle on and returns to the no-folder status", async () => {
+  await clearHandle();
+  const { renderVaultControl, wireVaultToggle } = await loadModule();
+  const panel = document.createElement("section");
+  document.body.append(panel);
+  const vaultControl = renderVaultControl(panel);
 
   window.showDirectoryPicker = async () => ({
     name: "notes",
@@ -293,16 +265,7 @@ test("forgetting the folder while vaultEnabled is on turns the toggle off and hi
 
   const vaultEnabled = makeVaultEnabledCheckbox();
   vaultEnabled.checked = true;
-  let dependentsRun = 0;
-  let dirtyRuns = 0;
-  coupling = wireVaultToggle(vaultEnabled, vaultControl, {
-    updateDependents: () => {
-      dependentsRun += 1;
-    },
-    refreshDirty: () => {
-      dirtyRuns += 1;
-    }
-  });
+  wireVaultToggle(vaultEnabled, vaultControl);
   vaultControl.setVisible(true);
 
   const forgetButton = Array.from(panel.querySelectorAll(".vault-buttons button")).find(
@@ -312,8 +275,7 @@ test("forgetting the folder while vaultEnabled is on turns the toggle off and hi
   forgetButton.click();
   await flushMicrotasks();
 
-  assert.equal(vaultEnabled.checked, false, "the toggle turns off once its folder is forgotten");
-  assert.equal(vaultControl.element.hidden, true);
-  assert.equal(dependentsRun, 1);
-  assert.equal(dirtyRuns, 1);
+  assert.equal(vaultEnabled.checked, true, "forgetting the folder does not touch the toggle");
+  assert.equal(vaultControl.element.hidden, false, "the control stays visible, just with no folder chosen");
+  assert.match(vaultControl.element.querySelector(".vault-status").textContent, /No folder chosen yet/);
 });

@@ -224,23 +224,28 @@ export const SETTINGS_SCHEMA = [
   {
     id: "knowledgeBase",
     label: "Knowledge base",
-    fields: [
+    groups: [
       {
-        key: "vaultEnabled",
-        label: "Save clips to a vault folder",
-        type: "toggle",
-        default: false,
-        help:
-          "When on and a folder is chosen below, clips write directly into that folder instead of your Downloads folder."
-      },
-      {
-        key: "knowledgeBasePreset",
-        label: "Use LLM-friendly frontmatter and keep an index",
-        type: "toggle",
-        default: false,
-        help:
-          "Adds content-type frontmatter (article, SharePoint, Confluence), fills in a description when the page has none, and keeps an index.md manifest of every clip in your vault folder.",
-        dependsOn: { key: "vaultEnabled", value: true }
+        label: "Vault",
+        fields: [
+          {
+            key: "vaultEnabled",
+            label: "Save clips to a vault folder",
+            type: "toggle",
+            default: false,
+            help:
+              "When on and a folder is chosen below, clips write directly into that folder instead of your Downloads folder."
+          },
+          {
+            key: "knowledgeBasePreset",
+            label: "Use LLM-friendly frontmatter and keep an index",
+            type: "toggle",
+            default: false,
+            help:
+              "Adds content-type frontmatter (article, SharePoint, Confluence), fills in a description when the page has none, and keeps an index.md manifest of every clip in your vault folder.",
+            dependsOn: { key: "vaultEnabled", value: true }
+          }
+        ]
       }
     ]
   },

@@ -483,13 +483,12 @@ function wireSectionNav(navElement, panelsElement) {
 // This is the ONE control on the options page not driven by the schema loop:
 // it triggers showDirectoryPicker() (needs a live user gesture) and stores a
 // FileSystemDirectoryHandle in IndexedDB (via vault-handle.js), not a plain
-// value in chrome.storage.sync, so it can't be a schema field. It is now a
-// nested sub-control of the vaultEnabled toggle (see initialize()): this
-// function only builds the folder-picker itself and returns an API the
-// coupling logic in initialize() drives (show/hide, prompt, read whether a
-// handle already exists). onForgotten fires after "Forget folder" so the
-// caller can turn vaultEnabled back off (on-without-folder is invalid).
-export function renderVaultControl(panel, { onForgotten } = {}) {
+// value in chrome.storage.sync, so it can't be a schema field. It is a
+// nested sub-control of the vaultEnabled toggle (see initialize()), shown
+// and hidden by wireVaultToggle below, but otherwise independent of it: the
+// folder picker only ever opens from this control's own "Choose folder"
+// button, so the click stays a live user gesture.
+export function renderVaultControl(panel) {
   if (!panel) {
     return null;
   }
@@ -528,13 +527,10 @@ export function renderVaultControl(panel, { onForgotten } = {}) {
   wrapper.append(buttons);
   panel.append(wrapper);
 
-  let cachedHasHandle = false;
-
   async function refresh() {
     const handle = await loadHandle();
-    cachedHasHandle = Boolean(handle);
     if (!handle) {
-      statusLine.textContent = "No vault folder chosen. Clips save to Downloads.";
+      statusLine.textContent = "No folder chosen yet. Clips save to Downloads until you choose one.";
       regrantButton.hidden = true;
       forgetButton.hidden = true;
       return;
@@ -587,9 +583,6 @@ export function renderVaultControl(panel, { onForgotten } = {}) {
   forgetButton.addEventListener("click", async () => {
     await clearHandle();
     await refresh();
-    if (onForgotten) {
-      onForgotten();
-    }
   });
 
   refresh();
@@ -597,7 +590,6 @@ export function renderVaultControl(panel, { onForgotten } = {}) {
   return {
     element: wrapper,
     refresh,
-    hasHandle: () => cachedHasHandle,
     setVisible: (visible) => {
       wrapper.hidden = !visible;
     },
@@ -606,55 +598,17 @@ export function renderVaultControl(panel, { onForgotten } = {}) {
 }
 
 // Couples the vaultEnabled toggle to the vault folder control (returned by
-// renderVaultControl above): shows/hides the nested folder control, prompts
-// for a folder the moment the toggle turns on with none chosen yet, and
-// reverts the toggle back off if that prompt is cancelled. Kept separate
-// from initialize() so it can be exercised directly in tests without the
-// rest of the options page (chrome.storage, the About block, etc).
-export function wireVaultToggle(vaultEnabledControl, vaultControl, { updateDependents, refreshDirty }) {
-  // Reverting the toggle programmatically (picker cancelled, or the folder
-  // was forgotten while the toggle was on) must not re-trigger this same
-  // enable/prompt logic.
-  let reverting = false;
-
-  function revertToggleOff() {
-    if (!vaultEnabledControl.checked) {
-      return;
-    }
-    reverting = true;
-    vaultEnabledControl.checked = false;
-    updateDependents();
-    vaultControl.setVisible(false);
-    refreshDirty();
-    reverting = false;
-  }
-
-  // Enabling with no folder yet immediately opens the picker (transient user
-  // activation from this "change" event is what makes showDirectoryPicker()
-  // work, so promptForFolder() runs with nothing awaited ahead of it).
-  // Cancelling reverts the toggle back off.
+// renderVaultControl above): purely shows/hides the nested folder control.
+// Nothing here opens the picker -- showDirectoryPicker() does not reliably
+// treat a checkbox's "change" event as a live user gesture, so the picker
+// only ever opens from the folder control's own "Choose folder" button
+// click. Kept separate from initialize() so it can be exercised directly in
+// tests without the rest of the options page (chrome.storage, the About
+// block, etc).
+export function wireVaultToggle(vaultEnabledControl, vaultControl) {
   vaultEnabledControl.addEventListener("change", () => {
-    if (reverting) {
-      return;
-    }
-    if (!vaultEnabledControl.checked) {
-      vaultControl.setVisible(false);
-      return;
-    }
-    if (vaultControl.hasHandle()) {
-      vaultControl.setVisible(true);
-      return;
-    }
-    vaultControl.promptForFolder().then((result) => {
-      if (result.picked) {
-        vaultControl.setVisible(true);
-        return;
-      }
-      revertToggleOff();
-    });
+    vaultControl.setVisible(vaultEnabledControl.checked);
   });
-
-  return { revertToggleOff };
 }
 
 // ---- Bespoke tag-rules editor ---------------------------------------------
@@ -676,13 +630,13 @@ function renderTagRulesControl(panel) {
     return;
   }
 
+  const heading = document.createElement("h3");
+  heading.className = "group-heading";
+  heading.textContent = "Tag rules";
+  panel.append(heading);
+
   const wrapper = document.createElement("div");
   wrapper.className = "field rules-field";
-
-  const label = document.createElement("p");
-  label.className = "rules-label";
-  label.textContent = "Tag rules";
-  wrapper.append(label);
 
   const help = document.createElement("p");
   help.className = "help-text";
@@ -1045,6 +999,11 @@ function renderBackupControl(panel, { fillForm }) {
     return;
   }
 
+  const heading = document.createElement("h3");
+  heading.className = "group-heading";
+  heading.textContent = "Backup & reset";
+  panel.append(heading);
+
   const wrapper = document.createElement("div");
   wrapper.className = "field backup-field";
 
@@ -1125,6 +1084,11 @@ function renderActivityControl(panel) {
   if (!panel) {
     return;
   }
+
+  const heading = document.createElement("h3");
+  heading.className = "group-heading";
+  heading.textContent = "Activity";
+  panel.append(heading);
 
   const wrapper = document.createElement("div");
   wrapper.className = "field activity-field";
@@ -1281,7 +1245,7 @@ async function initialize() {
   const navElement = document.getElementById("settings-nav");
   const panelsElement = document.getElementById("panels");
 
-  const { fillForm, readForm, controls, updateDependents } = createOptionsForm(SETTINGS_SCHEMA, {
+  const { fillForm, readForm, controls } = createOptionsForm(SETTINGS_SCHEMA, {
     navElement,
     panelsElement,
     onThemeChange: applyTheme
@@ -1313,9 +1277,7 @@ async function initialize() {
   const knowledgeBasePanel = panelsElement.querySelector('[data-section="knowledgeBase"]');
   const vaultEnabledControl = controls.get("vaultEnabled");
 
-  const vaultControl = renderVaultControl(knowledgeBasePanel, {
-    onForgotten: () => vaultCoupling.revertToggleOff()
-  });
+  const vaultControl = renderVaultControl(knowledgeBasePanel);
 
   // The vault folder picker is a nested sub-control of vaultEnabled (the
   // preset writes into it, the index lives there), so move it right after
@@ -1326,15 +1288,15 @@ async function initialize() {
     knowledgeBasePanel.insertBefore(vaultControl.element, presetField);
   }
 
-  const vaultCoupling = wireVaultToggle(vaultEnabledControl, vaultControl, { updateDependents, refreshDirty });
+  wireVaultToggle(vaultEnabledControl, vaultControl);
 
   renderTagRulesControl(knowledgeBasePanel);
   renderPromptGeneratorControl(knowledgeBasePanel);
 
   const advancedPanel = panelsElement.querySelector('[data-section="advanced"]');
   renderBackupControl(advancedPanel, { fillForm: fillFormAndSync });
-  renderActivityControl(advancedPanel);
   renderResetControl(advancedPanel, { fillForm: fillFormAndSync, statusElement });
+  renderActivityControl(advancedPanel);
 
   fillFormAndSync(await loadSettings());
   vaultControl.setVisible(vaultEnabledControl.checked);
