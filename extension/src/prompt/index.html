@@ -17,17 +17,17 @@
       </p>
 
       <form id="prompt-form">
-        <fieldset class="group">
-          <legend>Task</legend>
+        <section class="group">
+          <h2 class="group-title">Task</h2>
           <label class="field">
             <span>What should the LLM do</span>
             <select id="task"></select>
           </label>
           <p class="hint" id="task-description"></p>
-        </fieldset>
+        </section>
 
-        <fieldset class="group">
-          <legend>Filters</legend>
+        <section class="group">
+          <h2 class="group-title">Filters</h2>
           <div class="field-row">
             <label class="field">
               <span>Content type</span>
@@ -47,7 +47,7 @@
               <input id="limit-filter" type="number" min="1" step="1" placeholder="No limit">
             </label>
           </div>
-        </fieldset>
+        </section>
 
         <div class="buttons">
           <button id="generate-btn" type="submit">Generate</button>
