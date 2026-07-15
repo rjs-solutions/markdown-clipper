@@ -14,6 +14,7 @@ const el = {
   expand: document.getElementById("do-expand"),
   sidepanel: document.getElementById("do-sidepanel"),
   panel: document.getElementById("do-panel"),
+  closePanel: document.getElementById("do-close-panel"),
   loading: document.getElementById("loading"),
   empty: document.getElementById("empty"),
   emptyMessage: document.getElementById("empty-message"),
@@ -60,6 +61,8 @@ async function initialize() {
   inIframe = params.get("context") === "iframe";
   if (inPanel) {
     document.body.classList.add("in-panel");
+    el.closePanel.hidden = false;
+    el.closePanel.addEventListener("click", () => window.close());
   }
   if (inIframe) {
     document.body.classList.add("in-iframe");

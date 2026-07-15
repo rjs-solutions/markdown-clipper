@@ -9,8 +9,10 @@
 
 const HOST_ID = "mwc-panel-host";
 const STORAGE_KEY = "mwcPanelGeometry";
-const DEFAULT_WIDTH = 420;
-const DEFAULT_HEIGHT = 600;
+const DEFAULT_WIDTH = 480;
+const DEFAULT_HEIGHT = 780;
+const DEFAULT_HEIGHT_VIEWPORT_RATIO = 0.85;
+const DEFAULT_HEIGHT_MAX = 780;
 const MIN_WIDTH = 300;
 const MIN_HEIGHT = 220;
 const MARGIN = 12;
@@ -46,7 +48,7 @@ function clamp(value, min, max) {
 
 function defaultGeometry() {
   const width = DEFAULT_WIDTH;
-  const height = DEFAULT_HEIGHT;
+  const height = Math.min(window.innerHeight * DEFAULT_HEIGHT_VIEWPORT_RATIO, DEFAULT_HEIGHT_MAX);
   const left = Math.max(MARGIN, window.innerWidth - width - MARGIN);
   const top = MARGIN;
   return { left, top, width, height };
@@ -280,21 +282,25 @@ function template() {
         position: absolute;
         left: 0;
         bottom: 0;
-        width: 14px;
-        height: 14px;
+        width: 20px;
+        height: 20px;
         cursor: nesw-resize;
         touch-action: none;
+        display: grid;
+        place-items: end start;
+        padding: 3px;
       }
-      #resize-handle::after {
-        content: "";
-        position: absolute;
-        left: 3px;
-        bottom: 3px;
-        width: 8px;
-        height: 8px;
-        border-left: 2px solid light-dark(#a9b3bf, #4a515e);
-        border-bottom: 2px solid light-dark(#a9b3bf, #4a515e);
-        border-radius: 0 0 0 3px;
+      #resize-handle svg {
+        width: 14px;
+        height: 14px;
+        fill: none;
+        stroke: light-dark(#8b96a3, #5a6270);
+        stroke-width: 2;
+        stroke-linecap: round;
+        pointer-events: none;
+      }
+      #resize-handle:hover svg {
+        stroke: light-dark(#5f6d79, #a3a9b3);
       }
     </style>
     <div id="container">
@@ -308,7 +314,13 @@ function template() {
       </div>
       <div id="frame-wrap">
         <iframe id="frame"></iframe>
-        <div id="resize-handle" title="Resize"></div>
+        <div id="resize-handle" title="Drag to resize">
+          <svg viewBox="0 0 14 14" aria-hidden="true">
+            <path d="M2 12L12 2"></path>
+            <path d="M6 12L12 6"></path>
+            <path d="M10 12L12 10"></path>
+          </svg>
+        </div>
       </div>
     </div>
   `;

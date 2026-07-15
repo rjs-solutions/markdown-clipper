@@ -329,6 +329,18 @@ input {
   box-shadow: inset 0 0 0 2px var(--accent-soft);
 }
 
+/* The side panel and in-page overlay have real height to spare, so let the
+   description and markdown preview breathe instead of staying popup-sized. */
+body.in-panel .field-description textarea,
+body.in-iframe .field-description textarea {
+  min-height: 64px;
+}
+
+body.in-panel .preview-body,
+body.in-iframe .preview-body {
+  height: 320px;
+}
+
 /* Actions ----------------------------------------------------------------- */
 
 .actions {
