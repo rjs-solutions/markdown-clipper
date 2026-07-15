@@ -223,7 +223,13 @@ async function handleActionClicked(tab) {
   try {
     const settings = await loadSettings();
     if (settings.defaultAction === "sidepanel") {
-      await openSidePanelForTab(tab);
+      // On modern Chrome the panel already opened via setPanelBehavior's
+      // openPanelOnActionClick; calling sidePanel.open() here (after an awaited
+      // settings load) would throw the user-gesture error. Only open here as a
+      // fallback on browsers without setPanelBehavior.
+      if (!(chrome.sidePanel && chrome.sidePanel.setPanelBehavior)) {
+        await openSidePanelForTab(tab);
+      }
     } else if (settings.defaultAction === "inpage") {
       await injectPanel(tab);
     }

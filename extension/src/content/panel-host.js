@@ -89,8 +89,22 @@ async function saveGeometry(geometry) {
     await chrome.storage.local.set({ [STORAGE_KEY]: geometry });
   } catch (error) {
     // Geometry persistence is best-effort; never break the panel over it.
+    // A reloaded extension leaves old in-page panels with an invalidated
+    // context -- a later drag-release hitting that is expected and harmless,
+    // so only log genuinely unexpected failures.
+    if (isContextInvalidated(error)) {
+      return;
+    }
     console.error("Markdown Clipper panel: could not save geometry:", error);
   }
+}
+
+function isContextInvalidated(error) {
+  if (!chrome.runtime || chrome.runtime.id === undefined) {
+    return true;
+  }
+  const message = error && error.message ? String(error.message).toLowerCase() : "";
+  return message.includes("context invalidated");
 }
 
 // Resolves the saved theme setting the same way popup.js does (loadSettings,
