@@ -31,7 +31,7 @@ input {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  padding: 12px;
+  padding: 10px;
 }
 
 /* Header ------------------------------------------------------------------ */
@@ -42,9 +42,9 @@ input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin: -12px -12px 8px;
-  padding: 6px 12px;
+  gap: 10px;
+  margin: -10px -10px 6px;
+  padding: 4px 10px;
   background: var(--surface-muted);
   border-bottom: 1px solid var(--border);
 }
@@ -52,45 +52,45 @@ input {
 .wordmark {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: 0.01em;
 }
 
 .brand-mark {
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
   flex: 0 0 auto;
   display: block;
 }
 
 .header-actions {
   display: flex;
-  gap: 2px;
+  gap: 1px;
 }
 
 .icon-button {
   display: inline-grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 23px;
+  height: 23px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 6px;
   color: var(--text-muted);
   background: transparent;
   cursor: pointer;
 }
 
 .icon-button:hover {
-  background: var(--surface-muted);
+  background: var(--surface);
   color: var(--accent);
 }
 
 .icon-button svg {
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
@@ -145,30 +145,30 @@ input {
   /* minmax(0, …) lets the column shrink below its content's intrinsic width,
      so a long unbreakable URL in the preview can't force horizontal scroll. */
   grid-template-columns: minmax(0, 1fr);
-  gap: 6px;
+  gap: 5px;
 }
 
 .field {
   display: grid;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
 }
 
 .field > span:not(.filename-input) {
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--text-muted);
 }
 
 .field input,
 .field textarea {
   width: 100%;
-  min-height: 30px;
-  padding: 5px 9px;
+  min-height: 26px;
+  padding: 4px 8px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 7px;
   background: var(--surface);
   color: var(--text);
   font: inherit;
@@ -194,14 +194,14 @@ input {
 .field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 
 .filename-input {
   display: flex;
   align-items: center;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 7px;
   background: var(--surface);
   overflow: hidden;
   font-size: 12px;
@@ -239,7 +239,7 @@ input {
   margin: 0;
   padding: 0 0 4px;
   border-bottom: 1px solid var(--border);
-  font-size: 11.5px;
+  font-size: 11px;
 }
 
 .props:empty {
@@ -249,16 +249,14 @@ input {
 .prop-row {
   display: flex;
   align-items: baseline;
-  gap: 12px;
-  padding: 2px 0;
+  gap: 10px;
+  padding: 1px 0;
 }
 
 .prop-label {
-  flex: 0 0 58px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+  flex: 0 0 46px;
+  font-size: 10.5px;
+  font-weight: 500;
   color: var(--text-muted);
 }
 
@@ -280,31 +278,25 @@ input {
   text-decoration: underline;
 }
 
-/* Markdown preview */
+/* Markdown preview: a light, editable body with a small unobtrusive char
+   count tucked into the corner instead of a heavy labeled header bar. */
 .preview {
+  position: relative;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 7px;
   overflow: hidden;
 }
 
-.preview-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 10px;
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  background: var(--surface-muted);
-  border-bottom: 1px solid var(--border);
-}
-
 .char-count {
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0;
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 10px;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  pointer-events: none;
 }
 
 .preview-body {
@@ -341,36 +333,29 @@ body.in-iframe .preview-body {
   height: 320px;
 }
 
-/* Actions ----------------------------------------------------------------- */
+/* Actions ------------------------------------------------------------------
+   One primary action (Download) plus two light icon-only secondary actions
+   inline beside it -- no section header needed. */
 
 .actions {
-  margin-top: 10px;
-}
-
-.section-label {
-  margin: 0 0 5px;
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+  margin-top: 8px;
 }
 
 .actions-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
 }
 
 .btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 8px 12px;
+  gap: 7px;
+  min-height: 34px;
+  padding: 6px 10px;
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--surface);
   color: var(--text);
   cursor: pointer;
@@ -388,8 +373,8 @@ body.in-iframe .preview-body {
 }
 
 .btn-icon {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   flex: 0 0 auto;
   fill: none;
   stroke: currentColor;
@@ -398,17 +383,12 @@ body.in-iframe .preview-body {
   stroke-width: 1.9;
 }
 
-/* The three actions: equal columns, icon + label on one row (compact height),
-   graded shades of the accent so they read as one set with Download strongest. */
-.act {
-  gap: 7px;
-  min-height: 38px;
-  padding: 8px 8px;
+/* Download: the one primary action, full accent fill, takes the remaining
+   row width. */
+.act-download {
+  flex: 1;
   font-size: 12.5px;
   font-weight: 600;
-}
-
-.act-download {
   color: var(--accent-contrast);
   background: var(--accent);
   border-color: var(--accent);
@@ -419,42 +399,32 @@ body.in-iframe .preview-body {
   border-color: var(--accent-hover);
 }
 
-.act-copy {
-  color: var(--text);
-  background: color-mix(in srgb, var(--accent) 24%, var(--surface));
-  border-color: color-mix(in srgb, var(--accent) 36%, var(--surface));
+/* Copy / Open: compact, icon-only secondary actions -- quiet until hovered. */
+.act-secondary {
+  flex: 0 0 auto;
+  width: 34px;
+  padding: 6px;
+  color: var(--text-muted);
 }
 
-.act-copy:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 32%, var(--surface));
-  border-color: var(--accent);
-}
-
-.act-open {
-  color: var(--text);
-  background: color-mix(in srgb, var(--accent) 11%, var(--surface));
-  border-color: color-mix(in srgb, var(--accent) 22%, var(--surface));
-}
-
-.act-open:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
-  border-color: var(--accent);
-}
-
-.act-copy .btn-icon,
-.act-open .btn-icon {
-  stroke: var(--accent);
+.act-secondary:hover:not(:disabled) {
+  color: var(--accent);
 }
 
 .btn-export {
   width: 100%;
-  min-height: 36px;
-  margin-top: 8px;
+  min-height: 30px;
+  margin-top: 6px;
+  font-size: 12px;
   color: var(--text-muted);
+  background: transparent;
+  border-color: transparent;
 }
 
 .btn-export:hover {
   color: var(--text);
+  background: var(--surface-muted);
+  border-color: var(--border);
 }
 
 /* Status ------------------------------------------------------------------ */
