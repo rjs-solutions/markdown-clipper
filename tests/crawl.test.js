@@ -157,6 +157,20 @@ test("excludePatterns beats includePatterns", async () => {
   assert.ok(!urls.includes("https://a.com/3"), "excluded even though it also matches includePatterns");
 });
 
+test("the explicit seed may discover matching descendants without matching includePatterns itself", async () => {
+  installFakeChrome();
+  const pages = await crawlSite({
+    seeds: ["https://a.com/1"],
+    followLinks: true,
+    sameHostOnly: true,
+    maxPages: 25,
+    includePatterns: ["/2$"],
+    settleMs: 0,
+    delayMs: 0
+  });
+  assert.deepEqual(pages.map((page) => page.url), ["https://a.com/1", "https://a.com/2"]);
+});
+
 test("an invalid pattern is reported and ignored instead of crashing the crawl", async () => {
   installFakeChrome();
   const warnings = [];

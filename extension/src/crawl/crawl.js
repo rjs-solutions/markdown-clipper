@@ -14,6 +14,9 @@ import { downloadBlob, downloadText } from "../lib/download.js";
 import { slugify } from "../lib/slug.js";
 import { applyTheme } from "../lib/theme.js";
 import { loadJob, saveJob, getJobBodies } from "../lib/crawl-state.js";
+import { loadSites } from "../lib/sharepoint-sites.js";
+import { loadSiteInventory } from "../lib/sharepoint-inventory.js";
+import { matchSavedSite, savedSiteExportPreset } from "../lib/sharepoint-export.js";
 
 const CURRENT_JOB_KEY = "crawl-ui-current-job";
 const POLL_MS = 700;
@@ -33,10 +36,14 @@ const resumeButton = document.getElementById("resume-btn");
 const stopButton = document.getElementById("stop-btn");
 const summary = document.getElementById("summary");
 const logList = document.getElementById("log");
+const savedSiteSelect = document.getElementById("saved-site");
+const savedSiteHint = document.getElementById("saved-site-hint");
+const manageSitesButton = document.getElementById("manage-sites");
 
 let pollTimer = null;
 let renderedLogLines = 0;
 let currentSettings = null;
+let savedSiteEntries = [];
 
 document.addEventListener("DOMContentLoaded", initialize);
 
@@ -49,6 +56,9 @@ async function initialize() {
     urlsInput.value = seed;
     startInput.value = seed;
   }
+  manageSitesButton.addEventListener("click", openSharePointSettings);
+  savedSiteSelect.addEventListener("change", () => applySavedSite(savedSiteSelect.value));
+  await populateSavedSites(seed);
   for (const radio of form.querySelectorAll("input[name='mode']")) {
     radio.addEventListener("change", reflectMode);
   }
@@ -79,6 +89,62 @@ async function initialize() {
       renderJobSnapshot(job);
     }
   }
+}
+
+async function populateSavedSites(seed) {
+  const sites = await loadSites();
+  savedSiteEntries = await Promise.all(sites.map(async (site) => ({
+    site,
+    inventory: await loadSiteInventory(site.id)
+  })));
+  for (const entry of savedSiteEntries) {
+    const option = document.createElement("option");
+    option.value = entry.site.id;
+    const count = entry.inventory.pages.length;
+    option.textContent = `${entry.site.name} (${count} page${count === 1 ? "" : "s"})`;
+    savedSiteSelect.append(option);
+  }
+  savedSiteSelect.disabled = savedSiteEntries.length === 0;
+  if (!savedSiteEntries.length) {
+    savedSiteHint.textContent = "No saved sites yet. Use the SharePoint button to add one.";
+    return;
+  }
+
+  const matched = matchSavedSite(sites, seed);
+  if (matched) {
+    savedSiteSelect.value = matched.id;
+    applySavedSite(matched.id);
+  }
+}
+
+function applySavedSite(siteId) {
+  if (!siteId) {
+    savedSiteHint.textContent = "";
+    return;
+  }
+  const entry = savedSiteEntries.find((candidate) => candidate.site.id === siteId);
+  if (!entry) {
+    return;
+  }
+  const preset = savedSiteExportPreset(entry.site, entry.inventory);
+  const radio = form.querySelector(`input[name="mode"][value="${preset.mode}"]`);
+  radio.checked = true;
+  urlsInput.value = preset.urls.join("\n");
+  startInput.value = preset.startUrl;
+  maxPagesInput.value = String(preset.maxPages);
+  if (preset.includePatterns) {
+    includePatternsInput.value = preset.includePatterns;
+  }
+  reflectMode();
+  savedSiteHint.textContent = preset.inventoryCount
+    ? `Loaded ${preset.inventoryCount} refreshed page${preset.inventoryCount === 1 ? "" : "s"} from SharePoint settings.`
+    : "No refreshed inventory yet; using a Site Pages link crawl. Refresh this site in SharePoint settings for a precise page list.";
+}
+
+function openSharePointSettings() {
+  return chrome.tabs.create({
+    url: chrome.runtime.getURL("src/options/index.html?section=sharepoint")
+  });
 }
 
 function currentMode() {

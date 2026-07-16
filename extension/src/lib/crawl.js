@@ -145,7 +145,7 @@ export async function crawlSite({
   const errors = initialErrors ? [...initialErrors] : [];
   const pages = initialResults ? [...initialResults] : [];
 
-  const enqueue = (url, depth) => {
+  const enqueue = (url, depth, { isSeed = false } = {}) => {
     const key = comparableUrl(url);
     if (seen.has(key)) {
       return;
@@ -156,7 +156,11 @@ export async function crawlSite({
     if (excludeRe.length && matchesAny(url, excludeRe)) {
       return;
     }
-    if (includeRe.length && !matchesAny(url, includeRe)) {
+    // A crawl's explicit start page is the discovery entry point, even when
+    // it does not match the include filter. The filter applies to links found
+    // from that page; otherwise a useful pattern such as /SitePages/ would
+    // reject a SharePoint site home before it could discover any pages.
+    if (!isSeed && includeRe.length && !matchesAny(url, includeRe)) {
       return;
     }
     seen.add(key);
@@ -164,7 +168,7 @@ export async function crawlSite({
   };
 
   if (!initialQueue) {
-    seeds.forEach((url) => enqueue(url, 0));
+    seeds.forEach((url) => enqueue(url, 0, { isSeed: true }));
   }
   const origin = seeds[0];
 

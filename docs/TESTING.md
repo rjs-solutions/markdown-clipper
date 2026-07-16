@@ -37,6 +37,9 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 - [ ] Refresh the site without changes → the same page count, no duplicate rows, and “no changes.”
 - [ ] After a SharePoint page is created or edited, Refresh reports it as new or updated. Removing
       a page reports it as removed. **Refresh all sites** processes every saved site once.
+- [ ] From a page in that saved site, **Export a collection** automatically selects the site and
+      loads its refreshed inventory as the URL list. The SharePoint shortcut opens Options directly
+      on the SharePoint section from the popup, in-page panel, and native side panel.
 
 ## 3. Single-page capture — general webpage
 

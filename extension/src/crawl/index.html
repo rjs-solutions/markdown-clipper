@@ -20,6 +20,24 @@
         <section class="group">
           <h2 class="group-title">What to capture</h2>
 
+          <div class="saved-site-field">
+            <label for="saved-site">Saved SharePoint site</label>
+            <div class="saved-site-controls">
+              <select id="saved-site">
+                <option value="">Choose a saved site…</option>
+              </select>
+              <button id="manage-sites" class="icon-button" type="button" title="Manage SharePoint sites" aria-label="Manage SharePoint sites">
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <circle cx="8" cy="8" r="3.5"></circle>
+                  <circle cx="16.5" cy="7" r="2.5"></circle>
+                  <circle cx="16.5" cy="16.5" r="2.5"></circle>
+                  <path d="M11 9.5l3.2-1.4M10.5 10.5l4.2 4.2M5.5 15.5h5M8 13v5"></path>
+                </svg>
+              </button>
+            </div>
+            <p id="saved-site-hint" class="hint"></p>
+          </div>
+
           <div class="modes" role="radiogroup" aria-label="Discovery mode">
             <label><input type="radio" name="mode" value="list" checked> Paste a list of URLs</label>
             <label><input type="radio" name="mode" value="sitemap"> From a sitemap.xml</label>

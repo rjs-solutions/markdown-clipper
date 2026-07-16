@@ -43,6 +43,52 @@ h1 {
   color: var(--text);
 }
 
+.saved-site-field {
+  padding: 8px 0 10px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.saved-site-field > label {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--text-muted);
+}
+
+.saved-site-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.saved-site-controls select {
+  flex: 1;
+  min-width: 0;
+}
+
+.saved-site-controls .icon-button {
+  width: 36px;
+  min-height: 36px;
+  padding: 7px;
+  flex: 0 0 auto;
+}
+
+.icon-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.saved-site-field .hint {
+  min-height: 1.4em;
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
 .modes {
   display: flex;
   flex-direction: column;

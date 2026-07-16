@@ -1617,6 +1617,14 @@ async function initialize() {
     onThemeChange: applyTheme
   });
 
+  const requestedSection = new URLSearchParams(location.search).get("section");
+  const requestedNavItem = requestedSection
+    ? Array.from(navElement.querySelectorAll(".nav-item")).find((item) => item.dataset.section === requestedSection)
+    : null;
+  if (requestedNavItem) {
+    requestedNavItem.click();
+  }
+
   // Baseline is the last-saved (or last-loaded) form snapshot. Save only
   // shows once the live form diverges from it, and hides again if the user
   // edits their way back to it. Re-synced after every programmatic fillForm

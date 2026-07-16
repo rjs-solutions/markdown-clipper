@@ -12,6 +12,7 @@ import { applyTagRules, loadRules } from "../lib/tag-rules.js";
 
 const el = {
   optionsButton: document.getElementById("open-options"),
+  sharepointButton: document.getElementById("open-sharepoint"),
   expand: document.getElementById("do-expand"),
   sidepanel: document.getElementById("do-sidepanel"),
   panel: document.getElementById("do-panel"),
@@ -125,6 +126,7 @@ async function initialize() {
 
 function wireEvents() {
   el.optionsButton.addEventListener("click", () => chrome.runtime.openOptionsPage());
+  el.sharepointButton.addEventListener("click", openSharePointSettings);
   el.expand.addEventListener("click", openEditor);
   el.download.addEventListener("click", () => run("download"));
   el.downloadLocation.addEventListener("click", () => run("save-as"));
@@ -737,6 +739,15 @@ function closeSelf() {
   if (inIframe) {
     window.parent.postMessage({ type: "mc-panel-close" }, "*");
   } else {
+    window.close();
+  }
+}
+
+async function openSharePointSettings() {
+  await chrome.tabs.create({
+    url: chrome.runtime.getURL("src/options/index.html?section=sharepoint")
+  });
+  if (!inIframe) {
     window.close();
   }
 }

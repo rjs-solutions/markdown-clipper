@@ -55,6 +55,7 @@ extension/
     │   ├── download.js        Blob downloads
     │   ├── discover.js        URL list / sitemap parsing
     │   ├── sharepoint-inventory.js local page snapshots + refresh reconciliation
+    │   ├── sharepoint-export.js saved-site matching + collection-export presets
     │   ├── sitepath.js        URL -> structure-preserving .md path
     │   ├── aggregate.js       per-page files + index + aggregate doc
     │   ├── zip.js             store-only ZIP writer
@@ -111,7 +112,7 @@ flat map.
 
 ## Testing
 
-`npm test` runs `node --test` (302 cases), including Markdown conversion, settings, capture
+`npm test` runs `node --test` (308 cases), including Markdown conversion, settings, capture
 adapters, SharePoint discovery/inventory reconciliation, crawling, templating, the vault, and
 DOM integration coverage in jsdom. Browser-only behavior on real authenticated pages is covered
 by the manual checklist in [TESTING.md](TESTING.md).
