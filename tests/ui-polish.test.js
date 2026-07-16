@@ -146,6 +146,9 @@ test("Capture Collection uses branded flat sections and icon-led source choices"
   assert.match(css, /#save-collection\.is-primary-action\s*\{[^}]*background:\s*var\(--accent\);/s);
   assert.match(css, /#start-btn\.is-progress\s*\{[^}]*opacity:\s*1;[^}]*linear-gradient/s);
   assert.match(source, /Processing \$\{progress\.completed\} \/ \$\{progress\.total\} · ETA \$\{eta\}/);
+  assert.match(source, /showProgress\(true\)/);
+  assert.match(source, /progressSection\.scrollIntoView\(\{ behavior: "smooth", block: "end" \}\)/);
+  assert.match(css, /\.progress-group\s*\{[^}]*scroll-margin-bottom:\s*64px;/s);
   assert.match(source, /collectionNameInput\.addEventListener\("input", updateCollectionSaveState\)/);
   assert.match(source, /saveCollectionButton\.classList\.toggle\("is-primary-action", isReady\)/);
   assert.match(css, /textarea,[\s\S]*?background-color:\s*var\(--bg\);/s);

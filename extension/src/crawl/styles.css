@@ -317,6 +317,7 @@ select:focus {
 
 .progress-group {
   margin: 0;
+  scroll-margin-bottom: 64px;
   border: 0;
   border-radius: 0;
   background: transparent;

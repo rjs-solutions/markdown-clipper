@@ -8,7 +8,8 @@ All notable changes to Markdown Clipper are documented here. This project follow
 ## [1.1.0] — 2026-07-16
 
 - Turn Capture Collection's disabled Export Markdown action into a determinate progress bar with
-  processed/total pages, elapsed-time detail, ETA, pause state, and final output preparation.
+  processed/total pages, elapsed-time detail, ETA, pause state, and final output preparation;
+  automatically reveal the expanded detailed progress stream once when a job begins or resumes.
 - Generalize saved SharePoint sites into **Collections** for SharePoint, Confluence, websites,
   and custom URL lists, with automatic classification and sitemap, `llms.txt`, crawl, or manual
   discovery modes.

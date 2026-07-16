@@ -57,6 +57,7 @@ let currentSettings = null;
 let savedCollectionEntries = [];
 let cachedJobId = null;
 let syncQueue = [];
+let progressWasAutoRevealed = false;
 
 document.addEventListener("DOMContentLoaded", initialize);
 
@@ -110,12 +111,12 @@ async function initialize() {
     if (job && !["done", "cancelled", "failed"].includes(job.status)) {
       handledExisting = true;
       setCurrentJobId(existingId);
-      showProgress();
+      showProgress(true);
       setRunning(job.status);
       startPolling(existingId);
     } else if (job && !job.exported) {
       handledExisting = true;
-      showProgress();
+      showProgress(true);
       renderJobSnapshot(job);
       if (job.status === "done" && !job.exported) await exportJob(job);
     }
@@ -312,7 +313,8 @@ async function start() {
   logList.replaceChildren();
   renderedLogLines = 0;
   summary.textContent = "";
-  showProgress();
+  progressWasAutoRevealed = false;
+  showProgress(true);
   showPreparingAction();
   try {
     const mode = currentMode();
@@ -398,9 +400,15 @@ async function start() {
   }
 }
 
-function showProgress() {
+function showProgress(reveal = false) {
   progressSection.hidden = false;
   progressSection.open = true;
+  if (reveal && !progressWasAutoRevealed) {
+    progressWasAutoRevealed = true;
+    requestAnimationFrame(() => {
+      progressSection.scrollIntoView({ behavior: "smooth", block: "end" });
+    });
+  }
 }
 
 function startPolling(jobId) { stopPolling(); pollTimer = setInterval(() => pollJob(jobId), POLL_MS); pollJob(jobId); }
