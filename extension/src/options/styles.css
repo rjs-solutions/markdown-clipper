@@ -333,6 +333,22 @@ legend {
   background: transparent;
 }
 
+.segmented-field[data-key="theme"] .segmented-option {
+  border-color: var(--border);
+  background: transparent;
+}
+
+.segmented-field[data-key="theme"] .segmented-option:not(.is-active):hover {
+  border-color: var(--accent);
+  background: transparent;
+}
+
+.segmented-field[data-key="theme"] .segmented-option.is-active {
+  border-color: var(--border);
+  background: var(--surface-muted);
+  color: var(--accent-hover);
+}
+
 /* Behavior control (Toolbar icon click): vertical option rows on the left,
    an inline "browser window" diagram on the right showing where the clip UI
    appears for the selected option. Reuses .segmented-field/.segmented-label

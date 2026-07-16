@@ -38,3 +38,9 @@ test("options and collection export use padded custom select chevrons", async ()
     assert.match(css, /background-position:\s*(?:\r?\n\s*)?calc\(100% - 15px\)/s);
   }
 });
+
+test("every Theme option is outlined and the active option uses a filled surface", async () => {
+  const css = await readFile(new URL("../extension/src/options/styles.css", import.meta.url), "utf8");
+  assert.match(css, /\.segmented-field\[data-key="theme"\] \.segmented-option\s*\{[^}]*border-color:\s*var\(--border\);[^}]*background:\s*transparent;/s);
+  assert.match(css, /\.segmented-field\[data-key="theme"\] \.segmented-option\.is-active\s*\{[^}]*background:\s*var\(--surface-muted\);/s);
+});
