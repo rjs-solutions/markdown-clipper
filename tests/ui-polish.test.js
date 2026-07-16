@@ -14,6 +14,7 @@ test("popup header stays focused while collection capture and editing use a shor
   assert.match(html, /id="do-expand"[^>]*>[\s\S]*?<svg[^>]*>[\s\S]*?<span>Edit Markdown<\/span>/);
   assert.match(html, /id="do-export"[^>]*title="Open Capture Collection in a separate window"[\s\S]*?class="launch-context"/);
   assert.match(html, /id="do-expand"[^>]*title="Open the full Markdown editor in a new tab"[\s\S]*?class="launch-context"/);
+  assert.equal((html.match(/<path d="M6 3H3v10h10v-3M8 3h5v5M13 3 7 9"><\/path>/g) || []).length, 2);
   assert.match(css, /\.icon-button\s*\{[^}]*padding:\s*0;/s);
   assert.match(css, /\.icon-button svg\s*\{[^}]*display:\s*block;/s);
   assert.match(css, /\.act-workflow\s*\{[^}]*min-height:\s*26px;[^}]*background:\s*var\(--surface-muted\);/s);
