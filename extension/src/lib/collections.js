@@ -49,6 +49,7 @@ export function normalizeCollection(collection) {
     sourceMode,
     sourceUrl: cleanUrl(collection && (collection.sourceUrl || webUrl)),
     urls: Array.isArray(collection && collection.urls) ? [...new Set(collection.urls.filter((url) => /^https?:\/\//i.test(url)))] : [],
+    libraryPath: String(collection && collection.libraryPath || "").trim(),
     url: webUrl,
     webUrl,
     addedAt: Number(collection && collection.addedAt) || Date.now(),

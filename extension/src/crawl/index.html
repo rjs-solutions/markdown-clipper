@@ -71,9 +71,11 @@
         </details>
 
         <details class="group">
-          <summary><span>Output</span><small>ZIP, aggregate Markdown, or both</small></summary>
+          <summary><span>Output</span><small>Download a snapshot or sync normal files locally</small></summary>
           <div class="group-body">
+            <label class="field"><span>Destination</span><select id="destination"><option value="download">Download snapshot</option><option value="library">Local Collections Library</option></select></label>
             <label class="field"><span>Output format</span><select id="output"><option value="zip">ZIP: page files + index.md</option><option value="aggregate">Single aggregate Markdown file</option><option value="both">Both formats</option></select></label>
+            <p id="output-hint" class="hint">Snapshots are saved through Chrome Downloads.</p>
           </div>
         </details>
 

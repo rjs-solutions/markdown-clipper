@@ -5,7 +5,15 @@
 import { DEFAULT_SETTINGS, loadSettings, saveSettings, resetSettings, clampNumber } from "../lib/settings.js";
 import { SETTINGS_SCHEMA, schemaFields, findField } from "../lib/settings-schema.js";
 import { applyTheme } from "../lib/theme.js";
-import { saveHandle, loadHandle, clearHandle, ensurePermission } from "../lib/vault-handle.js";
+import {
+  saveHandle,
+  loadHandle,
+  clearHandle,
+  ensurePermission,
+  saveCollectionLibraryHandle,
+  loadCollectionLibraryHandle,
+  clearCollectionLibraryHandle
+} from "../lib/vault-handle.js";
 import { loadRules, saveRules } from "../lib/tag-rules.js";
 import { createCollectionFromUrl, loadCollections, saveCollections } from "../lib/collections.js";
 import { discoverSitePages } from "../lib/sharepoint-fetch.js";
@@ -24,6 +32,7 @@ import { exportSettings, importSettings } from "../lib/settings-backup.js";
 import { downloadText } from "../lib/download.js";
 import { collectionsToCsv } from "../lib/collection-csv.js";
 import { openCollectionWindow } from "../lib/window-placement.js";
+import { collectionLibraryPath, normalizeLibraryPath, uniqueCollectionLibraryPath } from "../lib/collection-library.js";
 import { slugify } from "../lib/slug.js";
 import { listClips } from "../lib/clip-log.js";
 import { TASK_PRESETS, buildPrompt } from "../lib/prompt-templates.js";
@@ -841,11 +850,9 @@ function renderCollectionsControl(panel) {
   refreshAllButton.textContent = "Refresh all collections";
   refreshAllButton.disabled = true;
   toolbar.append(importListButton, exportAllButton, refreshAllButton);
-  wrapper.append(toolbar);
 
   const list = document.createElement("div");
   list.className = "sites-list";
-  wrapper.append(list);
 
   const addRow = document.createElement("div");
   addRow.className = "sites-add-row";
@@ -878,10 +885,94 @@ function renderCollectionsControl(panel) {
   status.className = "sites-status";
   wrapper.append(status);
 
+  const libraryHeading = document.createElement("h3");
+  libraryHeading.className = "group-heading collection-library-heading";
+  libraryHeading.textContent = "Local Collections Library";
+  wrapper.append(libraryHeading);
+
+  const libraryField = document.createElement("div");
+  libraryField.className = "collection-library-field";
+  const libraryDescription = document.createElement("p");
+  libraryDescription.className = "help-text";
+  libraryDescription.textContent = "Choose one local root folder. Each collection syncs into its own normal-file folder for LLMs, search, backup, or sharing.";
+  const libraryStatus = document.createElement("p");
+  libraryStatus.className = "sites-status";
+  const libraryButtons = document.createElement("div");
+  libraryButtons.className = "collection-library-buttons";
+  const chooseLibraryButton = document.createElement("button");
+  chooseLibraryButton.type = "button";
+  chooseLibraryButton.textContent = "Choose library folder";
+  const regrantLibraryButton = document.createElement("button");
+  regrantLibraryButton.type = "button";
+  regrantLibraryButton.textContent = "Re-grant access";
+  const forgetLibraryButton = document.createElement("button");
+  forgetLibraryButton.type = "button";
+  forgetLibraryButton.textContent = "Forget folder";
+  libraryButtons.append(chooseLibraryButton, regrantLibraryButton, forgetLibraryButton);
+  libraryField.append(libraryDescription, libraryStatus, libraryButtons);
+  wrapper.append(libraryField);
+
+  const savedHeading = document.createElement("h3");
+  savedHeading.className = "group-heading collection-saved-heading";
+  savedHeading.textContent = "Saved collections";
+  wrapper.append(savedHeading, toolbar, list);
+
   panel.append(wrapper);
 
   let sites = [];
+  let libraryHandle = null;
   const rowControllers = new Map();
+
+  async function refreshLibraryStatus() {
+    try {
+      libraryHandle = await loadCollectionLibraryHandle();
+      if (!libraryHandle) {
+        libraryStatus.textContent = "No library folder chosen. Snapshot downloads still work normally.";
+        regrantLibraryButton.hidden = true;
+        forgetLibraryButton.hidden = true;
+        return;
+      }
+      const permission = await ensurePermission(libraryHandle);
+      libraryStatus.textContent = `Library folder: ${libraryHandle.name || "(unnamed folder)"} (${permission === "granted" ? "access granted" : "access needed"})`;
+      regrantLibraryButton.hidden = permission === "granted";
+      forgetLibraryButton.hidden = false;
+    } catch (error) {
+      libraryStatus.textContent = `Could not read the library folder: ${error && error.message ? error.message : error}`;
+    }
+  }
+
+  chooseLibraryButton.addEventListener("click", async () => {
+    if (!window.showDirectoryPicker) {
+      libraryStatus.textContent = "This browser does not support choosing a persistent folder.";
+      return;
+    }
+    try {
+      const handle = await window.showDirectoryPicker({ mode: "readwrite" });
+      await saveCollectionLibraryHandle(handle);
+      libraryHandle = handle;
+      await refreshLibraryStatus();
+    } catch (error) {
+      if (!error || error.name !== "AbortError") libraryStatus.textContent = `Could not choose the library folder: ${error && error.message ? error.message : error}`;
+    }
+  });
+
+  regrantLibraryButton.addEventListener("click", async () => {
+    if (!libraryHandle) return refreshLibraryStatus();
+    try {
+      await libraryHandle.requestPermission({ mode: "readwrite" });
+      await refreshLibraryStatus();
+    } catch (error) {
+      libraryStatus.textContent = `Could not restore folder access: ${error && error.message ? error.message : error}`;
+    }
+  });
+
+  forgetLibraryButton.addEventListener("click", async () => {
+    await clearCollectionLibraryHandle();
+    libraryHandle = null;
+    await refreshLibraryStatus();
+  });
+
+  refreshLibraryStatus();
 
   function persist() {
     saveSites(sites).catch((error) => {
@@ -930,6 +1021,11 @@ function renderCollectionsControl(panel) {
     runButton.textContent = "Export";
     runButton.setAttribute("aria-label", `Export ${site.name} to Markdown`);
 
+    const syncButton = document.createElement("button");
+    syncButton.type = "button";
+    syncButton.textContent = "Sync";
+    syncButton.setAttribute("aria-label", `Sync ${site.name} to its local library folder`);
+
     const csvButton = document.createElement("button");
     csvButton.type = "button";
     csvButton.textContent = "CSV";
@@ -940,7 +1036,7 @@ function renderCollectionsControl(panel) {
     removeButton.textContent = "Remove";
     removeButton.setAttribute("aria-label", `Remove ${site.name}`);
 
-    actions.append(discoverButton, runButton, csvButton, removeButton);
+    actions.append(discoverButton, syncButton, runButton, csvButton, removeButton);
     top.append(toggleButton, info, actions);
     row.append(top);
 
@@ -954,6 +1050,20 @@ function renderCollectionsControl(panel) {
     const discoverStatus = document.createElement("p");
     discoverStatus.className = "site-discover-status";
     details.append(discoverStatus);
+
+    const folderRow = document.createElement("div");
+    folderRow.className = "collection-folder-row";
+    const folderLabel = document.createElement("label");
+    folderLabel.textContent = "Local folder";
+    const folderInput = document.createElement("input");
+    folderInput.type = "text";
+    folderInput.value = collectionLibraryPath(site);
+    folderInput.setAttribute("aria-label", `Local library path for ${site.name}`);
+    const resetFolderButton = document.createElement("button");
+    resetFolderButton.type = "button";
+    resetFolderButton.textContent = "Use default";
+    folderRow.append(folderLabel, folderInput, resetFolderButton);
+    details.append(folderRow);
 
     const discoverResults = document.createElement("ul");
     discoverResults.className = "site-discover-results";
@@ -972,6 +1082,7 @@ function renderCollectionsControl(panel) {
     });
 
     removeButton.addEventListener("click", () => {
+      const removedName = site.name;
       sites = sites.filter((existing) => existing !== site);
       rowControllers.delete(site.id);
       row.remove();
@@ -980,9 +1091,36 @@ function renderCollectionsControl(panel) {
         console.error("Markdown Clipper collection inventory removal failed:", error);
       });
       refreshAllButton.disabled = sites.length === 0;
+      status.textContent = `Removed ${removedName} from saved collections. Any local library files were left in place.`;
     });
 
     runButton.addEventListener("click", () => openCollectionWindow(`collection=${encodeURIComponent(site.id)}`));
+    syncButton.addEventListener("click", () => {
+      if (!libraryHandle) {
+        discoverStatus.textContent = "Choose a Local Collections Library folder above before syncing.";
+        details.hidden = false;
+        return;
+      }
+      openCollectionWindow(`collection=${encodeURIComponent(site.id)}&destination=library`);
+    });
+    folderInput.addEventListener("change", () => {
+      const normalized = normalizeLibraryPath(folderInput.value);
+      const defaultPath = collectionLibraryPath({ ...site, libraryPath: "" });
+      const proposed = normalized === defaultPath ? "" : normalized;
+      if (sites.some((item) => item.id !== site.id && collectionLibraryPath(item).toLowerCase() === collectionLibraryPath({ ...site, libraryPath: proposed }).toLowerCase())) {
+        discoverStatus.textContent = "Another collection already uses that local folder.";
+        folderInput.value = collectionLibraryPath(site);
+        return;
+      }
+      site.libraryPath = proposed;
+      folderInput.value = collectionLibraryPath(site);
+      persist();
+    });
+    resetFolderButton.addEventListener("click", () => {
+      site.libraryPath = "";
+      folderInput.value = collectionLibraryPath(site);
+      persist();
+    });
     csvButton.addEventListener("click", async () => {
       const inventory = await loadSiteInventory(site.id);
       await downloadText(collectionsToCsv([site], { [site.id]: inventory }), `${slugify(site.name, { fallback: "collection" })}-urls.csv`, { type: "text/csv;charset=utf-8" });
@@ -1092,6 +1230,8 @@ function renderCollectionsControl(panel) {
       status.textContent = "That collection is already saved.";
       return;
     }
+    const uniquePath = uniqueCollectionLibraryPath(site, sites);
+    if (uniquePath !== collectionLibraryPath(site)) site.libraryPath = uniquePath;
     let granted = false;
     try {
       granted = await chrome.permissions.request({ origins: [`${new URL(site.webUrl).origin}/*`] });

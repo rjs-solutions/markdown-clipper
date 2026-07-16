@@ -12,6 +12,8 @@ import { loadJob, saveJob, getJobBodies } from "../lib/crawl-state.js";
 import { createCustomCollection, loadCollections, saveCollections } from "../lib/collections.js";
 import { loadSiteInventories } from "../lib/sharepoint-inventory.js";
 import { collectionExportPreset, matchSavedCollection } from "../lib/collection-export.js";
+import { syncCollectionToLibrary } from "../lib/collection-library.js";
+import { loadCollectionLibraryHandle, ensurePermission } from "../lib/vault-handle.js";
 
 const CURRENT_JOB_KEY = "crawl-ui-current-job";
 const POLL_MS = 700;
@@ -31,6 +33,8 @@ const maxDepthInput = document.getElementById("max-depth");
 const includePatternsInput = document.getElementById("include-patterns");
 const excludePatternsInput = document.getElementById("exclude-patterns");
 const outputSelect = document.getElementById("output");
+const destinationSelect = document.getElementById("destination");
+const outputHint = document.getElementById("output-hint");
 const startButton = document.getElementById("start-btn");
 const pauseButton = document.getElementById("pause-btn");
 const resumeButton = document.getElementById("resume-btn");
@@ -75,6 +79,9 @@ async function initialize() {
   if (requestedRadio) requestedRadio.checked = true;
   for (const radio of form.querySelectorAll("input[name='mode']")) radio.addEventListener("change", reflectMode);
   reflectMode();
+  if (params.get("destination") === "library") destinationSelect.value = "library";
+  destinationSelect.addEventListener("change", reflectDestination);
+  reflectDestination();
   updateUrlCount();
 
   form.addEventListener("submit", (event) => { event.preventDefault(); start(); });
@@ -94,6 +101,7 @@ async function initialize() {
     } else if (job) {
       showProgress();
       renderJobSnapshot(job);
+      if (job.status === "done" && !job.exported) await exportJob(job);
     }
   }
 }
@@ -203,6 +211,19 @@ function updateUrlCount() {
   urlCount.textContent = `${count} URL${count === 1 ? "" : "s"}`;
 }
 
+function reflectDestination() {
+  const library = destinationSelect.value === "library";
+  outputSelect.disabled = library;
+  outputHint.textContent = library
+    ? "Writes page files, index.md, collection.json, and a sync report into this collection's local folder."
+    : "Snapshots are saved through Chrome Downloads.";
+}
+
+function selectedCollection() {
+  const id = savedCollectionSelect.value;
+  return savedCollectionEntries.find((entry) => entry.collection.id === id)?.collection || null;
+}
+
 function sendMessage(message) {
   return new Promise((resolve) => chrome.runtime.sendMessage(message, (response) => resolve(response)));
 }
@@ -226,6 +247,12 @@ async function start() {
     const maxDepth = clampInt(maxDepthInput.value, 0, 20, 5);
     let seeds = [];
     let followLinks = false;
+    const destination = destinationSelect.value;
+    const collection = selectedCollection();
+
+    if (destination === "library" && !collection) {
+      throw new Error("Select or save a collection before syncing to the Local Collections Library.");
+    }
 
     if (mode === "list") {
       seeds = parseUrlList(urlsInput.value);
@@ -252,6 +279,14 @@ async function start() {
       await requestOrigins(seeds);
     }
 
+    if (destination === "library") {
+      const handle = await loadCollectionLibraryHandle();
+      if (!handle) throw new Error("Choose a Local Collections Library folder in Manage Collections first.");
+      if (await ensurePermission(handle) !== "granted") {
+        throw new Error("Folder access is needed. Use Re-grant access in Manage Collections, then try again.");
+      }
+    }
+
     currentSettings = await loadSettings();
     const captureOptions = {
       mode: currentSettings.mode,
@@ -274,7 +309,9 @@ async function start() {
         excludePatterns: parsePatterns(excludePatternsInput.value),
         retries: 2,
         retryDelayMs: 500,
-        outputMode: outputSelect.value
+        outputMode: outputSelect.value,
+        destination,
+        collectionId: collection && collection.id
       }
     });
     if (!response || !response.id) throw new Error(response && response.error || "Could not start the crawl.");
@@ -323,9 +360,15 @@ async function exportJob(job) {
     const pages = job.results.map((meta) => bodyByUrl.get(meta.url)).filter(Boolean)
       .map((body) => ({ url: body.url, title: body.title, markdown: body.markdown, metadata: body.metadata }));
     if (!pages.length) throw new Error("No pages were captured.");
-    await buildOutputs(pages, currentSettings, job.options.outputMode);
-    summary.textContent = `Exported ${pages.length} page(s).`;
-    progressSummary.textContent = "Export complete";
+    const collections = await loadCollections();
+    const collection = collections.find((item) => item.id === job.options.collectionId) || null;
+    await buildOutputs(pages, currentSettings, job.options.outputMode, {
+      destination: job.options.destination || "download",
+      collection
+    });
+    const synced = job.options.destination === "library";
+    summary.textContent = `${synced ? "Synced" : "Exported"} ${pages.length} page(s).`;
+    progressSummary.textContent = synced ? "Local sync complete" : "Export complete";
     log("Done.");
     await saveJob({ ...job, exported: true });
   } catch (error) {
@@ -333,10 +376,20 @@ async function exportJob(job) {
   }
 }
 
-async function buildOutputs(pages, settings, outputMode) {
-  const siteTitle = deriveSiteTitle(pages);
+async function buildOutputs(pages, settings, outputMode, { destination = "download", collection = null } = {}) {
+  const siteTitle = collection && collection.name || deriveSiteTitle(pages);
   const base = slugify(siteTitle, { fallback: "site-export" });
   const options = { metadataStyle: settings.metadataStyle, includeTitleHeading: settings.includeTitleHeading };
+  if (destination === "library") {
+    const handle = await loadCollectionLibraryHandle();
+    if (!handle || await ensurePermission(handle) !== "granted") {
+      throw new Error("Local Collections Library access is unavailable. Re-grant it in Manage Collections.");
+    }
+    const result = await syncCollectionToLibrary(handle, collection, pages, settings);
+    log(`Synced ${result.pageCount} page file(s) to ${result.folder}.`);
+    if (result.removed.length) log(`${result.removed.length} previously synced file(s) need review; none were deleted.`, true);
+    return;
+  }
   if (outputMode === "zip" || outputMode === "both" || !outputMode) {
     const files = buildPageFiles(pages, options);
     const entries = files.map((file) => ({ name: file.path, data: file.content }));

@@ -7,6 +7,7 @@ const DB_NAME = "markdown-clip-vault";
 const DB_VERSION = 1;
 const STORE_NAME = "handles";
 const HANDLE_KEY = "directory";
+const COLLECTION_LIBRARY_KEY = "collection-library";
 
 function openHandleDb() {
   return new Promise((resolve, reject) => {
@@ -22,12 +23,12 @@ function openHandleDb() {
   });
 }
 
-export async function saveHandle(handle) {
+async function saveHandleByKey(key, handle) {
   const db = await openHandleDb();
   try {
     await new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readwrite");
-      tx.objectStore(STORE_NAME).put({ key: HANDLE_KEY, handle });
+      tx.objectStore(STORE_NAME).put({ key, handle });
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
@@ -36,12 +37,12 @@ export async function saveHandle(handle) {
   }
 }
 
-export async function loadHandle() {
+async function loadHandleByKey(key) {
   const db = await openHandleDb();
   try {
     const record = await new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readonly");
-      const request = tx.objectStore(STORE_NAME).get(HANDLE_KEY);
+      const request = tx.objectStore(STORE_NAME).get(key);
       request.onsuccess = () => resolve(request.result || null);
       request.onerror = () => reject(request.error);
     });
@@ -51,18 +52,42 @@ export async function loadHandle() {
   }
 }
 
-export async function clearHandle() {
+async function clearHandleByKey(key) {
   const db = await openHandleDb();
   try {
     await new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readwrite");
-      tx.objectStore(STORE_NAME).delete(HANDLE_KEY);
+      tx.objectStore(STORE_NAME).delete(key);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
   } finally {
     db.close();
   }
+}
+
+export function saveHandle(handle) {
+  return saveHandleByKey(HANDLE_KEY, handle);
+}
+
+export function loadHandle() {
+  return loadHandleByKey(HANDLE_KEY);
+}
+
+export function clearHandle() {
+  return clearHandleByKey(HANDLE_KEY);
+}
+
+export function saveCollectionLibraryHandle(handle) {
+  return saveHandleByKey(COLLECTION_LIBRARY_KEY, handle);
+}
+
+export function loadCollectionLibraryHandle() {
+  return loadHandleByKey(COLLECTION_LIBRARY_KEY);
+}
+
+export function clearCollectionLibraryHandle() {
+  return clearHandleByKey(COLLECTION_LIBRARY_KEY);
 }
 
 export async function hasVault() {

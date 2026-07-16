@@ -10,7 +10,7 @@
 - [ ] Remove and re-add the unpacked `extension/` folder after manifest changes.
 - [ ] Complete [browser-verification-checklist.md](browser-verification-checklist.md), including
       an authenticated SharePoint capture, saved-collection refresh/import/export, popup, in-page panel,
-      Chrome side panel, templates, vault save, and collection export.
+      Chrome side panel, templates, vault save, collection export, and Local Collections Library sync.
 - [ ] Confirm the public [privacy policy](../PRIVACY.md) matches the dashboard disclosures.
 - [ ] Capture the listing images in [SCREENSHOTS.md](SCREENSHOTS.md), then run
       `npm run store:check`.

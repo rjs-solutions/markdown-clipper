@@ -58,6 +58,7 @@ extension/
     │   ├── collection-import.js TXT / CSV / XLSX URL intake
     │   ├── collections.js     versioned saved-collection model + legacy migration
     │   ├── collection-csv.js  collection/inventory CSV export
+    │   ├── collection-library.js direct local Markdown sync + manifest/report
     │   ├── sharepoint-inventory.js local page snapshots + refresh reconciliation
     │   ├── collection-export.js saved-collection matching + export presets
     │   ├── sitepath.js        URL -> structure-preserving .md path
@@ -86,7 +87,7 @@ crawl page → discover seeds (file/list | sitemap | llms.txt | saved collection
            → crawl.js: for each URL — open background tab, wait for load,
              capture.js, (optionally) collect same-host links, close tab
            → aggregate.js → ZIP (buildPageFiles + index, via zip.js) and/or aggregate.md
-           → Blob download
+           → Blob download, or collection-library.js → normal files under the chosen local root
 ```
 
 ## Conversion engine
@@ -117,7 +118,7 @@ flat map.
 
 ## Testing
 
-`npm test` runs `node --test` (320 cases), including Markdown conversion, settings, capture
+`npm test` runs `node --test` (325 cases), including Markdown conversion, settings, capture
 adapters, SharePoint discovery/inventory reconciliation, crawling, templating, the vault, and
 DOM integration coverage in jsdom. Browser-only behavior on real authenticated pages is covered
 by the manual checklist in [TESTING.md](TESTING.md).

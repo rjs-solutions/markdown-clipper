@@ -1,6 +1,6 @@
 # Browser verification checklist — feature/clipper-expansion
 
-Everything on this branch passes 320 automated tests and a static load-safety audit
+Everything on this branch passes 325 automated tests and a static load-safety audit
 (service worker has no load-fatal DOM globals, no `createObjectURL` in the worker tree,
 all manifest-referenced files exist). What remains can only be checked in a real Chrome
 because it needs the extension loaded, the File System Access API, real IndexedDB, or a
@@ -30,6 +30,10 @@ independent once the extension is loaded.
 - [ ] On a page within the saved site, open **Export a collection** → the selector chooses that collection and loads its refreshed page inventory. Its Manage button and the popup header Collections icon both open Options directly on Collections.
 - [ ] Add a website and confirm `llms.txt` or sitemap auto-discovery, with crawl offered as fallback.
 - [ ] Import a URL list from TXT, CSV, and XLSX. Save one custom collection, then export its CSV and the all-collections CSV.
+- [ ] Choose a Local Collections Library root, adjust one collection's relative folder, and click
+      Sync. Confirm page `.md` files, `index.md`, `collection.json`, and `_sync-report.md` are
+      directly readable without extracting a ZIP. A second sync updates files in place.
+- [ ] Reopen Chrome and verify the folder status; use Re-grant access if Chrome requires it.
 
 ## 3. Crawler v2 — durability  *(THE acceptance test; also the only check of IndexedDB body storage)*
 - [ ] Start a follow-links crawl (max pages ~15) on a site you may crawl; approve the permission prompt. Watch a few pages capture.

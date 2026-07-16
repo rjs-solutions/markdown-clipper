@@ -20,8 +20,8 @@ refresh, or collection export. It may process:
 - the URL, rendered website content, headings, links, images, tables, selected text, and page
   metadata such as title, author, and dates for the page or pages the user chose;
 - the URLs discovered during a user-started sitemap, `llms.txt`, same-site crawl, or platform discovery;
-- the user's capture settings, templates, tag rules, saved collection definitions, and
-  chosen vault folder; and
+- the user's capture settings, templates, tag rules, saved collection definitions and relative
+  library paths, chosen vault folder, and chosen Local Collections Library folder; and
 - generated Markdown, filenames, crawl progress, and local clip-history metadata needed to
   complete or update the requested export.
 
@@ -36,12 +36,12 @@ cookies or passwords.
   same Chrome profile, according to the user's Chrome sync settings.
 - Collection page inventories, crawl job metadata, the active crawl reference, and in-page panel
   geometry use extension-local browser storage.
-- Crawl page bodies, clip-history records, and the chosen vault directory handle use IndexedDB
+- Crawl page bodies, clip-history records, and chosen vault and Collections Library directory handles use IndexedDB
   in the extension's browser profile. A chosen directory handle is only used to write files after
   browser permission is granted.
 - Short-lived selection and editor handoff data use session storage.
 - Markdown files and ZIP archives are written only when the user chooses Download, Save as, or a
-  configured vault action. Those files remain in the destination the user selected.
+  configured vault or collection-sync action. Those files remain in the destination the user selected.
 
 The extension provides reset, removal, and activity controls for its stored configuration and
 work history. Uninstalling the extension removes browser-managed extension storage; exported
@@ -67,7 +67,8 @@ libraries are packaged with the extension; it does not execute remote code.
 - **`activeTab`** — access the current page after a user invokes a capture.
 - **`scripting`** — run the on-demand collector in a user-selected page or export tab.
 - **`downloads`** — save a requested Markdown file or collection archive.
-- **`storage`** — keep settings, saved-collection definitions, inventories, and resumable work state.
+- **`storage`** — keep settings, saved-collection definitions and relative library paths,
+  inventories, and resumable work state. Directory handles stay in local IndexedDB.
 - **`sidePanel`** — show the clip card in Chrome's side panel when the user chooses that surface.
 - **`alarms`** — wake the service worker to resume a user-started crawl after Chrome suspends it.
 - **`contextMenus`** — provide explicit page and selection clipping commands.

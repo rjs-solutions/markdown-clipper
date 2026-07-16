@@ -570,6 +570,31 @@ legend {
   min-height: 1em;
 }
 
+.collection-library-heading,
+.collection-saved-heading {
+  margin-top: 18px;
+}
+
+.collection-library-field {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-muted);
+}
+
+.collection-library-field .help-text,
+.collection-library-field .sites-status {
+  margin: 0;
+}
+
+.collection-library-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .site-row {
   display: flex;
   flex-direction: column;
@@ -617,6 +642,23 @@ legend {
 
 .site-details[hidden] {
   display: none;
+}
+
+.collection-folder-row {
+  display: grid;
+  grid-template-columns: auto minmax(160px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.collection-folder-row label {
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+
+.collection-folder-row input {
+  min-width: 0;
+  font-size: 0.85em;
 }
 
 .site-info {
@@ -755,6 +797,10 @@ legend {
   .site-row-top {
     align-items: flex-start;
     flex-wrap: wrap;
+  }
+
+  .collection-folder-row {
+    grid-template-columns: 1fr;
   }
 
   .prompt-filters-row {

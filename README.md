@@ -5,7 +5,7 @@ SharePoint. Copy, download, save into a local knowledge vault, or export whole s
 preserving their structure.
 
 > **Status:** 1.1.0 plus the `feature/clipper-expansion` preview. The preview is covered by
-> 320 automated tests but still requires the
+> 325 automated tests but still requires the
 > [browser verification checklist](docs/browser-verification-checklist.md). Load the unpacked
 > `extension/` before testing. See
 > [CHANGELOG.md](CHANGELOG.md) for details.
@@ -19,6 +19,9 @@ preserving their structure.
 - **Saved collections** — save SharePoint, Confluence, general websites, or custom URL lists;
   refresh inventories to detect changes without duplicates; and export one inventory or all
   collection metadata as CSV.
+- **Local Collections Library** — choose one local root and sync each saved collection into its
+  own type/name folder as normal Markdown files with `index.md`, `collection.json`, and a
+  non-destructive sync report suitable for LLMs, desktop search, backup, or sharing.
 - **Works on any page** — general webpages use Mozilla Readability article extraction, with a
   full-page fallback. A capture **mode** setting (auto / sharepoint / article / full) lets you
   override.

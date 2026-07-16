@@ -44,6 +44,13 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
       handoff to same-site crawl when neither exists.
 - [ ] Import TXT, CSV, and XLSX URL lists in Export Collection; save one as a custom collection.
 - [ ] Export one collection and all collections as CSV; verify labels, types, sources, and URLs.
+- [ ] Choose a **Local Collections Library** folder. Each collection shows a unique relative path;
+      changing a path persists, while a duplicate path is rejected.
+- [ ] Sync a collection and verify normal Markdown page files, `index.md`, `collection.json`, and
+      `_sync-report.md` appear under `<type>/<collection>`. Sync again after editing a page and
+      confirm its file is updated rather than duplicated.
+- [ ] Remove a page from the source and sync again. The sync report lists it, but the prior local
+      file remains until the user reviews and removes it.
 
 ## 3. Single-page capture — general webpage
 
@@ -69,6 +76,8 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
       host.
 - [ ] ZIP output contains per-page Markdown plus `index.md`; aggregate output downloads when
       selected.
+- [ ] Choosing **Local Collections Library** disables snapshot format selection and writes normal
+      files instead of downloading a ZIP.
 - [ ] A sitemap containing page URLs on unapproved origins skips them with a clear message;
       use URL-list mode to explicitly approve multiple hosts.
 

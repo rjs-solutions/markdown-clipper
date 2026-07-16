@@ -12,6 +12,9 @@ All notable changes to Markdown Clipper are documented here. This project follow
   collections CSV inventory export.
 - Redesign Export Collection with branded, collapsible sections and open it beside the in-page
   clipper when space allows.
+- Add an opt-in Local Collections Library: one chosen root, safe per-collection folder overrides,
+  direct Markdown synchronization, overwrite-in-place updates, and non-destructive removed-page
+  reporting. Snapshot ZIP and aggregate downloads remain available.
 
 - Add an accessible split Download action: the main segment keeps one-click download/vault behavior, while a folder segment opens Chrome's native location chooser in the popup, side panel, in-page overlay, and full editor.
 

@@ -45,6 +45,8 @@ Export and revisit collections:
 - Save SharePoint, Confluence, website, and custom URL-list collections; refresh inventories to
   identify new, updated, unchanged, and removed pages without duplicates.
 - Export one collection inventory or all saved collection metadata as CSV.
+- Choose a Local Collections Library and sync every saved collection into a separate folder of
+  directly readable Markdown files, with an index, machine-readable manifest, and safe change report.
 - Export structure-preserving Markdown files with `index.md` in a ZIP, one aggregate Markdown
   document, or both.
 - Pause and resume longer exports; progress survives service-worker suspension.
@@ -63,7 +65,8 @@ It does not monitor ordinary browsing.
 ## Suggested release notes
 
 Markdown Clipper 1.1 adds a movable in-page clip panel, configurable toolbar behavior, direct
-vault saving, generalized Collections with refresh/change detection and URL-list imports,
+vault saving, generalized Collections with refresh/change detection, URL-list imports, and direct
+local library sync,
 selection clipping, richer site adapters, and a split Download / Save as control.
 
 ## Single purpose
@@ -81,7 +84,8 @@ knowledge-vault, and user-started collection-export workflows.
 - **downloads** — save a Markdown file or ZIP archive after the user clicks Download or completes
   an export.
 - **storage** — store settings, templates, tag rules, saved collection definitions and
-  inventories, panel geometry, resumable crawl metadata, and short-lived handoff data.
+  inventories, relative library paths, panel geometry, resumable crawl metadata, and short-lived
+  handoff data. User-chosen directory handles remain local in IndexedDB.
 - **sidePanel** — open the clip interface in Chrome's docked side panel when the user explicitly
   selects that surface.
 - **alarms** — periodically wake the Manifest V3 service worker only to resume or finish a
