@@ -565,9 +565,21 @@ legend {
 
 .sites-toolbar {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.collection-utility-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+}
+
+.collection-utility-actions .collection-icon-action:disabled {
+  cursor: default;
 }
 
 .sites-add-row {

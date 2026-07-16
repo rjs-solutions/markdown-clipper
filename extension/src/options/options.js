@@ -852,24 +852,44 @@ function renderCollectionsControl(panel) {
   const importListButton = document.createElement("button");
   importListButton.type = "button";
   importListButton.textContent = "Import URL list…";
+  importListButton.title = "Create a collection from URLs in a TXT, CSV, or XLSX file";
   const importDefinitionsButton = document.createElement("button");
   importDefinitionsButton.type = "button";
-  importDefinitionsButton.textContent = "Import definitions…";
+  configureCollectionIcon(
+    importDefinitionsButton,
+    "Restore collections from a JSON backup",
+    '<path d="M6 3h8l4 4v14H6Z"></path><path d="M13 3v5h5M12 17V10m-3 3 3-3 3 3"></path>'
+  );
   const importDefinitionsInput = document.createElement("input");
   importDefinitionsInput.type = "file";
   importDefinitionsInput.accept = ".json,application/json";
   importDefinitionsInput.hidden = true;
   const exportDefinitionsButton = document.createElement("button");
   exportDefinitionsButton.type = "button";
-  exportDefinitionsButton.textContent = "Export definitions";
+  configureCollectionIcon(
+    exportDefinitionsButton,
+    "Back up all collection settings as JSON",
+    '<path d="M6 3h8l4 4v14H6Z"></path><path d="M13 3v5h5M12 10v7m-3-3 3 3 3-3"></path>'
+  );
   const exportAllButton = document.createElement("button");
   exportAllButton.type = "button";
-  exportAllButton.textContent = "Export all CSV";
+  configureCollectionIcon(
+    exportAllButton,
+    "Export every collection URL inventory as CSV",
+    '<path d="M4 5h16v14H4Z"></path><path d="M4 10h16M9 5v14M15 12v6m-3-3 3 3 3-3"></path>'
+  );
   const refreshAllButton = document.createElement("button");
   refreshAllButton.type = "button";
-  refreshAllButton.textContent = "Refresh all collections";
+  configureCollectionIcon(
+    refreshAllButton,
+    "Refresh all saved collection inventories",
+    '<path d="M20 12a8 8 0 1 1-2.34-5.66"></path><path d="M20 4v6h-6"></path>'
+  );
   refreshAllButton.disabled = true;
-  toolbar.append(importListButton, importDefinitionsButton, exportDefinitionsButton, exportAllButton, refreshAllButton);
+  const utilityActions = document.createElement("div");
+  utilityActions.className = "collection-utility-actions";
+  utilityActions.append(importDefinitionsButton, exportDefinitionsButton, exportAllButton, refreshAllButton);
+  toolbar.append(importListButton, utilityActions);
 
   const list = document.createElement("div");
   list.className = "sites-list";

@@ -30,6 +30,16 @@ test("Collections uses a second-line intake row and compact CSV or TXT export", 
   assert.match(css, /\.site-row-top\s*\{[^}]*grid-template-columns:\s*28px minmax\(0, 1fr\) auto;/s);
 });
 
+test("Saved Collections keeps URL import labeled and groups secondary utilities as icons", async () => {
+  const source = await readFile(new URL("../extension/src/options/options.js", import.meta.url), "utf8");
+  assert.match(source, /importListButton\.textContent = "Import URL list…"/);
+  assert.match(source, /"Restore collections from a JSON backup"/);
+  assert.match(source, /"Back up all collection settings as JSON"/);
+  assert.match(source, /"Export every collection URL inventory as CSV"/);
+  assert.match(source, /"Refresh all saved collection inventories"/);
+  assert.match(source, /utilityActions\.className = "collection-utility-actions"/);
+});
+
 test("options and collection export use padded custom select chevrons", async () => {
   const options = await readFile(new URL("../extension/src/options/styles.css", import.meta.url), "utf8");
   const crawl = await readFile(new URL("../extension/src/crawl/styles.css", import.meta.url), "utf8");
