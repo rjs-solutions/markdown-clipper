@@ -350,6 +350,18 @@ select:focus {
   background: var(--accent);
 }
 
+#start-btn.is-progress {
+  --progress-percent: 0%;
+  opacity: 1;
+  cursor: wait;
+  background: linear-gradient(
+    90deg,
+    var(--accent-hover) 0 var(--progress-percent),
+    var(--accent) var(--progress-percent) 100%
+  );
+  transition: background .2s ease;
+}
+
 @media (max-width: 500px) {
   .header-subtitle {
     display: none;

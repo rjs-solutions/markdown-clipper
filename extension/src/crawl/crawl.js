@@ -16,6 +16,7 @@ import { syncCollectionToLibrary, writeCollectionLibraryCatalog } from "../lib/c
 import { loadCollectionLibraryHandle, ensurePermission } from "../lib/vault-handle.js";
 import { markCollectionSyncCompleted } from "../lib/collection-schedule.js";
 import { saveCollectionHealth } from "../lib/collection-health.js";
+import { formatClock, getJobProgress } from "../lib/job-progress.js";
 
 const CURRENT_JOB_KEY = "crawl-ui-current-job";
 const SYNC_QUEUE_KEY = "crawl-ui-sync-queue";
@@ -312,6 +313,7 @@ async function start() {
   renderedLogLines = 0;
   summary.textContent = "";
   showProgress();
+  showPreparingAction();
   try {
     const mode = currentMode();
     const maxPages = clampInt(maxPagesInput.value, 1, 500, 25);
@@ -391,6 +393,7 @@ async function start() {
     startPolling(response.id);
   } catch (error) {
     log(`Error: ${error && error.message ? error.message : error}`, true);
+    clearProgressAction();
     setRunning("done");
   }
 }
@@ -421,10 +424,18 @@ function renderJobSnapshot(job) {
   const message = `${job.status} — ${job.results.length} captured, ${job.errors.length} error(s), ${job.queue.length} queued.`;
   summary.textContent = message;
   progressSummary.textContent = message;
+  if (["queued", "running", "paused"].includes(job.status)) {
+    showJobProgress(job);
+  } else if (job.status === "done" && !job.exported) {
+    showFinalizingAction(job);
+  } else {
+    clearProgressAction();
+  }
 }
 
 async function exportJob(job) {
   try {
+    showFinalizingAction(job);
     log(`Captured ${job.results.length} page(s). Building output…`);
     const bodies = await getJobBodies(job.id);
     const bodyByUrl = new Map(bodies.map((body) => [body.url, body]));
@@ -459,6 +470,10 @@ async function exportJob(job) {
     }
   } catch (error) {
     log(`Error: ${error && error.message ? error.message : error}`, true);
+  } finally {
+    // Sync all can start the next queued job before this export finishes.
+    // Do not erase that new job's progress state from the previous job's cleanup.
+    if (getCurrentJobId() === job.id) clearProgressAction();
   }
 }
 
@@ -516,10 +531,52 @@ function sourceLabel(mode) { return ({ list: "saved URL", sitemap: "sitemap", ll
 function setRunning(status) {
   const running = status === "running" || status === "queued";
   const paused = status === "paused";
-  startButton.disabled = running || paused;
+  startButton.disabled = running || paused || startButton.classList.contains("is-progress");
   pauseButton.disabled = !running;
   resumeButton.disabled = !paused;
   stopButton.disabled = !(running || paused);
+}
+
+function showPreparingAction() {
+  startButton.classList.add("is-progress");
+  startButton.setAttribute("aria-busy", "true");
+  startButton.style.setProperty("--progress-percent", "0%");
+  startButton.disabled = true;
+  startButton.title = "Preparing the collection capture.";
+  setPrimaryActionLabel("Preparing capture…");
+}
+
+function showJobProgress(job) {
+  const progress = getJobProgress(job);
+  const paused = job.status === "paused";
+  const eta = progress.etaMs == null ? "estimating…" : formatClock(progress.etaMs);
+  const label = paused
+    ? `Paused ${progress.completed} / ${progress.total}`
+    : `Processing ${progress.completed} / ${progress.total} · ETA ${eta}`;
+  startButton.classList.add("is-progress");
+  startButton.setAttribute("aria-busy", "true");
+  startButton.style.setProperty("--progress-percent", `${progress.percent}%`);
+  startButton.disabled = true;
+  startButton.title = `${progress.captured} captured, ${progress.failed} failed · Elapsed ${formatClock(progress.elapsedMs)}`;
+  setPrimaryActionLabel(label);
+}
+
+function showFinalizingAction(job) {
+  const progress = getJobProgress(job);
+  startButton.classList.add("is-progress");
+  startButton.setAttribute("aria-busy", "true");
+  startButton.style.setProperty("--progress-percent", "100%");
+  startButton.disabled = true;
+  startButton.title = `${progress.captured} captured, ${progress.failed} failed. Building the selected output.`;
+  setPrimaryActionLabel("Preparing Markdown…");
+}
+
+function clearProgressAction() {
+  startButton.classList.remove("is-progress");
+  startButton.removeAttribute("aria-busy");
+  startButton.style.removeProperty("--progress-percent");
+  startButton.removeAttribute("title");
+  updatePrimaryActionLabel();
 }
 
 function log(message, isError = false) {

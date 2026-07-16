@@ -137,12 +137,15 @@ test("Capture Collection uses branded flat sections and icon-led source choices"
   assert.match(html, />Import URL file</);
   assert.match(html, />Save as collection</);
   assert.match(html, />Export Markdown</);
+  assert.match(html, /id="start-btn"[\s\S]*?<span aria-live="polite">Export Markdown<\/span>/);
   assert.match(html, /id="urls" rows="5"/);
   assert.match(css, /\.modes label:has\(input:checked\)\s*\{[^}]*background:\s*var\(--surface-muted\);/s);
   assert.match(css, /\.modes label\s*\{[^}]*min-height:\s*44px;[^}]*padding:\s*5px 9px;/s);
   assert.match(css, /#urls\s*\{[^}]*min-height:\s*124px;/s);
   assert.match(css, /#urls::\-webkit-resizer\s*\{[^}]*background-color:\s*var\(--bg\);/s);
   assert.match(css, /#save-collection\.is-primary-action\s*\{[^}]*background:\s*var\(--accent\);/s);
+  assert.match(css, /#start-btn\.is-progress\s*\{[^}]*opacity:\s*1;[^}]*linear-gradient/s);
+  assert.match(source, /Processing \$\{progress\.completed\} \/ \$\{progress\.total\} · ETA \$\{eta\}/);
   assert.match(source, /collectionNameInput\.addEventListener\("input", updateCollectionSaveState\)/);
   assert.match(source, /saveCollectionButton\.classList\.toggle\("is-primary-action", isReady\)/);
   assert.match(css, /textarea,[\s\S]*?background-color:\s*var\(--bg\);/s);
