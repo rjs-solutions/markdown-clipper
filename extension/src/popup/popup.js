@@ -31,6 +31,7 @@ const el = {
   previewBody: document.getElementById("preview-body"),
   actions: document.getElementById("actions"),
   download: document.getElementById("do-download"),
+  downloadLocation: document.getElementById("do-download-location"),
   copy: document.getElementById("do-copy"),
   export: document.getElementById("do-export"),
   status: document.getElementById("status")
@@ -126,6 +127,7 @@ function wireEvents() {
   el.optionsButton.addEventListener("click", () => chrome.runtime.openOptionsPage());
   el.expand.addEventListener("click", openEditor);
   el.download.addEventListener("click", () => run("download"));
+  el.downloadLocation.addEventListener("click", () => run("save-as"));
   el.copy.addEventListener("click", () => run("copy"));
   el.export.addEventListener("click", exportWholeSite);
 
@@ -538,10 +540,12 @@ async function run(action) {
       // overwrites the same file instead of creating a new one; otherwise
       // fall back to today's freshly derived filename.
       const relativePath = existingClip ? existingClip.path : payload.filename;
+      const chooseLocation = action === "save-as";
       const written = await writeArtifact({
         relativePath,
         content: payload.markdown,
-        useVault: settings.vaultEnabled
+        saveAs: chooseLocation,
+        useVault: chooseLocation ? false : settings.vaultEnabled
       });
       if (!written.ok) {
         throw new Error(written.error || "Could not save the file.");
@@ -576,7 +580,9 @@ async function run(action) {
           ? `Updated existing clip: ${written.path}`
           : written.backend === "vault"
             ? `Saved to vault: ${written.path}`
-            : `Downloaded ${payload.filename}`
+            : chooseLocation
+              ? `Downloaded ${payload.filename} to the selected location`
+              : `Downloaded ${payload.filename}`
       );
     }
   } catch (error) {
@@ -810,7 +816,7 @@ function showEmpty(message) {
 }
 
 function setBusy(isBusy) {
-  for (const button of [el.download, el.copy, el.expand]) {
+  for (const button of [el.download, el.downloadLocation, el.copy, el.expand]) {
     button.disabled = isBusy;
   }
 }

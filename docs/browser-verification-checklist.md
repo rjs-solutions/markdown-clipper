@@ -1,6 +1,6 @@
 # Browser verification checklist — feature/clipper-expansion
 
-Everything on this branch passes 298 automated tests and a static load-safety audit
+Everything on this branch passes 302 automated tests and a static load-safety audit
 (service worker has no load-fatal DOM globals, no `createObjectURL` in the worker tree,
 all manifest-referenced files exist). What remains can only be checked in a real Chrome
 because it needs the extension loaded, the File System Access API, real IndexedDB, or a
@@ -62,6 +62,7 @@ independent once the extension is loaded.
 
 ## 8. UX feedback pass (popup slim, panel, entry points)
 - [ ] Popup: only a **Source** row up top (no Author/Published/Modified/Site); Download/Copy/Open visible with little/no scroll. The full editor (expand icon) still shows all fields.
+- [ ] Popup, in-page panel, native side panel, and editor: the wide **Download** segment keeps the normal behavior; the narrow folder segment shows “Choose download location” on hover and opens Chrome's Save As dialog.
 - [ ] Settings > Knowledge Base has an **Open prompt generator** button (the popup no longer does).
 - [ ] Open in Page: panel is noticeably bigger, the bottom-right **resize grip is visible** and drags; Description/Markdown fields are taller than in the plain popup.
 - [ ] Side panel: an **X** closes it (only shown there).

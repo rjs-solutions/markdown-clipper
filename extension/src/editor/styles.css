@@ -162,6 +162,30 @@ body {
   border-color: var(--accent-hover);
 }
 
+.download-split {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent);
+}
+
+.download-split .btn-primary {
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.download-main {
+  min-width: 120px !important;
+}
+
+.download-location {
+  width: 38px;
+  padding: 7px;
+  border-left: 1px solid color-mix(in srgb, var(--accent-contrast) 38%, transparent) !important;
+}
+
 /* Three-pane body: properties | markdown | output --------------------------- */
 
 .ed-grid {

@@ -22,6 +22,8 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 - [ ] On a SharePoint page, **Copy Markdown** → paste elsewhere; headings, lists, tables, and
       links are correct; navigation/chrome is excluded.
 - [ ] **Download** saves a sensibly named `.md` file with the same content.
+- [ ] The folder segment beside **Download** opens Chrome's Save As dialog and allows a different
+      location; the main Download segment remains a one-click action.
 - [ ] **Open in tab** shows the Markdown preview.
 - [ ] A long, lazy-loading page captures the below-the-fold content (scroll-to-load worked).
 - [ ] Merely opening the popup does not move the SharePoint page. Choosing Copy, Download,

@@ -26,14 +26,23 @@
             </svg>
             <span>Copy</span>
           </button>
-          <button class="btn btn-primary" id="do-download" type="button">
-            <svg class="btn-icon" aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <path d="M7 10l5 5 5-5"></path>
-              <path d="M12 15V3"></path>
-            </svg>
-            <span>Download</span>
-          </button>
+          <div class="download-split" role="group" aria-label="Download options">
+            <button class="btn btn-primary download-main" id="do-download" type="button">
+              <svg class="btn-icon" aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <path d="M7 10l5 5 5-5"></path>
+                <path d="M12 15V3"></path>
+              </svg>
+              <span>Download</span>
+            </button>
+            <button class="btn btn-primary download-location" id="do-download-location" type="button"
+                    title="Choose download location" aria-label="Choose download location">
+              <svg class="btn-icon" aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"></path>
+                <path d="m9 13 2 2 4-4"></path>
+              </svg>
+            </button>
+          </div>
           <span class="ed-sep" aria-hidden="true"></span>
           <button class="btn btn-close" id="do-close" type="button">
             <svg class="btn-icon" aria-hidden="true" viewBox="0 0 24 24">

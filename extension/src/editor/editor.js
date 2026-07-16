@@ -22,6 +22,7 @@ const el = {
   outputName: document.getElementById("output-name"),
   copy: document.getElementById("do-copy"),
   download: document.getElementById("do-download"),
+  downloadLocation: document.getElementById("do-download-location"),
   close: document.getElementById("do-close"),
   status: document.getElementById("status")
 };
@@ -132,16 +133,19 @@ function wire() {
     }
   });
 
-  el.download.addEventListener("click", async () => {
+  async function download(saveAs = false) {
     try {
       const out = assemble();
-      await downloadText(out.markdown, out.filename);
+      await downloadText(out.markdown, out.filename, { saveAs });
       dirty = false;
-      flash(`Downloaded ${out.filename}`);
+      flash(saveAs ? `Downloaded ${out.filename} to the selected location` : `Downloaded ${out.filename}`);
     } catch (error) {
       flash(messageFrom(error), true);
     }
-  });
+  }
+
+  el.download.addEventListener("click", () => download(false));
+  el.downloadLocation.addEventListener("click", () => download(true));
 
   el.close.addEventListener("click", closeEditor);
 }

@@ -103,14 +103,23 @@
       <!-- Quick actions: one primary (Download), two light secondary icon buttons. -->
       <div class="actions" id="actions" hidden>
         <div class="actions-row">
-          <button class="btn act act-download" id="do-download" type="button">
-            <svg class="btn-icon" aria-hidden="true" viewBox="0 0 24 24">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <path d="M7 10l5 5 5-5"></path>
-              <path d="M12 15V3"></path>
-            </svg>
-            <span>Download</span>
-          </button>
+          <div class="download-split" role="group" aria-label="Download options">
+            <button class="btn act act-download act-download-main" id="do-download" type="button">
+              <svg class="btn-icon" aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <path d="M7 10l5 5 5-5"></path>
+                <path d="M12 15V3"></path>
+              </svg>
+              <span>Download</span>
+            </button>
+            <button class="btn act act-download act-download-location" id="do-download-location" type="button"
+                    title="Choose download location" aria-label="Choose download location">
+              <svg class="btn-icon" aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"></path>
+                <path d="m9 13 2 2 4-4"></path>
+              </svg>
+            </button>
+          </div>
           <button class="btn act-secondary" id="do-copy" type="button" title="Copy markdown" aria-label="Copy markdown">
             <svg class="btn-icon" aria-hidden="true" viewBox="0 0 24 24">
               <path d="M8 8h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2Z"></path>
