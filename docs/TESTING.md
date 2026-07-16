@@ -73,6 +73,11 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
       Download, and Open work there.
 - [ ] Main Copy copies only the visible Body and briefly animates to **Copied**; the secondary
       segment copies the complete assembled note. The Body counter matches the primary copy.
+- [ ] After downloading a clip, reopen the page: the header indicator shows the saved date/path
+      and **Appears current**. Change visible content to verify **Page changed**. Older records may
+      say freshness is unknown until saved again.
+- [ ] Header icon hover tiles are centered and ordered Export Collection, Manage Collections,
+      divider, Options. At narrow side-panel widths, nothing causes horizontal overflow.
 - [ ] A SharePoint Page details description is populated in the Description field.
 - [ ] Switching to another tab hides the clipper panel instead of showing an empty capture;
       returning to the original tab restores it, with no horizontal scrolling at narrow widths.

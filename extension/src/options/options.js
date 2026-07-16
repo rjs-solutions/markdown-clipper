@@ -788,6 +788,13 @@ function collectionTypeLabel(type) {
   return ({ sharepoint: "SharePoint", confluence: "Confluence", website: "Website", custom: "Custom list" })[type] || "Collection";
 }
 
+function configureCollectionIcon(button, label, paths, className = "") {
+  button.className = `collection-icon-action ${className}`.trim();
+  button.title = label;
+  button.setAttribute("aria-label", label);
+  button.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
+}
+
 function pageFromUrl(url) {
   try {
     const parsed = new URL(url);
@@ -891,7 +898,10 @@ function renderCollectionsControl(panel) {
   addButton.type = "button";
   addButton.textContent = "Add & discover";
 
-  addRow.append(urlInput, typeSelect, sourceSelect, addButton);
+  const addControls = document.createElement("div");
+  addControls.className = "sites-add-controls";
+  addControls.append(typeSelect, sourceSelect, addButton);
+  addRow.append(urlInput, addControls);
   wrapper.append(addRow);
 
   const status = document.createElement("p");
@@ -948,6 +958,7 @@ function renderCollectionsControl(panel) {
   let sites = [];
   let libraryHandle = null;
   let libraryPermissionGranted = false;
+  const requestedCollectionId = new URLSearchParams(location.search).get("collection") || "";
   const rowControllers = new Map();
 
   async function refreshLibraryStatus() {
@@ -1057,7 +1068,8 @@ function renderCollectionsControl(panel) {
     toggleButton.className = "site-toggle";
     toggleButton.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m5 6 3 3 3-3"></path></svg>';
 
-    const info = document.createElement("div");
+    const info = document.createElement("button");
+    info.type = "button";
     info.className = "site-info";
     const name = document.createElement("span");
     name.className = "site-name";
@@ -1078,39 +1090,54 @@ function renderCollectionsControl(panel) {
 
     const discoverButton = document.createElement("button");
     discoverButton.type = "button";
-    discoverButton.textContent = site.type === "custom" ? "Review URLs" : "Refresh";
-    discoverButton.setAttribute("aria-label", `${site.type === "custom" ? "Review" : "Refresh"} ${site.name}`);
+    configureCollectionIcon(
+      discoverButton,
+      `${site.type === "custom" ? "Review URLs in" : "Refresh"} ${site.name}`,
+      '<path d="M20 12a8 8 0 1 1-2.34-5.66"></path><path d="M20 4v6h-6"></path>'
+    );
 
     const runButton = document.createElement("button");
     runButton.type = "button";
-    runButton.textContent = "Export";
-    runButton.setAttribute("aria-label", `Export ${site.name} to Markdown`);
+    configureCollectionIcon(runButton, `Export ${site.name} to Markdown`, '<path d="M6 3h8l4 4v14H6Z"></path><path d="M13 3v5h5M9 14h6"></path><path d="m12 11 3 3-3 3"></path>');
 
     const syncButton = document.createElement("button");
     syncButton.type = "button";
-    syncButton.textContent = "Sync";
-    syncButton.setAttribute("aria-label", `Sync ${site.name} to its local library folder`);
+    configureCollectionIcon(syncButton, `Sync ${site.name} to its local library folder`, '<path d="M4 7h12a4 4 0 0 1 4 4v1"></path><path d="m17 9 3 3 3-3"></path><path d="M20 17H8a4 4 0 0 1-4-4v-1"></path><path d="m7 15-3-3-3 3"></path>');
 
+    const inventoryExport = document.createElement("details");
+    inventoryExport.className = "collection-action-menu";
+    const inventorySummary = document.createElement("summary");
+    inventorySummary.className = "collection-icon-action";
+    inventorySummary.title = `Export ${site.name} URL inventory`;
+    inventorySummary.setAttribute("aria-label", `Export ${site.name} URL inventory`);
+    inventorySummary.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4Z"></path><path d="M4 10h16M9 5v14"></path><path d="m14 14 2 2 4-4"></path></svg>';
+    const inventoryMenu = document.createElement("div");
+    inventoryMenu.className = "collection-action-menu-popover";
     const csvButton = document.createElement("button");
     csvButton.type = "button";
-    csvButton.textContent = "CSV";
-    csvButton.setAttribute("aria-label", `Export ${site.name} URL inventory as CSV`);
+    csvButton.textContent = "CSV spreadsheet";
+    const txtButton = document.createElement("button");
+    txtButton.type = "button";
+    txtButton.textContent = "TXT URL list";
+    inventoryMenu.append(csvButton, txtButton);
+    inventoryExport.append(inventorySummary, inventoryMenu);
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
-    removeButton.textContent = "Remove";
-    removeButton.setAttribute("aria-label", `Remove ${site.name}`);
+    configureCollectionIcon(removeButton, `Remove ${site.name}`, '<path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"></path>', "is-danger");
 
-    actions.append(discoverButton, syncButton, runButton, csvButton, removeButton);
+    actions.append(discoverButton, syncButton, runButton, inventoryExport, removeButton);
     top.append(toggleButton, info, actions);
     row.append(top);
 
     const details = document.createElement("div");
     details.className = "site-details";
-    details.hidden = Boolean(site.collapsed);
+    details.hidden = site.id === requestedCollectionId ? false : Boolean(site.collapsed);
     toggleButton.classList.toggle("is-collapsed", details.hidden);
     toggleButton.setAttribute("aria-expanded", String(!details.hidden));
     toggleButton.setAttribute("aria-label", `${details.hidden ? "Expand" : "Collapse"} ${site.name}`);
+    info.setAttribute("aria-expanded", String(!details.hidden));
+    info.setAttribute("aria-label", `${details.hidden ? "Expand" : "Collapse"} ${site.name}`);
 
     const discoverStatus = document.createElement("p");
     discoverStatus.className = "site-discover-status";
@@ -1141,14 +1168,23 @@ function renderCollectionsControl(panel) {
 
     list.append(row);
 
-    toggleButton.addEventListener("click", () => {
+    if (site.id === requestedCollectionId) {
+      row.classList.add("is-requested");
+      requestAnimationFrame(() => row.scrollIntoView({ block: "center", behavior: "smooth" }));
+    }
+
+    const toggleDetails = () => {
       details.hidden = !details.hidden;
       site.collapsed = details.hidden;
       toggleButton.classList.toggle("is-collapsed", details.hidden);
       toggleButton.setAttribute("aria-expanded", String(!details.hidden));
       toggleButton.setAttribute("aria-label", `${details.hidden ? "Expand" : "Collapse"} ${site.name}`);
+      info.setAttribute("aria-expanded", String(!details.hidden));
+      info.setAttribute("aria-label", `${details.hidden ? "Expand" : "Collapse"} ${site.name}`);
       persist();
-    });
+    };
+    toggleButton.addEventListener("click", toggleDetails);
+    info.addEventListener("click", toggleDetails);
 
     removeButton.addEventListener("click", () => {
       const removedName = site.name;
@@ -1194,6 +1230,13 @@ function renderCollectionsControl(panel) {
     csvButton.addEventListener("click", async () => {
       const inventory = await loadSiteInventory(site.id);
       await downloadText(collectionsToCsv([site], { [site.id]: inventory }), `${slugify(site.name, { fallback: "collection" })}-urls.csv`, { type: "text/csv;charset=utf-8" });
+      inventoryExport.open = false;
+    });
+    txtButton.addEventListener("click", async () => {
+      const inventory = await loadSiteInventory(site.id);
+      const urls = [...new Set([...(inventory.pages || []).map((page) => page.url), ...(site.urls || [])].filter(Boolean))];
+      await downloadText(`${urls.join("\n")}\n`, `${slugify(site.name, { fallback: "collection" })}-urls.txt`, { type: "text/plain;charset=utf-8" });
+      inventoryExport.open = false;
     });
 
     async function refresh({ permissionGranted = false } = {}) {
@@ -1208,6 +1251,8 @@ function renderCollectionsControl(panel) {
       toggleButton.classList.remove("is-collapsed");
       toggleButton.setAttribute("aria-expanded", "true");
       toggleButton.setAttribute("aria-label", `Collapse ${site.name}`);
+      info.setAttribute("aria-expanded", "true");
+      info.setAttribute("aria-label", `Collapse ${site.name}`);
 
       // Request host permission as the very first async op, before any other
       // await, so the click's user activation is still valid when
@@ -1238,7 +1283,6 @@ function renderCollectionsControl(panel) {
             site.sourceMode = result.sourceMode;
             site.sourceUrl = result.sourceUrl || site.sourceUrl;
           }
-          discoverButton.textContent = site.type === "custom" ? "Review URLs" : "Refresh";
           discoverStatus.textContent = describeRefreshResult(comparison, previous.lastRefreshedAt, refreshedAt);
           renderDiscoveredPages(
             discoverResults,
@@ -1342,7 +1386,6 @@ function renderCollectionsControl(panel) {
     rowControllers.set(site.id, controller);
     Promise.resolve(initialInventory || loadSiteInventory(site.id)).then((inventory) => {
       if (inventory.lastRefreshedAt) {
-        discoverButton.textContent = "Refresh";
         discoverStatus.textContent = `Last checked ${formatDateTime(inventory.lastRefreshedAt)} · ${inventory.pages.length} page${inventory.pages.length === 1 ? "" : "s"}.`;
         renderDiscoveredPages(discoverResults, inventory.pages);
       } else if (site.urls?.length) {

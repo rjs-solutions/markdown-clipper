@@ -5,7 +5,7 @@ SharePoint. Copy, download, save into a local knowledge vault, or export whole s
 preserving their structure.
 
 > **Status:** 1.1.0 plus the `feature/clipper-expansion` preview. The preview is covered by
-> 339 automated tests but still requires the
+> 348 automated tests but still requires the
 > [browser verification checklist](docs/browser-verification-checklist.md). Load the unpacked
 > `extension/` before testing. See
 > [CHANGELOG.md](CHANGELOG.md) for details.
@@ -14,6 +14,8 @@ preserving their structure.
 
 - **Capture the active page as Markdown** — copy to clipboard, download a `.md` file, or open
   the Markdown in a new tab.
+- **Know what is already clipped** — a compact header indicator shows whether the current URL
+  was saved before and whether its normalized visible Markdown appears current or changed.
 - **SharePoint-aware** — scrolls to trigger lazy-loaded sections and uses a scored content-root
   finder to skip chrome/navigation and keep the real page content.
 - **Saved collections** — save SharePoint, Confluence, general websites, or custom URL lists;

@@ -25,6 +25,14 @@ All notable changes to Markdown Clipper are documented here. This project follow
   title and metadata. Success is acknowledged on the button instead of a mismatched footer count.
 - Read the Site Pages `Description` from SharePoint's serialized page context when standard
   metadata does not expose it.
+- Add a clipped-page header indicator with saved date/path, current/changed fingerprint status,
+  and a deep link to the matching saved collection. Legacy clip records remain supported and
+  gain freshness data the next time they are saved.
+- Reorder and clarify the header's collection actions, center SVGs within their hover tiles, and
+  visually separate collection management from general Options.
+- Reflow Collections intake and saved rows for long names and URLs, replace wide per-collection
+  text buttons with accessible icon actions, and offer URL inventory as CSV or TXT.
+- Standardize rounded, padded custom select controls across Options and Export Collection.
 
 - Add an accessible split Download action: the main segment keeps one-click download/vault behavior, while a folder segment opens Chrome's native location chooser in the popup, side panel, in-page overlay, and full editor.
 

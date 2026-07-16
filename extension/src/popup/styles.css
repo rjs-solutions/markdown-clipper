@@ -77,6 +77,7 @@ body.in-iframe .header .icon-button {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
 .brand-mark {
@@ -90,6 +91,7 @@ body.in-iframe .header .icon-button {
   display: flex;
   align-items: center;
   gap: 1px;
+  flex: 0 0 auto;
 }
 
 .header-actions-group {
@@ -109,11 +111,14 @@ body.in-iframe .header .icon-button {
   place-items: center;
   width: 23px;
   height: 23px;
+  padding: 0;
+  flex: 0 0 23px;
   border: 0;
   border-radius: 6px;
   color: var(--text-muted);
   background: transparent;
   cursor: pointer;
+  line-height: 0;
 }
 
 .icon-button:hover {
@@ -123,6 +128,7 @@ body.in-iframe .header .icon-button {
 }
 
 .icon-button svg {
+  display: block;
   width: 15px;
   height: 15px;
   fill: none;
@@ -449,6 +455,129 @@ body.in-iframe .preview-body {
   border: 1px solid var(--accent);
   border-radius: 8px;
   background: var(--accent);
+}
+
+.clip-state-wrap {
+  position: relative;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.clip-state {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  line-height: 0;
+}
+
+.clip-state:hover,
+.clip-state[aria-expanded="true"] {
+  border-color: var(--accent);
+}
+
+.clip-state.is-current {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+.clip-state.is-changed {
+  border-color: var(--warning);
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.clip-state svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.clip-state-change {
+  display: none;
+}
+
+.clip-state.is-changed .clip-state-check {
+  display: none;
+}
+
+.clip-state.is-changed .clip-state-change {
+  display: initial;
+}
+
+.clip-state-popover {
+  position: fixed;
+  z-index: 12;
+  top: 36px;
+  left: 50vw;
+  display: grid;
+  width: min(260px, calc(100vw - 20px));
+  gap: 5px;
+  padding: 10px;
+  transform: translateX(-50%);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.clip-state-popover > span {
+  color: var(--text-muted);
+  font-size: 11.5px;
+}
+
+.clip-state-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clip-state-popover button {
+  justify-self: start;
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-muted);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 430px) {
+  .header {
+    gap: 6px;
+  }
+
+  .header-actions-divider {
+    margin-inline: 3px;
+  }
+}
+
+@media (max-width: 340px) {
+  .wordmark {
+    gap: 0;
+    font-size: 0;
+  }
+
+  .brand-mark {
+    width: 24px;
+    height: 24px;
+  }
 }
 
 .copy-split {

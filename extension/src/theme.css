@@ -23,6 +23,8 @@
   --text: light-dark(#162028, #e8eaed);
   --text-muted: light-dark(#5f6d79, #a3a9b3);
   --danger: light-dark(#b3381f, #ff8a73);
+  --warning: light-dark(#9a5a00, #fbbf24);
+  --warning-soft: light-dark(#fff1d6, rgba(251, 191, 36, 0.16));
 
   --shadow-color: light-dark(rgba(16, 32, 40, 0.12), rgba(0, 0, 0, 0.55));
   --shadow: 0 1px 2px var(--shadow-color), 0 8px 22px var(--shadow-color);

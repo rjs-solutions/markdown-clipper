@@ -10,10 +10,20 @@ import { buildWikiIndexMarkdown } from "../lib/wiki-index.js";
 import { applyTheme } from "../lib/theme.js";
 import { applyTagRules, loadRules } from "../lib/tag-rules.js";
 import { openCollectionWindow } from "../lib/window-placement.js";
+import { compareMarkdownFingerprint, fingerprintMarkdown } from "../lib/content-fingerprint.js";
+import { loadCollections } from "../lib/collections.js";
+import { matchSavedCollection } from "../lib/collection-export.js";
 
 const el = {
   optionsButton: document.getElementById("open-options"),
   collectionsButton: document.getElementById("open-collections"),
+  clipStateWrap: document.getElementById("clip-state-wrap"),
+  clipState: document.getElementById("clip-state"),
+  clipStatePopover: document.getElementById("clip-state-popover"),
+  clipStateTitle: document.getElementById("clip-state-title"),
+  clipStateDetail: document.getElementById("clip-state-detail"),
+  clipStatePath: document.getElementById("clip-state-path"),
+  clipStateCollection: document.getElementById("clip-state-collection"),
   expand: document.getElementById("do-expand"),
   sidepanel: document.getElementById("do-sidepanel"),
   panel: document.getElementById("do-panel"),
@@ -49,6 +59,7 @@ let preview = null; // fast (no-scroll) capture used to populate the card
 let fullResult = null; // cached full-settings capture, once produced
 let fullResultPromise = null; // in-flight full capture (deduped / pre-warmed)
 let busy = false;
+let clipStateCollectionId = "";
 
 document.addEventListener("DOMContentLoaded", initialize);
 
@@ -135,6 +146,15 @@ function wireEvents() {
   el.copy.addEventListener("click", () => run("copy"));
   el.copyFull.addEventListener("click", () => run("copy-full"));
   el.export.addEventListener("click", exportWholeSite);
+  el.clipState.addEventListener("click", () => {
+    const open = el.clipStatePopover.hidden;
+    el.clipStatePopover.hidden = !open;
+    el.clipState.setAttribute("aria-expanded", String(open));
+  });
+  el.clipStateCollection.addEventListener("click", () => openCollectionsSettings(clipStateCollectionId));
+  document.addEventListener("click", (event) => {
+    if (!el.clipStateWrap.contains(event.target)) closeClipStatePopover();
+  });
 
   // Keep the filename in sync with the title until the user edits it directly.
   el.title.addEventListener("input", () => {
@@ -453,7 +473,58 @@ function populateCard(result) {
   el.contentType.textContent = contentTypeLabel(result.mode);
   updateCharCount();
   setStatus("");
+  refreshClipState(result).catch((error) => {
+    console.error("Markdown Clipper clipped-state lookup failed:", error);
+  });
+}
 
+function closeClipStatePopover() {
+  el.clipStatePopover.hidden = true;
+  el.clipState.setAttribute("aria-expanded", "false");
+}
+
+function formatClippedDate(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "an earlier date" : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
+async function refreshClipState(result) {
+  const existing = await findClipByUrl(result && result.url);
+  if (!existing) {
+    el.clipStateWrap.hidden = true;
+    closeClipStatePopover();
+    return;
+  }
+
+  const storedFingerprint = existing.previewFingerprint
+    || (result.mode === "sharepoint" ? "" : existing.contentFingerprint);
+  const state = existing.type === "selection" ? "known" : compareMarkdownFingerprint(storedFingerprint, result.markdown);
+  const title = state === "current" ? "Appears current" : state === "changed" ? "Page changed" : "Previously clipped";
+  const detail = state === "current"
+    ? `Matches the visible page content. Clipped ${formatClippedDate(existing.updatedAt || existing.clipped)}.`
+    : state === "changed"
+      ? `Visible page content differs from the clip saved ${formatClippedDate(existing.updatedAt || existing.clipped)}.`
+      : `Clipped ${formatClippedDate(existing.updatedAt || existing.clipped)}. Freshness will be available after the next save.`;
+
+  el.clipState.classList.toggle("is-current", state === "current");
+  el.clipState.classList.toggle("is-changed", state === "changed");
+  el.clipState.title = `${title}. Click for details.`;
+  el.clipState.setAttribute("aria-label", `${title}. Click for details.`);
+  el.clipStateTitle.textContent = title;
+  el.clipStateDetail.textContent = detail;
+  el.clipStatePath.textContent = existing.path ? `Saved as ${existing.path}` : "";
+  el.clipStatePath.hidden = !existing.path;
+
+  let collection = null;
+  try {
+    collection = matchSavedCollection(await loadCollections(), result.url);
+  } catch (error) {
+    console.error("Markdown Clipper collection match failed:", error);
+  }
+  clipStateCollectionId = collection && collection.id || "";
+  el.clipStateCollection.hidden = !clipStateCollectionId;
+  if (collection) el.clipStateCollection.textContent = `View ${collection.name}`;
+  el.clipStateWrap.hidden = false;
 }
 
 function updateCharCount() {
@@ -564,6 +635,8 @@ async function run(action) {
           tags: parseTags(fields.tags),
           description: fields.description || "",
           byteLength: new TextEncoder().encode(payload.markdown).length,
+          contentFingerprint: fingerprintMarkdown(result.markdown),
+          previewFingerprint: fingerprintMarkdown(preview && preview.markdown),
           updatedAt: new Date().toISOString(),
           path: existingClip.path
         });
@@ -576,7 +649,9 @@ async function run(action) {
           type: payload.mode,
           tags: parseTags(fields.tags),
           description: fields.description || "",
-          byteLength: new TextEncoder().encode(payload.markdown).length
+          byteLength: new TextEncoder().encode(payload.markdown).length,
+          contentFingerprint: fingerprintMarkdown(result.markdown),
+          previewFingerprint: fingerprintMarkdown(preview && preview.markdown)
         });
       }
       if (written.backend === "vault" && settings.knowledgeBasePreset) {
@@ -591,6 +666,7 @@ async function run(action) {
               ? `Downloaded ${payload.filename} to the selected location`
               : `Downloaded ${payload.filename}`
       );
+      await refreshClipState(preview || result);
     }
   } catch (error) {
     console.error("Markdown Clipper action failed:", error);
@@ -748,9 +824,10 @@ function closeSelf() {
   }
 }
 
-async function openCollectionsSettings() {
+async function openCollectionsSettings(collectionId = "") {
+  const collectionQuery = collectionId ? `&collection=${encodeURIComponent(collectionId)}` : "";
   await chrome.tabs.create({
-    url: chrome.runtime.getURL("src/options/index.html?section=collections")
+    url: chrome.runtime.getURL(`src/options/index.html?section=collections${collectionQuery}`)
   });
   if (!inIframe) {
     window.close();
@@ -819,6 +896,8 @@ async function hostTab() {
 }
 
 function showEmpty(message) {
+  el.clipStateWrap.hidden = true;
+  closeClipStatePopover();
   el.loading.hidden = true;
   el.card.hidden = true;
   el.actions.hidden = true;

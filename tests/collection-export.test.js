@@ -15,6 +15,12 @@ test("matchSavedCollection chooses the most specific base", () => {
   assert.equal(matchSavedCollection(collections, "https://a.test/docs/page").id, "docs");
 });
 
+test("matchSavedCollection finds any URL in a custom list", () => {
+  const collection = { id: "custom", type: "custom", webUrl: "https://one.example/a", urls: ["https://one.example/a", "https://two.example/b"] };
+  const broadSite = { id: "site", type: "website", webUrl: "https://two.example" };
+  assert.equal(matchSavedCollection([broadSite, collection], "https://two.example/b#details")?.id, "custom");
+});
+
 test("collectionsToCsv exports labels, types, source, and inventory URLs", () => {
   const csv = collectionsToCsv([{ id: "x", name: "Docs, Inc", type: "website", sourceMode: "sitemap", sourceUrl: "https://a.test/sitemap.xml" }], {
     x: { lastRefreshedAt: 1, pages: [{ title: "Home", url: "https://a.test/", modified: "2026-01-01" }] }

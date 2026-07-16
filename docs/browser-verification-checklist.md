@@ -1,6 +1,6 @@
 # Browser verification checklist — feature/clipper-expansion
 
-Everything on this branch passes 339 automated tests and a static load-safety audit
+Everything on this branch passes 348 automated tests and a static load-safety audit
 (service worker has no load-fatal DOM globals, no `createObjectURL` in the worker tree,
 all manifest-referenced files exist). What remains can only be checked in a real Chrome
 because it needs the extension loaded, the File System Access API, real IndexedDB, or a
@@ -77,6 +77,16 @@ independent once the extension is loaded.
 - [ ] A rule with a deliberately broken regex (e.g. `(unterminated[`, regex checked) does NOT break tagging on other rules or the clip.
 
 ## 8. UX feedback pass (popup slim, panel, entry points)
+- [ ] Save a page, reopen its clipper, and confirm the header indicator says **Appears current**.
+      Change visible page content and reopen to confirm **Page changed**. Click the indicator to
+      see its saved date/path and, for a saved collection, open that collection expanded in Options.
+- [ ] Header icon hover tiles are centered. Collection export appears before Manage Collections,
+      and a divider separates Manage Collections from Options.
+- [ ] Collections intake gives the URL a full row; platform, discovery, and Add & discover remain
+      readable below it. Saved names/URLs have room to wrap or truncate cleanly, clicking the
+      identity expands the row, and every compact action has a clear tooltip.
+- [ ] Per-collection inventory export offers both CSV and TXT. Select controls across Options and
+      Export Collection have rounded corners, readable text, and a chevron inset from the edge.
 - [ ] Popup: only a **Source** row up top (no Author/Published/Modified/Site); Download/Copy/Open visible with little/no scroll. The full editor (expand icon) still shows all fields.
 - [ ] Popup, in-page panel, native side panel, and editor: Copy and Download have equal visual
       weight. Main Copy copies only the displayed body and briefly changes to **Copied**; its

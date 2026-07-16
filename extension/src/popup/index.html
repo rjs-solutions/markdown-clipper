@@ -11,6 +11,19 @@
     <main class="popup">
       <header class="header">
         <h1 class="wordmark"><img class="brand-mark" src="../../assets/icons/icon-48.png" alt="">Markdown Clipper</h1>
+        <div class="clip-state-wrap" id="clip-state-wrap" hidden>
+          <button class="clip-state" id="clip-state" type="button" aria-expanded="false" aria-controls="clip-state-popover">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M9 5h6M9 3h6v4H9Z"></path><path d="M7 5H5v16h14V5h-2"></path><path class="clip-state-check" d="m8 14 2.5 2.5L16 11"></path><path class="clip-state-change" d="m9 12 6 6m0-6-6 6"></path>
+            </svg>
+          </button>
+          <div class="clip-state-popover" id="clip-state-popover" hidden>
+            <strong id="clip-state-title">Previously clipped</strong>
+            <span id="clip-state-detail"></span>
+            <span class="clip-state-path" id="clip-state-path"></span>
+            <button id="clip-state-collection" type="button" hidden>View collection</button>
+          </div>
+        </div>
         <div class="header-actions">
           <div class="header-actions-group">
             <button class="icon-button" id="do-panel" type="button" title="Open in page" aria-label="Open in page" hidden>
@@ -28,20 +41,19 @@
           </div>
           <div class="header-actions-divider" aria-hidden="true"></div>
           <div class="header-actions-group">
-            <button class="icon-button" id="open-collections" type="button" title="Manage collections" aria-label="Manage collections">
-              <svg aria-hidden="true" viewBox="0 0 24 24">
-                <path d="m12 3 8 4-8 4-8-4 8-4Z"></path>
-                <path d="m4 12 8 4 8-4M4 17l8 4 8-4"></path>
-              </svg>
-            </button>
             <button class="icon-button" id="do-export" type="button" title="Export a collection" aria-label="Export a collection">
               <svg aria-hidden="true" viewBox="0 0 24 24">
-                <rect x="3.5" y="3.5" width="7" height="7" rx="1.5"></rect>
-                <rect x="13.5" y="3.5" width="7" height="7" rx="1.5"></rect>
-                <rect x="3.5" y="13.5" width="7" height="7" rx="1.5"></rect>
-                <rect x="13.5" y="13.5" width="7" height="7" rx="1.5"></rect>
+                <path d="m11 3 7 3.5-7 3.5-7-3.5L11 3Z"></path><path d="m4 11 7 3.5 3-1.5M4 15.5l7 3.5 3-1.5"></path><path d="M18 11v9m-3-3 3 3 3-3"></path>
               </svg>
             </button>
+            <button class="icon-button" id="open-collections" type="button" title="Manage collections" aria-label="Manage collections">
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M4 6h7M15 6h5M4 12h2M10 12h10M4 18h10M18 18h2"></path><circle cx="13" cy="6" r="2"></circle><circle cx="8" cy="12" r="2"></circle><circle cx="16" cy="18" r="2"></circle>
+              </svg>
+            </button>
+          </div>
+          <div class="header-actions-divider" aria-hidden="true"></div>
+          <div class="header-actions-group">
             <button class="icon-button" id="open-options" type="button" title="Options" aria-label="Options">
               <svg aria-hidden="true" viewBox="0 0 24 24">
                 <path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"></path>

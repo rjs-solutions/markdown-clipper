@@ -27,6 +27,8 @@ Capture and save the way you work:
 - Copy Markdown, download a `.md` file, choose a save location, or edit the result first.
 - Use a compact toolbar popup, Chrome's docked side panel, or a movable in-page panel tied to
   the current tab.
+- See when the current page was clipped before and whether its visible Markdown appears current
+  or changed, with a shortcut to its saved collection when applicable.
 - Clip a selected passage from the page context menu.
 - Save directly to a chosen local vault folder and maintain an optional `index.md`.
 

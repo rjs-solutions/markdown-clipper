@@ -1,3 +1,5 @@
+import { comparableUrl } from "./discover.js";
+
 function normalizedBase(collection) {
   return String(collection && (collection.webUrl || collection.url || collection.sourceUrl) || "").replace(/\/+$/, "");
 }
@@ -5,11 +7,15 @@ function normalizedBase(collection) {
 export function matchSavedCollection(collections, pageUrl) {
   const target = String(pageUrl || "");
   return (Array.isArray(collections) ? collections : [])
-    .filter((collection) => {
+    .map((collection) => {
       const base = normalizedBase(collection);
-      return base && (target === base || target.startsWith(`${base}/`) || target.startsWith(`${base}?`));
+      const listed = Array.isArray(collection.urls)
+        && collection.urls.some((url) => comparableUrl(url) === comparableUrl(target));
+      const baseMatch = base && (target === base || target.startsWith(`${base}/`) || target.startsWith(`${base}?`));
+      return { collection, base, listed, matches: listed || baseMatch };
     })
-    .sort((a, b) => normalizedBase(b).length - normalizedBase(a).length)[0] || null;
+    .filter((candidate) => candidate.matches)
+    .sort((a, b) => Number(b.listed) - Number(a.listed) || b.base.length - a.base.length)[0]?.collection || null;
 }
 
 export function collectionExportPreset(collection, inventory, { maxPages = 500 } = {}) {
