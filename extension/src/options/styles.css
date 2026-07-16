@@ -632,15 +632,76 @@ legend {
   margin: 0;
 }
 
-.collection-library-field .sites-status.has-library .library-folder-name {
+.collection-library-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.collection-library-label,
+.library-access-status {
+  color: var(--text-muted);
+  font-size: 0.9em;
+}
+
+.library-access-status.is-needed {
+  color: var(--accent-hover);
+}
+
+.library-folder-button {
+  min-height: 26px;
+  padding: 2px 3px;
+  border-color: transparent;
+  background: transparent;
   color: var(--text);
   font-weight: 650;
 }
 
-.collection-library-buttons {
+.library-folder-button:hover {
+  border-color: transparent;
+  background: transparent;
+  color: var(--accent-hover);
+}
+
+.library-folder-button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.collection-library-inline-actions {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.quiet-icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+  padding: 5px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.quiet-icon-button:hover:not(:disabled) {
+  border-color: transparent;
+  background: transparent;
+  color: var(--accent-hover);
+}
+
+.quiet-icon-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .collection-schedule-row {

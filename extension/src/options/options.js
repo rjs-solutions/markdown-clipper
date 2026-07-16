@@ -106,6 +106,13 @@ function setLabeledButtonText(button, text) {
   else button.textContent = text;
 }
 
+function configureQuietIconButton(button, label, icon) {
+  button.className = "quiet-icon-button";
+  button.title = label;
+  button.setAttribute("aria-label", label);
+  button.innerHTML = icon;
+}
+
 // Builds nav items + panels for `schema` inside the given containers and
 // returns { controls, fillForm, readForm, updateDependents } bound to the
 // rendered DOM. Kept as a factory (rather than module-level state) so tests
@@ -971,24 +978,33 @@ function renderCollectionsControl(panel) {
 
   const libraryField = document.createElement("div");
   libraryField.className = "collection-library-field";
-  const libraryStatus = document.createElement("p");
-  libraryStatus.className = "sites-status";
-  const libraryButtons = document.createElement("div");
-  libraryButtons.className = "collection-library-buttons";
+  const librarySummary = document.createElement("div");
+  librarySummary.className = "collection-library-summary";
+  const libraryLabel = document.createElement("span");
+  libraryLabel.className = "collection-library-label";
+  libraryLabel.textContent = "Library folder:";
   const chooseLibraryButton = document.createElement("button");
   chooseLibraryButton.type = "button";
-  configureLabeledButton(chooseLibraryButton, "Choose library folder", ACTION_ICONS.folder, "Choose the root folder that will contain all locally synced collections");
+  configureLabeledButton(chooseLibraryButton, "Choose a library folder", ACTION_ICONS.folder, "Choose the root folder that will contain all locally synced collections");
+  chooseLibraryButton.classList.add("library-folder-button");
+  const libraryAccessStatus = document.createElement("span");
+  libraryAccessStatus.className = "library-access-status";
+  const libraryActions = document.createElement("div");
+  libraryActions.className = "collection-library-inline-actions";
   const regrantLibraryButton = document.createElement("button");
   regrantLibraryButton.type = "button";
-  configureLabeledButton(regrantLibraryButton, "Restore folder access", ACTION_ICONS.access, "Allow Markdown Clipper to write to the selected Collections Library again");
-  const forgetLibraryButton = document.createElement("button");
-  forgetLibraryButton.type = "button";
-  configureLabeledButton(forgetLibraryButton, "Forget library folder", ACTION_ICONS.forget, "Stop using this library folder; existing files are not deleted");
+  configureQuietIconButton(regrantLibraryButton, "Restore write access to this folder", ACTION_ICONS.access);
   const syncAllLibraryButton = document.createElement("button");
   syncAllLibraryButton.type = "button";
-  configureLabeledButton(syncAllLibraryButton, "Sync all collections", ACTION_ICONS.sync, "Update every saved collection in the Local Collections Library");
-  libraryButtons.append(chooseLibraryButton, regrantLibraryButton, forgetLibraryButton, syncAllLibraryButton);
-  libraryField.append(libraryStatus, libraryButtons);
+  configureQuietIconButton(syncAllLibraryButton, "Sync all collections to this folder", ACTION_ICONS.sync);
+  const forgetLibraryButton = document.createElement("button");
+  forgetLibraryButton.type = "button";
+  configureQuietIconButton(forgetLibraryButton, "Forget this library folder (files are not deleted)", ACTION_ICONS.forget);
+  libraryActions.append(regrantLibraryButton, syncAllLibraryButton, forgetLibraryButton);
+  librarySummary.append(libraryLabel, chooseLibraryButton, libraryAccessStatus, libraryActions);
+  const libraryStatus = document.createElement("p");
+  libraryStatus.className = "sites-status collection-library-message";
+  libraryField.append(librarySummary, libraryStatus);
   const scheduleRow = document.createElement("div");
   scheduleRow.className = "collection-schedule-row";
   const scheduleLabel = document.createElement("span");
@@ -1032,13 +1048,18 @@ function renderCollectionsControl(panel) {
   const requestedCollectionId = new URLSearchParams(location.search).get("collection") || "";
   const rowControllers = new Map();
 
+  function showLibraryMessage(message = "") {
+    libraryStatus.textContent = message;
+    libraryStatus.hidden = !message;
+  }
+
   function showLibraryFolderStatus(handle, permission) {
-    const folderName = document.createElement("strong");
-    folderName.className = "library-folder-name";
-    folderName.textContent = handle.name || "(unnamed folder)";
-    const access = permission === "granted" ? "access granted" : "access needed";
-    libraryStatus.replaceChildren("Library folder: ", folderName, ` (${access})`);
-    libraryStatus.classList.add("has-library");
+    setLabeledButtonText(chooseLibraryButton, handle.name || "(unnamed folder)");
+    chooseLibraryButton.title = "Choose a different Local Collections Library folder";
+    libraryAccessStatus.textContent = permission === "granted" ? "Access granted" : "Access needed";
+    libraryAccessStatus.classList.toggle("is-needed", permission !== "granted");
+    librarySummary.classList.add("has-library");
+    showLibraryMessage();
   }
 
   async function refreshLibraryStatus() {
@@ -1046,10 +1067,14 @@ function renderCollectionsControl(panel) {
       libraryHandle = await loadCollectionLibraryHandle();
       if (!libraryHandle) {
         libraryPermissionGranted = false;
-        libraryStatus.classList.remove("has-library");
-        libraryStatus.textContent = "No library folder chosen. Snapshot downloads still work normally.";
+        librarySummary.classList.remove("has-library");
+        setLabeledButtonText(chooseLibraryButton, "Choose a library folder");
+        chooseLibraryButton.title = "Choose the root folder that will contain all locally synced collections";
+        libraryAccessStatus.textContent = "";
+        showLibraryMessage("No library folder chosen. Snapshot downloads still work normally.");
         regrantLibraryButton.hidden = true;
         forgetLibraryButton.hidden = true;
+        syncAllLibraryButton.disabled = true;
         return;
       }
       const permission = await ensurePermission(libraryHandle);
@@ -1057,16 +1082,16 @@ function renderCollectionsControl(panel) {
       showLibraryFolderStatus(libraryHandle, permission);
       regrantLibraryButton.hidden = permission === "granted";
       forgetLibraryButton.hidden = false;
+      syncAllLibraryButton.disabled = false;
       for (const controller of rowControllers.values()) controller.reviewHealth();
     } catch (error) {
-      libraryStatus.classList.remove("has-library");
-      libraryStatus.textContent = `Could not read the library folder: ${error && error.message ? error.message : error}`;
+      showLibraryMessage(`Could not read the library folder: ${error && error.message ? error.message : error}`);
     }
   }
 
   chooseLibraryButton.addEventListener("click", async () => {
     if (!window.showDirectoryPicker) {
-      libraryStatus.textContent = "This browser does not support choosing a persistent folder.";
+      showLibraryMessage("This browser does not support choosing a persistent folder.");
       return;
     }
     try {
@@ -1075,7 +1100,7 @@ function renderCollectionsControl(panel) {
       libraryHandle = handle;
       await refreshLibraryStatus();
     } catch (error) {
-      if (!error || error.name !== "AbortError") libraryStatus.textContent = `Could not choose the library folder: ${error && error.message ? error.message : error}`;
+      if (!error || error.name !== "AbortError") showLibraryMessage(`Could not choose the library folder: ${error && error.message ? error.message : error}`);
     }
   });
 
@@ -1085,7 +1110,7 @@ function renderCollectionsControl(panel) {
       await libraryHandle.requestPermission({ mode: "readwrite" });
       await refreshLibraryStatus();
     } catch (error) {
-      libraryStatus.textContent = `Could not restore folder access: ${error && error.message ? error.message : error}`;
+      showLibraryMessage(`Could not restore folder access: ${error && error.message ? error.message : error}`);
     }
   });
 
@@ -1097,11 +1122,11 @@ function renderCollectionsControl(panel) {
 
   syncAllLibraryButton.addEventListener("click", async () => {
     if (!sites.length) {
-      libraryStatus.textContent = "Add at least one collection before syncing.";
+      showLibraryMessage("Add at least one collection before syncing.");
       return;
     }
     if (!libraryHandle || !libraryPermissionGranted) {
-      libraryStatus.textContent = "Choose or re-grant the Local Collections Library folder first.";
+      showLibraryMessage("Choose or restore access to the Local Collections Library folder first.");
       return;
     }
     const urls = sites.flatMap((site) => site.type === "custom" ? site.urls || [] : [site.webUrl || site.sourceUrl || site.url]);
@@ -1115,7 +1140,7 @@ function renderCollectionsControl(panel) {
       granted = false;
     }
     if (!granted) {
-      libraryStatus.textContent = "Site access is needed before all collections can be synced.";
+      showLibraryMessage("Site access is needed before all collections can be synced.");
       return;
     }
     const queue = sites.map((site) => site.id).join(",");
