@@ -76,6 +76,7 @@ async function initialize() {
   fileInput.addEventListener("change", importSelectedFile);
   saveCollectionButton.addEventListener("click", saveUrlListCollection);
   urlsInput.addEventListener("input", updateUrlCount);
+  collectionNameInput.addEventListener("input", updateCollectionSaveState);
   await populateSavedCollections(seed, syncQueue[0] || params.get("collection"));
 
   const requestedMode = params.get("mode");
@@ -220,6 +221,12 @@ function reflectMode() {
 function updateUrlCount() {
   const count = parseUrlList(urlsInput.value).length;
   urlCount.textContent = `${count} URL${count === 1 ? "" : "s"}`;
+  updateCollectionSaveState();
+}
+
+function updateCollectionSaveState() {
+  const isReady = Boolean(collectionNameInput.value.trim() && parseUrlList(urlsInput.value).length);
+  saveCollectionButton.classList.toggle("is-primary-action", isReady);
 }
 
 function reflectDestination() {
