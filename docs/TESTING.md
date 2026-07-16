@@ -49,8 +49,16 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 - [ ] Sync a collection and verify normal Markdown page files, `index.md`, `collection.json`, and
       `_sync-report.md` appear under `<type>/<collection>`. Sync again after editing a page and
       confirm its file is updated rather than duplicated.
+- [ ] Sync again without edits and confirm unchanged page files are skipped. Verify root
+      `_collections.md` and `_collections.json`, plus hostname subfolders for a multi-host list.
+- [ ] Use **Sync all collections**, close/reopen mid-batch, and confirm already completed
+      collections do not repeat. Verify the optional weekly/monthly reminder badge without
+      expecting unattended folder writes.
+- [ ] Export and re-import portable collection definitions JSON; existing collections merge
+      without duplicates and retain discovery and local-path settings.
 - [ ] Remove a page from the source and sync again. The sync report lists it, but the prior local
-      file remains until the user reviews and removes it.
+      file remains until the user explicitly archives or deletes it. Failed pages appear red and
+      can be opened for review; failed custom-list URLs can also be removed from the definition.
 
 ## 3. Single-page capture — general webpage
 
@@ -63,6 +71,9 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
       Save, and Reset all work.
 - [ ] From the popup, **Open in side panel** opens a docked, full-width clip card; Copy,
       Download, and Open work there.
+- [ ] Main Copy copies only the visible Body and briefly animates to **Copied**; the secondary
+      segment copies the complete assembled note. The Body counter matches the primary copy.
+- [ ] A SharePoint Page details description is populated in the Description field.
 - [ ] Switching to another tab hides the clipper panel instead of showing an empty capture;
       returning to the original tab restores it, with no horizontal scrolling at narrow widths.
 - [ ] In the full-page editor, Close has a visible secondary-button outline before hover.

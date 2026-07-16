@@ -45,6 +45,48 @@ export function getSharePointPageType() {
   return isNews ? "news" : "page";
 }
 
+export function parseSharePointPageContext(source) {
+  const text = String(source || "");
+  const marker = text.indexOf("spClientSidePageContext");
+  if (marker < 0) return null;
+  const start = text.indexOf("{", marker);
+  if (start < 0) return null;
+  let depth = 0;
+  let quoted = false;
+  let escaped = false;
+  for (let index = start; index < text.length; index += 1) {
+    const char = text[index];
+    if (quoted) {
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === '"') quoted = false;
+      continue;
+    }
+    if (char === '"') quoted = true;
+    else if (char === "{") depth += 1;
+    else if (char === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        try {
+          return JSON.parse(text.slice(start, index + 1));
+        } catch {
+          return null;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+export function getSharePointDescription() {
+  for (const script of document.scripts) {
+    const context = parseSharePointPageContext(script.textContent);
+    const description = cleanText(context && context.item && context.item.Description || "");
+    if (description) return description;
+  }
+  return "";
+}
+
 export function getSharePointTitle(root) {
   const selectors = [
     "[data-automation-id='pageTitle']",

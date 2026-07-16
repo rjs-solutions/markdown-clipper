@@ -21,6 +21,7 @@ const el = {
   output: document.getElementById("output"),
   outputName: document.getElementById("output-name"),
   copy: document.getElementById("do-copy"),
+  copyFull: document.getElementById("do-copy-full"),
   download: document.getElementById("do-download"),
   downloadLocation: document.getElementById("do-download-location"),
   close: document.getElementById("do-close"),
@@ -124,10 +125,19 @@ function wire() {
 
   el.copy.addEventListener("click", async () => {
     try {
-      const out = assemble();
-      await navigator.clipboard.writeText(out.markdown);
+      await navigator.clipboard.writeText(el.body.value);
       dirty = false;
-      flash(`Copied ${out.markdown.length.toLocaleString()} characters`);
+      showCopySuccess(el.copy);
+    } catch (error) {
+      flash(messageFrom(error), true);
+    }
+  });
+
+  el.copyFull.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(assemble().markdown);
+      dirty = false;
+      showCopySuccess(el.copyFull);
     } catch (error) {
       flash(messageFrom(error), true);
     }
@@ -202,6 +212,16 @@ function flash(message, isError = false) {
     el.status.textContent = "";
     el.status.classList.remove("is-error");
   }, 2200);
+}
+
+function showCopySuccess(button) {
+  const label = button.querySelector(".btn-label");
+  button.classList.add("is-success");
+  if (label) label.textContent = "Copied";
+  setTimeout(() => {
+    button.classList.remove("is-success");
+    if (label) label.textContent = "Copy";
+  }, 1200);
 }
 
 function messageFrom(error) {

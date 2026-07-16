@@ -595,6 +595,18 @@ legend {
   flex-wrap: wrap;
 }
 
+.collection-schedule-row {
+  display: grid;
+  grid-template-columns: auto 130px minmax(160px, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.collection-schedule-row > span:first-child {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .site-row {
   display: flex;
   flex-direction: column;
@@ -751,6 +763,50 @@ legend {
   padding-top: 2px;
 }
 
+.collection-health-review {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.collection-health-review[hidden] {
+  display: none;
+}
+
+.collection-health-heading {
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+.collection-health-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.collection-health-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.collection-health-list li > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.collection-health-list .is-error,
+.collection-health-list .is-removed {
+  color: var(--danger);
+}
+
 .site-discover-results:empty {
   display: none;
 }
@@ -800,6 +856,10 @@ legend {
   }
 
   .collection-folder-row {
+    grid-template-columns: 1fr;
+  }
+
+  .collection-schedule-row {
     grid-template-columns: 1fr;
   }
 

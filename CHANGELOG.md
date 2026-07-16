@@ -15,6 +15,16 @@ All notable changes to Markdown Clipper are documented here. This project follow
 - Add an opt-in Local Collections Library: one chosen root, safe per-collection folder overrides,
   direct Markdown synchronization, overwrite-in-place updates, and non-destructive removed-page
   reporting. Snapshot ZIP and aggregate downloads remain available.
+- Add incremental local-library writes, hostname grouping for multi-host custom lists, root
+  `_collections.md`/`_collections.json` catalogs, resumable **Sync all**, weekly/monthly sync-due
+  reminders, and an explicit page-health review for failed, removed, archived, or deleted pages.
+- Add portable JSON import/export for complete collection definitions, including type,
+  discovery source, URL inventory, and local-library path.
+- Make Copy a first-class split action: the primary segment copies the displayed body and its
+  counter now says **Body**; the secondary segment copies the complete assembled document with
+  title and metadata. Success is acknowledged on the button instead of a mismatched footer count.
+- Read the Site Pages `Description` from SharePoint's serialized page context when standard
+  metadata does not expose it.
 
 - Add an accessible split Download action: the main segment keeps one-click download/vault behavior, while a folder segment opens Chrome's native location chooser in the popup, side panel, in-page overlay, and full editor.
 

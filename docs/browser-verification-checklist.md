@@ -1,6 +1,6 @@
 # Browser verification checklist — feature/clipper-expansion
 
-Everything on this branch passes 325 automated tests and a static load-safety audit
+Everything on this branch passes 339 automated tests and a static load-safety audit
 (service worker has no load-fatal DOM globals, no `createObjectURL` in the worker tree,
 all manifest-referenced files exist). What remains can only be checked in a real Chrome
 because it needs the extension loaded, the File System Access API, real IndexedDB, or a
@@ -34,6 +34,15 @@ independent once the extension is loaded.
       Sync. Confirm page `.md` files, `index.md`, `collection.json`, and `_sync-report.md` are
       directly readable without extracting a ZIP. A second sync updates files in place.
 - [ ] Reopen Chrome and verify the folder status; use Re-grant access if Chrome requires it.
+- [ ] Click **Sync all collections**, let at least two collections finish, close/reopen the export
+      window, and confirm completed collections are not repeated. Weekly/monthly reminder choices
+      should show a `SYNC` toolbar badge only when due; they do not run unattended.
+- [ ] Confirm the library root contains `_collections.md` and `_collections.json`; a second sync
+      with no source edits reports unchanged files rather than rewriting them.
+- [ ] Export collection definitions to JSON, import them again, and confirm existing definitions
+      update without duplicates. For a multi-host custom list, confirm page files are grouped by host.
+- [ ] After a failed capture or removed source page, confirm Page health marks it red. Open failed
+      URLs for review, and explicitly Archive or Delete stale local files.
 
 ## 3. Crawler v2 — durability  *(THE acceptance test; also the only check of IndexedDB body storage)*
 - [ ] Start a follow-links crawl (max pages ~15) on a site you may crawl; approve the permission prompt. Watch a few pages capture.
@@ -69,7 +78,13 @@ independent once the extension is loaded.
 
 ## 8. UX feedback pass (popup slim, panel, entry points)
 - [ ] Popup: only a **Source** row up top (no Author/Published/Modified/Site); Download/Copy/Open visible with little/no scroll. The full editor (expand icon) still shows all fields.
-- [ ] Popup, in-page panel, native side panel, and editor: the wide **Download** segment keeps the normal behavior; the narrow folder segment shows “Choose download location” on hover and opens Chrome's Save As dialog.
+- [ ] Popup, in-page panel, native side panel, and editor: Copy and Download have equal visual
+      weight. Main Copy copies only the displayed body and briefly changes to **Copied**; its
+      secondary segment copies the complete document. The Body character count matches main Copy.
+- [ ] The wide **Download** segment keeps the normal behavior; the narrow folder segment shows
+      “Choose download location” on hover and opens Chrome's Save As dialog.
+- [ ] On a modern SharePoint Site Page with a Page details description, confirm Description is
+      prefilled even when no ordinary meta-description tag exists.
 - [ ] Settings > Knowledge Base has an **Open prompt generator** button (the popup no longer does).
 - [ ] Open in Page: panel is noticeably bigger, the bottom-right **resize grip is visible** and drags; Description/Markdown fields are taller than in the plain popup.
 - [ ] Side panel: an **X** closes it (only shown there).

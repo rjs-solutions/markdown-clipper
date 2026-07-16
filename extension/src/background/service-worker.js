@@ -26,11 +26,23 @@ import {
 } from "../lib/crawl-state.js";
 import { loadSettings } from "../lib/settings.js";
 import { popupPathForAction } from "../lib/action-mode.js";
+import { isCollectionSyncDue, loadCollectionSchedule } from "../lib/collection-schedule.js";
 
 const WATCHDOG_ALARM = "crawl-watchdog";
 const MAX_LOG_LINES = 300;
 const CONTEXT_MENU_ID = "clip-page";
 const SELECTION_CONTEXT_MENU_ID = "clip-selection";
+
+async function updateCollectionSyncBadge() {
+  try {
+    const schedule = await loadCollectionSchedule();
+    const due = isCollectionSyncDue(schedule.frequency, schedule.lastCompletedAt);
+    await chrome.action.setBadgeText({ text: due ? "SYNC" : "" });
+    if (due) await chrome.action.setBadgeBackgroundColor({ color: "#0f8b8d" });
+  } catch (error) {
+    console.error("Markdown Clipper collection sync reminder failed:", error);
+  }
+}
 // Must match manifest.json's side_panel.default_path and the ?panel=1
 // convention popup.js reads to know it's rendering inside the side panel.
 const SIDE_PANEL_PATH = "src/popup/index.html?panel=1";
@@ -399,11 +411,14 @@ chrome.alarms.create(WATCHDOG_ALARM, { periodInMinutes: 1 });
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === WATCHDOG_ALARM) {
     resumeRunningJobs();
+    updateCollectionSyncBadge();
   }
 });
 
 chrome.runtime.onStartup.addListener(resumeRunningJobs);
 chrome.runtime.onInstalled.addListener(resumeRunningJobs);
+chrome.runtime.onStartup.addListener(updateCollectionSyncBadge);
+chrome.runtime.onInstalled.addListener(updateCollectionSyncBadge);
 
 chrome.runtime.onStartup.addListener(applyActionMode);
 chrome.runtime.onInstalled.addListener(applyActionMode);
@@ -440,3 +455,4 @@ try {
 resumeRunningJobs();
 applyActionMode();
 setupContextMenu();
+updateCollectionSyncBadge();

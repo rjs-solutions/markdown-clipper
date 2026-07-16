@@ -32,7 +32,10 @@ import { exportSettings, importSettings } from "../lib/settings-backup.js";
 import { downloadText } from "../lib/download.js";
 import { collectionsToCsv } from "../lib/collection-csv.js";
 import { openCollectionWindow } from "../lib/window-placement.js";
-import { collectionLibraryPath, normalizeLibraryPath, uniqueCollectionLibraryPath } from "../lib/collection-library.js";
+import { collectionLibraryPath, loadCollectionLibraryManifest, normalizeLibraryPath, reviewRemovedCollectionFile, uniqueCollectionLibraryPath } from "../lib/collection-library.js";
+import { exportCollectionDefinitions, mergeCollectionDefinitions, parseCollectionDefinitions } from "../lib/collection-backup.js";
+import { loadCollectionSchedule, saveCollectionSchedule } from "../lib/collection-schedule.js";
+import { loadCollectionHealth, removeCollectionHealth } from "../lib/collection-health.js";
 import { slugify } from "../lib/slug.js";
 import { listClips } from "../lib/clip-log.js";
 import { TASK_PRESETS, buildPrompt } from "../lib/prompt-templates.js";
@@ -842,6 +845,16 @@ function renderCollectionsControl(panel) {
   const importListButton = document.createElement("button");
   importListButton.type = "button";
   importListButton.textContent = "Import URL list…";
+  const importDefinitionsButton = document.createElement("button");
+  importDefinitionsButton.type = "button";
+  importDefinitionsButton.textContent = "Import definitions…";
+  const importDefinitionsInput = document.createElement("input");
+  importDefinitionsInput.type = "file";
+  importDefinitionsInput.accept = ".json,application/json";
+  importDefinitionsInput.hidden = true;
+  const exportDefinitionsButton = document.createElement("button");
+  exportDefinitionsButton.type = "button";
+  exportDefinitionsButton.textContent = "Export definitions";
   const exportAllButton = document.createElement("button");
   exportAllButton.type = "button";
   exportAllButton.textContent = "Export all CSV";
@@ -849,7 +862,7 @@ function renderCollectionsControl(panel) {
   refreshAllButton.type = "button";
   refreshAllButton.textContent = "Refresh all collections";
   refreshAllButton.disabled = true;
-  toolbar.append(importListButton, exportAllButton, refreshAllButton);
+  toolbar.append(importListButton, importDefinitionsButton, exportDefinitionsButton, exportAllButton, refreshAllButton);
 
   const list = document.createElement("div");
   list.className = "sites-list";
@@ -908,34 +921,51 @@ function renderCollectionsControl(panel) {
   const forgetLibraryButton = document.createElement("button");
   forgetLibraryButton.type = "button";
   forgetLibraryButton.textContent = "Forget folder";
-  libraryButtons.append(chooseLibraryButton, regrantLibraryButton, forgetLibraryButton);
+  const syncAllLibraryButton = document.createElement("button");
+  syncAllLibraryButton.type = "button";
+  syncAllLibraryButton.textContent = "Sync all collections";
+  libraryButtons.append(chooseLibraryButton, regrantLibraryButton, forgetLibraryButton, syncAllLibraryButton);
   libraryField.append(libraryDescription, libraryStatus, libraryButtons);
+  const scheduleRow = document.createElement("label");
+  scheduleRow.className = "collection-schedule-row";
+  const scheduleLabel = document.createElement("span");
+  scheduleLabel.textContent = "Sync reminder";
+  const scheduleSelect = document.createElement("select");
+  scheduleSelect.append(new Option("Off", "off"), new Option("Weekly", "weekly"), new Option("Monthly", "monthly"));
+  const scheduleStatus = document.createElement("span");
+  scheduleStatus.className = "help-text";
+  scheduleRow.append(scheduleLabel, scheduleSelect, scheduleStatus);
+  libraryField.append(scheduleRow);
   wrapper.append(libraryField);
 
   const savedHeading = document.createElement("h3");
   savedHeading.className = "group-heading collection-saved-heading";
   savedHeading.textContent = "Saved collections";
-  wrapper.append(savedHeading, toolbar, list);
+  wrapper.append(savedHeading, toolbar, importDefinitionsInput, list);
 
   panel.append(wrapper);
 
   let sites = [];
   let libraryHandle = null;
+  let libraryPermissionGranted = false;
   const rowControllers = new Map();
 
   async function refreshLibraryStatus() {
     try {
       libraryHandle = await loadCollectionLibraryHandle();
       if (!libraryHandle) {
+        libraryPermissionGranted = false;
         libraryStatus.textContent = "No library folder chosen. Snapshot downloads still work normally.";
         regrantLibraryButton.hidden = true;
         forgetLibraryButton.hidden = true;
         return;
       }
       const permission = await ensurePermission(libraryHandle);
+      libraryPermissionGranted = permission === "granted";
       libraryStatus.textContent = `Library folder: ${libraryHandle.name || "(unnamed folder)"} (${permission === "granted" ? "access granted" : "access needed"})`;
       regrantLibraryButton.hidden = permission === "granted";
       forgetLibraryButton.hidden = false;
+      for (const controller of rowControllers.values()) controller.reviewHealth();
     } catch (error) {
       libraryStatus.textContent = `Could not read the library folder: ${error && error.message ? error.message : error}`;
     }
@@ -972,7 +1002,42 @@ function renderCollectionsControl(panel) {
     await refreshLibraryStatus();
   });
 
+  syncAllLibraryButton.addEventListener("click", async () => {
+    if (!sites.length) {
+      libraryStatus.textContent = "Add at least one collection before syncing.";
+      return;
+    }
+    if (!libraryHandle || !libraryPermissionGranted) {
+      libraryStatus.textContent = "Choose or re-grant the Local Collections Library folder first.";
+      return;
+    }
+    const urls = sites.flatMap((site) => site.type === "custom" ? site.urls || [] : [site.webUrl || site.sourceUrl || site.url]);
+    const origins = Array.from(new Set(urls.flatMap((value) => {
+      try { const parsed = new URL(value); return [`${parsed.protocol}//${parsed.host}/*`]; } catch { return []; }
+    })));
+    let granted = origins.length === 0;
+    try {
+      granted = origins.length ? await chrome.permissions.request({ origins }) : true;
+    } catch {
+      granted = false;
+    }
+    if (!granted) {
+      libraryStatus.textContent = "Site access is needed before all collections can be synced.";
+      return;
+    }
+    const queue = sites.map((site) => site.id).join(",");
+    openCollectionWindow(`destination=library&syncQueue=${encodeURIComponent(queue)}`);
+  });
+
   refreshLibraryStatus();
+  loadCollectionSchedule().then((schedule) => {
+    scheduleSelect.value = schedule.frequency;
+    scheduleStatus.textContent = schedule.lastCompletedAt ? `Last Sync all: ${formatDateTime(schedule.lastCompletedAt)}` : "Chrome shows a SYNC badge when due.";
+  });
+  scheduleSelect.addEventListener("change", async () => {
+    await saveCollectionSchedule(scheduleSelect.value);
+    scheduleStatus.textContent = scheduleSelect.value === "off" ? "Reminder disabled." : "Chrome will show a SYNC badge when due.";
+  });
 
   function persist() {
     saveSites(sites).catch((error) => {
@@ -1068,6 +1133,10 @@ function renderCollectionsControl(panel) {
     const discoverResults = document.createElement("ul");
     discoverResults.className = "site-discover-results";
     details.append(discoverResults);
+    const healthReview = document.createElement("div");
+    healthReview.className = "collection-health-review";
+    healthReview.hidden = true;
+    details.append(healthReview);
     row.append(details);
 
     list.append(row);
@@ -1090,6 +1159,7 @@ function renderCollectionsControl(panel) {
       removeSiteInventory(site.id).catch((error) => {
         console.error("Markdown Clipper collection inventory removal failed:", error);
       });
+      removeCollectionHealth(site.id).catch((error) => console.error("Markdown Clipper collection health removal failed:", error));
       refreshAllButton.disabled = sites.length === 0;
       status.textContent = `Removed ${removedName} from saved collections. Any local library files were left in place.`;
     });
@@ -1192,7 +1262,83 @@ function renderCollectionsControl(panel) {
 
     discoverButton.addEventListener("click", () => refresh());
 
-    const controller = { refresh, discoverButton };
+    async function reviewHealth() {
+      healthReview.replaceChildren();
+      const health = await loadCollectionHealth(site.id);
+      const failures = (health.pages || []).filter((page) => page.status === "error");
+      let removedFiles = [];
+      if (libraryHandle && libraryPermissionGranted) {
+        const manifest = await loadCollectionLibraryManifest(libraryHandle, site);
+        removedFiles = manifest?.removedFromPreviousSync || [];
+      }
+      if (!health.checkedAt && !removedFiles.length) {
+        healthReview.hidden = true;
+        return;
+      }
+      healthReview.hidden = false;
+      const heading = document.createElement("div");
+      heading.className = "collection-health-heading";
+      const okCount = (health.pages || []).filter((page) => page.status === "ok").length;
+      heading.textContent = `Page health · ${okCount} passed · ${failures.length + removedFiles.length} need review`;
+      healthReview.append(heading);
+      const listElement = document.createElement("ul");
+      listElement.className = "collection-health-list";
+      for (const page of failures) {
+        const item = document.createElement("li");
+        item.className = "is-error";
+        const text = document.createElement("span");
+        text.textContent = `${page.url} — ${page.error}`;
+        item.append(text);
+        const openButton = document.createElement("button");
+        openButton.type = "button";
+        openButton.textContent = "Open";
+        openButton.title = "Open this page to review or fix it";
+        openButton.addEventListener("click", () => chrome.tabs.create({ url: page.url }));
+        item.append(openButton);
+        if (site.type === "custom") {
+          const removeUrlButton = document.createElement("button");
+          removeUrlButton.type = "button";
+          removeUrlButton.textContent = "Remove URL";
+          removeUrlButton.title = "Remove this failed URL from the custom collection";
+          removeUrlButton.addEventListener("click", () => {
+            site.urls = (site.urls || []).filter((url) => url !== page.url);
+            persist();
+            item.remove();
+          });
+          item.append(removeUrlButton);
+        }
+        listElement.append(item);
+      }
+      for (const path of removedFiles) {
+        const item = document.createElement("li");
+        item.className = "is-removed";
+        const text = document.createElement("span");
+        text.textContent = `${path} — no longer present in the latest sync`;
+        const archiveButton = document.createElement("button");
+        archiveButton.type = "button";
+        archiveButton.textContent = "Archive";
+        archiveButton.title = "Move this local file into the collection's _archive folder";
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.textContent = "Delete";
+        deleteButton.title = "Permanently delete this local stale file";
+        const review = async (action) => {
+          try {
+            await reviewRemovedCollectionFile(libraryHandle, site, path, action);
+            item.remove();
+          } catch (error) {
+            discoverStatus.textContent = error && error.message ? error.message : String(error);
+          }
+        };
+        archiveButton.addEventListener("click", () => review("archive"));
+        deleteButton.addEventListener("click", () => review("delete"));
+        item.append(text, archiveButton, deleteButton);
+        listElement.append(item);
+      }
+      healthReview.append(listElement);
+    }
+
+    const controller = { refresh, discoverButton, reviewHealth };
     rowControllers.set(site.id, controller);
     Promise.resolve(initialInventory || loadSiteInventory(site.id)).then((inventory) => {
       if (inventory.lastRefreshedAt) {
@@ -1208,11 +1354,34 @@ function renderCollectionsControl(panel) {
     }).catch((error) => {
       console.error("Markdown Clipper collection inventory load failed:", error);
     });
+    reviewHealth().catch((error) => console.error("Markdown Clipper collection health load failed:", error));
 
     return controller;
   }
 
   importListButton.addEventListener("click", () => openCollectionWindow("mode=list&save=1"));
+
+  importDefinitionsButton.addEventListener("click", () => importDefinitionsInput.click());
+  importDefinitionsInput.addEventListener("change", async () => {
+    const file = importDefinitionsInput.files && importDefinitionsInput.files[0];
+    if (!file) return;
+    try {
+      const imported = parseCollectionDefinitions(await file.text());
+      const result = mergeCollectionDefinitions(sites, imported);
+      sites = result.collections;
+      await saveSites(sites);
+      await renderSavedRows();
+      status.textContent = `Imported collection definitions: ${result.added} added, ${result.updated} updated.`;
+    } catch (error) {
+      status.textContent = error && error.message ? error.message : String(error);
+    } finally {
+      importDefinitionsInput.value = "";
+    }
+  });
+
+  exportDefinitionsButton.addEventListener("click", async () => {
+    await downloadText(exportCollectionDefinitions(sites), "markdown-clipper-collections.json", { type: "application/json;charset=utf-8" });
+  });
 
   exportAllButton.addEventListener("click", async () => {
     const inventories = await loadSiteInventories(sites.map((site) => site.id));
@@ -1291,14 +1460,20 @@ function renderCollectionsControl(panel) {
     refreshAllButton.disabled = false;
   });
 
-  loadSites().then(async (loaded) => {
-    sites = loaded;
+  async function renderSavedRows() {
+    list.replaceChildren();
+    rowControllers.clear();
     const inventories = await loadSiteInventories(sites.map((site) => site.id));
     for (const site of sites) {
       renderRow(site, inventories[site.id]);
     }
     refreshAllButton.disabled = sites.length === 0;
     exportAllButton.disabled = sites.length === 0;
+  }
+
+  loadSites().then(async (loaded) => {
+    sites = loaded;
+    await renderSavedRows();
   });
 }
 

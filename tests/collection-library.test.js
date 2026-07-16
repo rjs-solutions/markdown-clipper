@@ -4,7 +4,9 @@ import {
   collectionLibraryPath,
   normalizeLibraryPath,
   uniqueCollectionLibraryPath,
-  syncCollectionToLibrary
+  syncCollectionToLibrary,
+  writeCollectionLibraryCatalog,
+  reviewRemovedCollectionFile
 } from "../extension/src/lib/collection-library.js";
 
 function missing(name) {
@@ -40,6 +42,9 @@ function makeDirectory(name = "root") {
         });
       }
       return files.get(fileName);
+    },
+    async removeEntry(fileName) {
+      if (!files.delete(fileName) && !directories.delete(fileName)) throw missing(fileName);
     }
   };
 }
@@ -65,6 +70,7 @@ test("sync writes normal Markdown files, index, manifest, and report", async () 
 
   assert.equal(result.folder, "sharepoint/team-docs");
   assert.equal(result.pageCount, 1);
+  assert.equal(result.updatedCount, 1);
   assert.match(target.files.get("index.md").content, /\[Start\]/);
   assert.match(target.files.get("collection.json").content, /"collectionId": "docs"/);
   assert.match(target.files.get("_sync-report.md").content, /Current pages: 1/);
@@ -83,7 +89,54 @@ test("a later sync overwrites current pages and reports missing files without de
   const docs = directory(root, "sharepoint/team-docs/docs");
 
   assert.deepEqual(result.removed, ["docs/remove.md"]);
+  assert.equal(result.updatedCount, 1);
   assert.match(docs.files.get("keep.md").content, /New/);
   assert.ok(docs.files.has("remove.md"), "stale local files are preserved for review");
   assert.match(directory(root, "sharepoint/team-docs").files.get("_sync-report.md").content, /docs\/remove\.md/);
+});
+
+test("unchanged content is not rewritten on incremental sync", async () => {
+  const root = makeDirectory();
+  const pages = [{ url: "https://example.test/docs/keep", title: "Keep", markdown: "Same", metadata: {} }];
+  await syncCollectionToLibrary(root, collection, pages, { metadataStyle: "none", includeTitleHeading: true });
+  const result = await syncCollectionToLibrary(root, collection, pages, { metadataStyle: "none", includeTitleHeading: true });
+  assert.equal(result.updatedCount, 0);
+  assert.equal(result.unchangedCount, 1);
+});
+
+test("multi-host custom collections group page files by hostname", async () => {
+  const root = makeDirectory();
+  const custom = { id: "mixed", name: "Mixed", type: "custom" };
+  const pages = [
+    { url: "https://one.test/docs/start", title: "One", markdown: "One", metadata: {} },
+    { url: "https://two.test/docs/start", title: "Two", markdown: "Two", metadata: {} }
+  ];
+  await syncCollectionToLibrary(root, custom, pages, { metadataStyle: "none", includeTitleHeading: true });
+  const target = directory(root, "custom/mixed");
+  assert.ok(directory(target, "one.test/docs").files.has("start.md"));
+  assert.ok(directory(target, "two.test/docs").files.has("start.md"));
+});
+
+test("library catalog links every collection that has been synced", async () => {
+  const root = makeDirectory();
+  const pages = [{ url: "https://example.test/docs/start", title: "Start", markdown: "Hello", metadata: {} }];
+  await syncCollectionToLibrary(root, collection, pages, { metadataStyle: "none", includeTitleHeading: true });
+  const result = await writeCollectionLibraryCatalog(root, [collection, { id: "not-synced", name: "Later", type: "website" }]);
+  assert.equal(result.count, 1);
+  assert.match(root.files.get("_collections.md").content, /sharepoint\/team-docs\/index\.md/);
+  assert.match(root.files.get("_collections.json").content, /"name": "Team Docs"/);
+});
+
+test("removed local files can be explicitly archived after review", async () => {
+  const root = makeDirectory();
+  const first = [
+    { url: "https://example.test/docs/keep", title: "Keep", markdown: "Keep", metadata: {} },
+    { url: "https://example.test/docs/old", title: "Old", markdown: "Old", metadata: {} }
+  ];
+  await syncCollectionToLibrary(root, collection, first, { metadataStyle: "none", includeTitleHeading: true });
+  await syncCollectionToLibrary(root, collection, first.slice(0, 1), { metadataStyle: "none", includeTitleHeading: true });
+  const result = await reviewRemovedCollectionFile(root, collection, "docs/old.md", "archive", { reviewedAt: Date.UTC(2026, 6, 16) });
+  assert.equal(result.remaining, 0);
+  assert.equal(directory(root, "sharepoint/team-docs/docs").files.has("old.md"), false);
+  assert.ok(directory(root, "sharepoint/team-docs/_archive/2026-07-16/docs").files.has("old.md"));
 });

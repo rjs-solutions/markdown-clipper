@@ -58,7 +58,10 @@ extension/
     │   ├── collection-import.js TXT / CSV / XLSX URL intake
     │   ├── collections.js     versioned saved-collection model + legacy migration
     │   ├── collection-csv.js  collection/inventory CSV export
-    │   ├── collection-library.js direct local Markdown sync + manifest/report
+    │   ├── collection-library.js incremental local sync + catalog/manifest/review
+    │   ├── collection-backup.js portable collection-definition import/export
+    │   ├── collection-health.js last crawl results for explicit page review
+    │   ├── collection-schedule.js optional sync-due reminder state
     │   ├── sharepoint-inventory.js local page snapshots + refresh reconciliation
     │   ├── collection-export.js saved-collection matching + export presets
     │   ├── sitepath.js        URL -> structure-preserving .md path
@@ -118,7 +121,7 @@ flat map.
 
 ## Testing
 
-`npm test` runs `node --test` (325 cases), including Markdown conversion, settings, capture
+`npm test` runs `node --test` (339 cases), including Markdown conversion, settings, capture
 adapters, SharePoint discovery/inventory reconciliation, crawling, templating, the vault, and
 DOM integration coverage in jsdom. Browser-only behavior on real authenticated pages is covered
 by the manual checklist in [TESTING.md](TESTING.md).

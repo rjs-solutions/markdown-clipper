@@ -35,6 +35,7 @@ const el = {
   download: document.getElementById("do-download"),
   downloadLocation: document.getElementById("do-download-location"),
   copy: document.getElementById("do-copy"),
+  copyFull: document.getElementById("do-copy-full"),
   export: document.getElementById("do-export"),
   status: document.getElementById("status")
 };
@@ -132,6 +133,7 @@ function wireEvents() {
   el.download.addEventListener("click", () => run("download"));
   el.downloadLocation.addEventListener("click", () => run("save-as"));
   el.copy.addEventListener("click", () => run("copy"));
+  el.copyFull.addEventListener("click", () => run("copy-full"));
   el.export.addEventListener("click", exportWholeSite);
 
   // Keep the filename in sync with the title until the user edits it directly.
@@ -146,7 +148,7 @@ function wireEvents() {
   // Mark the body as user-edited so background/full captures stop overwriting it.
   el.previewBody.addEventListener("input", () => {
     el.previewBody.dataset.edited = "1";
-    el.charCount.textContent = `Markdown · ${el.previewBody.value.length.toLocaleString()} chars`;
+    el.charCount.textContent = `Body · ${el.previewBody.value.length.toLocaleString()} chars`;
   });
   // Mirror the same guard for tags: once the user edits the pre-filled tags,
   // a later full-capture refresh must not clobber their edit.
@@ -456,7 +458,7 @@ function populateCard(result) {
 
 function updateCharCount() {
   const length = el.previewBody.value.length;
-  el.charCount.textContent = `Markdown · ${length.toLocaleString()} chars`;
+  el.charCount.textContent = `Body · ${length.toLocaleString()} chars`;
 }
 
 // Scrolling to load lazy content only helps virtualized SharePoint pages; for
@@ -535,9 +537,11 @@ async function run(action) {
 
     const payload = buildPayload(result);
 
-    if (action === "copy") {
-      await navigator.clipboard.writeText(payload.markdown);
-      setStatus(`Copied ${payload.markdown.length.toLocaleString()} characters`);
+    if (action === "copy" || action === "copy-full") {
+      const copyText = action === "copy" ? currentFields().body : payload.markdown;
+      await navigator.clipboard.writeText(copyText);
+      setStatus("");
+      showActionSuccess(action === "copy" ? el.copy : el.copyFull);
     } else {
       // Reuse the existing record's path on a matched re-clip so the write
       // overwrites the same file instead of creating a new one; otherwise
@@ -823,9 +827,22 @@ function showEmpty(message) {
 }
 
 function setBusy(isBusy) {
-  for (const button of [el.download, el.downloadLocation, el.copy, el.expand]) {
+  for (const button of [el.download, el.downloadLocation, el.copy, el.copyFull, el.expand]) {
     button.disabled = isBusy;
   }
+}
+
+function showActionSuccess(button) {
+  const label = button.querySelector(".btn-label");
+  const originalLabel = label && label.textContent;
+  button.classList.add("is-success");
+  button.setAttribute("aria-label", "Copied");
+  if (label) label.textContent = "Copied";
+  setTimeout(() => {
+    button.classList.remove("is-success");
+    button.setAttribute("aria-label", button === el.copy ? "Copy page Markdown" : "Copy complete Markdown with title and metadata");
+    if (label) label.textContent = originalLabel;
+  }, 1200);
 }
 
 function setStatus(message, isError = false) {

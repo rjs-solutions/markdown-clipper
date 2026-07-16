@@ -12,10 +12,13 @@ import { loadJob, saveJob, getJobBodies } from "../lib/crawl-state.js";
 import { createCustomCollection, loadCollections, saveCollections } from "../lib/collections.js";
 import { loadSiteInventories } from "../lib/sharepoint-inventory.js";
 import { collectionExportPreset, matchSavedCollection } from "../lib/collection-export.js";
-import { syncCollectionToLibrary } from "../lib/collection-library.js";
+import { syncCollectionToLibrary, writeCollectionLibraryCatalog } from "../lib/collection-library.js";
 import { loadCollectionLibraryHandle, ensurePermission } from "../lib/vault-handle.js";
+import { markCollectionSyncCompleted } from "../lib/collection-schedule.js";
+import { saveCollectionHealth } from "../lib/collection-health.js";
 
 const CURRENT_JOB_KEY = "crawl-ui-current-job";
+const SYNC_QUEUE_KEY = "crawl-ui-sync-queue";
 const POLL_MS = 700;
 
 const form = document.getElementById("crawl-form");
@@ -52,6 +55,7 @@ let renderedLogLines = 0;
 let currentSettings = null;
 let savedCollectionEntries = [];
 let cachedJobId = null;
+let syncQueue = [];
 
 document.addEventListener("DOMContentLoaded", initialize);
 
@@ -59,6 +63,7 @@ async function initialize() {
   currentSettings = await loadSettings();
   applyTheme(currentSettings.theme);
   const params = new URLSearchParams(location.search);
+  syncQueue = await restoreSyncQueue(String(params.get("syncQueue") || ""));
   const seed = params.get("seed") || "";
   if (seed) {
     urlsInput.value = seed;
@@ -72,7 +77,7 @@ async function initialize() {
   fileInput.addEventListener("change", importSelectedFile);
   saveCollectionButton.addEventListener("click", saveUrlListCollection);
   urlsInput.addEventListener("input", updateUrlCount);
-  await populateSavedCollections(seed, params.get("collection"));
+  await populateSavedCollections(seed, syncQueue[0] || params.get("collection"));
 
   const requestedMode = params.get("mode");
   const requestedRadio = requestedMode && form.querySelector(`input[name="mode"][value="${requestedMode}"]`);
@@ -91,18 +96,25 @@ async function initialize() {
 
   await sendMessage({ type: "crawl:resume-check" });
   const existingId = await getStoredJobId();
+  let handledExisting = false;
   if (existingId) {
     const job = await loadJob(existingId);
     if (job && !["done", "cancelled", "failed"].includes(job.status)) {
+      handledExisting = true;
       setCurrentJobId(existingId);
       showProgress();
       setRunning(job.status);
       startPolling(existingId);
-    } else if (job) {
+    } else if (job && !job.exported) {
+      handledExisting = true;
       showProgress();
       renderJobSnapshot(job);
       if (job.status === "done" && !job.exported) await exportJob(job);
     }
+  }
+  if (syncQueue.length && !handledExisting) {
+    startButton.textContent = `Sync all (${syncQueue.length})`;
+    await start();
   }
 }
 
@@ -231,6 +243,35 @@ function sendMessage(message) {
 function getCurrentJobId() { return cachedJobId; }
 function setCurrentJobId(id) { cachedJobId = id; chrome.storage.local.set({ [CURRENT_JOB_KEY]: id }); }
 async function getStoredJobId() { const stored = await chrome.storage.local.get(CURRENT_JOB_KEY); cachedJobId = stored[CURRENT_JOB_KEY] || null; return cachedJobId; }
+
+async function restoreSyncQueue(requestedValue) {
+  const requested = requestedValue.split(",").map((value) => value.trim()).filter(Boolean);
+  if (!requested.length) return [];
+  const signature = requested.join(",");
+  const stored = await chrome.storage.local.get(SYNC_QUEUE_KEY);
+  const previous = stored[SYNC_QUEUE_KEY];
+  if (previous?.signature === signature && Array.isArray(previous.remaining) && previous.remaining.length) {
+    return previous.remaining.filter((id) => requested.includes(id));
+  }
+  await saveSyncQueue(requested, signature);
+  return requested;
+}
+
+async function saveSyncQueue(remaining, signature = null) {
+  if (!remaining.length) {
+    await chrome.storage.local.remove(SYNC_QUEUE_KEY);
+    return;
+  }
+  const stored = signature ? null : await chrome.storage.local.get(SYNC_QUEUE_KEY);
+  const previous = stored && stored[SYNC_QUEUE_KEY];
+  await chrome.storage.local.set({
+    [SYNC_QUEUE_KEY]: {
+      signature: signature || previous?.signature || remaining.join(","),
+      remaining,
+      updatedAt: Date.now()
+    }
+  });
+}
 
 function parsePatterns(text) {
   return String(text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
@@ -362,6 +403,7 @@ async function exportJob(job) {
     if (!pages.length) throw new Error("No pages were captured.");
     const collections = await loadCollections();
     const collection = collections.find((item) => item.id === job.options.collectionId) || null;
+    if (collection) await saveCollectionHealth(collection.id, { results: job.results, errors: job.errors });
     await buildOutputs(pages, currentSettings, job.options.outputMode, {
       destination: job.options.destination || "download",
       collection
@@ -371,6 +413,19 @@ async function exportJob(job) {
     progressSummary.textContent = synced ? "Local sync complete" : "Export complete";
     log("Done.");
     await saveJob({ ...job, exported: true });
+    if (syncQueue.length) {
+      if (syncQueue[0] === job.options.collectionId) syncQueue.shift();
+      await saveSyncQueue(syncQueue);
+      if (syncQueue.length) {
+        startButton.textContent = `Sync all (${syncQueue.length} remaining)`;
+        await populateSavedCollections("", syncQueue[0]);
+        await start();
+      } else {
+        startButton.textContent = "Start export";
+        await markCollectionSyncCompleted();
+        try { await chrome.action.setBadgeText({ text: "" }); } catch { /* Optional badge surface. */ }
+      }
+    }
   } catch (error) {
     log(`Error: ${error && error.message ? error.message : error}`, true);
   }
@@ -386,7 +441,8 @@ async function buildOutputs(pages, settings, outputMode, { destination = "downlo
       throw new Error("Local Collections Library access is unavailable. Re-grant it in Manage Collections.");
     }
     const result = await syncCollectionToLibrary(handle, collection, pages, settings);
-    log(`Synced ${result.pageCount} page file(s) to ${result.folder}.`);
+    await writeCollectionLibraryCatalog(handle, await loadCollections());
+    log(`Synced ${result.pageCount} page(s) to ${result.folder}: ${result.updatedCount} updated, ${result.unchangedCount} unchanged.`);
     if (result.removed.length) log(`${result.removed.length} previously synced file(s) need review; none were deleted.`, true);
     return;
   }
@@ -408,6 +464,7 @@ function deriveSiteTitle(pages) { try { return new URL(pages[0].url).hostname; }
 async function requestOrigins(urls) {
   const origins = [...new Set(urls.map(originPattern).filter(Boolean))];
   if (!origins.length) return;
+  if (await chrome.permissions.contains({ origins })) return;
   if (!await chrome.permissions.request({ origins })) throw new Error("Permission to access those sites was declined.");
 }
 
