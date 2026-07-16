@@ -5,6 +5,8 @@ All notable changes to Markdown Clipper are documented here. This project follow
 
 ## [Unreleased]
 
+- Persist SharePoint page inventories locally, with collapsible saved-site rows, per-site refresh, refresh-all, and new/updated/removed change detection without duplicate pages.
+
 ### Added
 - Preview expansion with popup/side-panel/in-page action modes, draggable and resizable in-page
   panel, context-menu page/selection clipping, durable crawler jobs, SharePoint and Confluence

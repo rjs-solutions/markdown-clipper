@@ -27,6 +27,15 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 - [ ] Merely opening the popup does not move the SharePoint page. Choosing Copy, Download,
       Open, or the editor shows a brief loading overlay, then restores the original position.
 
+### Saved SharePoint sites
+
+- [ ] Options → SharePoint → add a signed-in site and discover its pages; the permission prompt
+      appears once and the page count/list persists after closing and reopening Options.
+- [ ] Collapse and expand the saved site; the state persists after reopening Options.
+- [ ] Refresh the site without changes → the same page count, no duplicate rows, and “no changes.”
+- [ ] After a SharePoint page is created or edited, Refresh reports it as new or updated. Removing
+      a page reports it as removed. **Refresh all sites** processes every saved site once.
+
 ## 3. Single-page capture — general webpage
 
 - [ ] On a news/article page, capture produces clean article Markdown (Readability mode).

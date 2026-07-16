@@ -1,6 +1,6 @@
 # Browser verification checklist — feature/clipper-expansion
 
-Everything on this branch passes 294 automated tests and a static load-safety audit
+Everything on this branch passes 298 automated tests and a static load-safety audit
 (service worker has no load-fatal DOM globals, no `createObjectURL` in the worker tree,
 all manifest-referenced files exist). What remains can only be checked in a real Chrome
 because it needs the extension loaded, the File System Access API, real IndexedDB, or a
@@ -21,6 +21,12 @@ independent once the extension is loaded.
 ## 2. Confluence detection  *(needs real Confluence + Jira)*
 - [ ] On a real Confluence page (Cloud `*.atlassian.net/wiki/...` or Server/DC) → popup mode auto-detects "Confluence"; captured body is the page, not nav/sidebar chrome.
 - [ ] On a **Jira** page (`*.atlassian.net` with NO `/wiki` path) → mode does NOT say Confluence. *(This is the false-positive guard.)*
+
+## 2a. Saved SharePoint site refresh
+- [ ] Options → SharePoint → add a site and discover pages. The inventory persists after Options is closed and reopened.
+- [ ] Collapse/expand the site row; the chevron and saved state agree after reopening Options.
+- [ ] Refresh with no SharePoint edits → “no changes,” the same page count, and no duplicates.
+- [ ] Edit or add a test page, refresh again → the page is labeled Updated or New. Refresh all handles every saved site sequentially.
 
 ## 3. Crawler v2 — durability  *(THE acceptance test; also the only check of IndexedDB body storage)*
 - [ ] Start a follow-links crawl (max pages ~15) on a site you may crawl; approve the permission prompt. Watch a few pages capture.
@@ -57,7 +63,7 @@ independent once the extension is loaded.
 ## 8. UX feedback pass (popup slim, panel, entry points)
 - [ ] Popup: only a **Source** row up top (no Author/Published/Modified/Site); Download/Copy/Open visible with little/no scroll. The full editor (expand icon) still shows all fields.
 - [ ] Settings > Knowledge Base has an **Open prompt generator** button (the popup no longer does).
-- [ ] Open in Page: panel is noticeably bigger, the bottom-left **resize grip is visible** and drags; Description/Markdown fields are taller than in the plain popup.
+- [ ] Open in Page: panel is noticeably bigger, the bottom-right **resize grip is visible** and drags; Description/Markdown fields are taller than in the plain popup.
 - [ ] Side panel: an **X** closes it (only shown there).
 - [ ] Settings > General > **Toolbar icon click**: set to Popup / Side panel / Open in page, save, click the icon each time — behavior matches. Fresh reload still opens the popup before the worker adjusts.
 - [ ] Right-click a page > **Clip with Markdown Clipper** → the in-page overlay opens.

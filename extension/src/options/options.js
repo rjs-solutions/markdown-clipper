@@ -10,6 +10,13 @@ import { loadRules, saveRules } from "../lib/tag-rules.js";
 import { loadSites, saveSites, generateSiteId } from "../lib/sharepoint-sites.js";
 import { parseSharePointSite } from "../lib/sharepoint-site.js";
 import { discoverSitePages } from "../lib/sharepoint-fetch.js";
+import {
+  loadSiteInventory,
+  saveSiteInventory,
+  removeSiteInventory,
+  reconcileSitePages,
+  pageIdentity
+} from "../lib/sharepoint-inventory.js";
 import { exportSettings, importSettings } from "../lib/settings-backup.js";
 import { downloadText } from "../lib/download.js";
 import { listClips } from "../lib/clip-log.js";
@@ -754,10 +761,10 @@ function renderTagRulesControl(panel) {
 // A saved-sites list for the upcoming "sync a SharePoint site" feature. Like
 // tag-rules and the vault folder, it persists under its own chrome.storage.sync
 // key ("sharepointSites", via sharepoint-sites.js) rather than a schema field,
-// and auto-saves on every edit. Phase 1a: add/list/remove a site. Phase 1b
-// adds a per-row "Discover pages" probe (sharepoint-fetch.js) that opens the
-// site in a background tab and reads its Site Pages list. No capture wiring
-// yet.
+// and auto-saves on every edit. Page inventories are kept separately in
+// chrome.storage.local (sharepoint-inventory.js) so large sites do not consume
+// the sync quota. Discovery/refresh opens the site in a background tab and
+// reads its Site Pages list; capture/sync wiring comes later.
 function renderSharePointSitesControl(panel) {
   if (!panel) {
     return;
@@ -773,8 +780,17 @@ function renderSharePointSitesControl(panel) {
 
   const help = document.createElement("p");
   help.className = "help-text";
-  help.textContent = "Save a SharePoint site to sync its pages into your vault. Discovery comes next.";
+  help.textContent = "Save SharePoint sites, discover their pages, and refresh to find changes without duplicates.";
   wrapper.append(help);
+
+  const toolbar = document.createElement("div");
+  toolbar.className = "sites-toolbar";
+  const refreshAllButton = document.createElement("button");
+  refreshAllButton.type = "button";
+  refreshAllButton.textContent = "Refresh all sites";
+  refreshAllButton.disabled = true;
+  toolbar.append(refreshAllButton);
+  wrapper.append(toolbar);
 
   const list = document.createElement("div");
   list.className = "sites-list";
@@ -802,6 +818,7 @@ function renderSharePointSitesControl(panel) {
   panel.append(wrapper);
 
   let sites = [];
+  const rowControllers = new Map();
 
   function persist() {
     saveSites(sites).catch((error) => {
@@ -815,6 +832,11 @@ function renderSharePointSitesControl(panel) {
 
     const top = document.createElement("div");
     top.className = "site-row-top";
+
+    const toggleButton = document.createElement("button");
+    toggleButton.type = "button";
+    toggleButton.className = "site-toggle";
+    toggleButton.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m5 6 3 3 3-3"></path></svg>';
 
     const info = document.createElement("div");
     info.className = "site-info";
@@ -840,53 +862,90 @@ function renderSharePointSitesControl(panel) {
     removeButton.setAttribute("aria-label", `Remove ${site.name}`);
 
     actions.append(discoverButton, removeButton);
-    top.append(info, actions);
+    top.append(toggleButton, info, actions);
     row.append(top);
+
+    const details = document.createElement("div");
+    details.className = "site-details";
+    details.hidden = Boolean(site.collapsed);
+    toggleButton.classList.toggle("is-collapsed", details.hidden);
+    toggleButton.setAttribute("aria-expanded", String(!details.hidden));
+    toggleButton.setAttribute("aria-label", `${details.hidden ? "Expand" : "Collapse"} ${site.name}`);
 
     const discoverStatus = document.createElement("p");
     discoverStatus.className = "site-discover-status";
-    row.append(discoverStatus);
+    details.append(discoverStatus);
 
     const discoverResults = document.createElement("ul");
     discoverResults.className = "site-discover-results";
-    row.append(discoverResults);
+    details.append(discoverResults);
+    row.append(details);
 
     list.append(row);
 
-    removeButton.addEventListener("click", () => {
-      sites = sites.filter((existing) => existing !== site);
-      row.remove();
+    toggleButton.addEventListener("click", () => {
+      details.hidden = !details.hidden;
+      site.collapsed = details.hidden;
+      toggleButton.classList.toggle("is-collapsed", details.hidden);
+      toggleButton.setAttribute("aria-expanded", String(!details.hidden));
+      toggleButton.setAttribute("aria-label", `${details.hidden ? "Expand" : "Collapse"} ${site.name}`);
       persist();
     });
 
-    discoverButton.addEventListener("click", async () => {
-      discoverStatus.textContent = "Discovering...";
-      discoverResults.replaceChildren();
+    removeButton.addEventListener("click", () => {
+      sites = sites.filter((existing) => existing !== site);
+      rowControllers.delete(site.id);
+      row.remove();
+      persist();
+      removeSiteInventory(site.id).catch((error) => {
+        console.error("Markdown Clipper sharepoint inventory removal failed:", error);
+      });
+      refreshAllButton.disabled = sites.length === 0;
+    });
+
+    async function refresh({ permissionGranted = false } = {}) {
+      discoverStatus.textContent = "Checking for page changes...";
       discoverButton.disabled = true;
+      details.hidden = false;
+      site.collapsed = false;
+      toggleButton.classList.remove("is-collapsed");
+      toggleButton.setAttribute("aria-expanded", "true");
+      toggleButton.setAttribute("aria-label", `Collapse ${site.name}`);
 
       // Request host permission as the very first async op, before any other
       // await, so the click's user activation is still valid when
       // chrome.permissions.request runs (it requires a user gesture). The
       // synchronous status/disable updates above don't consume the gesture.
-      let granted = false;
-      try {
-        granted = await chrome.permissions.request({ origins: [`${new URL(site.webUrl).origin}/*`] });
-      } catch {
-        granted = false;
+      let granted = permissionGranted;
+      if (!granted) {
+        try {
+          granted = await chrome.permissions.request({ origins: [`${new URL(site.webUrl).origin}/*`] });
+        } catch {
+          granted = false;
+        }
       }
       if (!granted) {
         discoverStatus.textContent = "Permission needed to read this site.";
         discoverButton.disabled = false;
-        return;
+        return false;
       }
 
       try {
         const result = await discoverSitePages(site);
         if (result.ok) {
-          discoverStatus.textContent = result.count
-            ? `Found ${result.count} page${result.count === 1 ? "" : "s"}.`
-            : "No pages found (the site may have no modern pages, or the list is named differently).";
-          renderDiscoveredPages(discoverResults, result.pages || []);
+          const previous = await loadSiteInventory(site.id);
+          const comparison = reconcileSitePages(previous.pages, result.pages || []);
+          const refreshedAt = Date.now();
+          await saveSiteInventory(site.id, { pages: comparison.pages, lastRefreshedAt: refreshedAt });
+          discoverButton.textContent = "Refresh";
+          discoverStatus.textContent = describeRefreshResult(comparison, previous.lastRefreshedAt, refreshedAt);
+          renderDiscoveredPages(
+            discoverResults,
+            comparison.pages,
+            previous.lastRefreshedAt ? comparison.changeTypes : {}
+          );
+          persist();
+          return true;
         } else {
           discoverStatus.textContent = describeDiscoveryError(result);
         }
@@ -895,13 +954,34 @@ function renderSharePointSitesControl(panel) {
       } finally {
         discoverButton.disabled = false;
       }
+      return false;
+    }
+
+    discoverButton.addEventListener("click", () => refresh());
+
+    const controller = { refresh, discoverButton };
+    rowControllers.set(site.id, controller);
+    loadSiteInventory(site.id).then((inventory) => {
+      if (inventory.lastRefreshedAt) {
+        discoverButton.textContent = "Refresh";
+        discoverStatus.textContent = `Last checked ${formatDateTime(inventory.lastRefreshedAt)} · ${inventory.pages.length} page${inventory.pages.length === 1 ? "" : "s"}.`;
+        renderDiscoveredPages(discoverResults, inventory.pages);
+      }
+    }).catch((error) => {
+      console.error("Markdown Clipper sharepoint inventory load failed:", error);
     });
+
+    return controller;
   }
 
   addButton.addEventListener("click", () => {
     const result = parseSharePointSite(urlInput.value);
     if (!result.ok) {
       status.textContent = result.reason;
+      return;
+    }
+    if (sites.some((site) => (site.webUrl || site.url).toLowerCase() === result.webUrl.toLowerCase())) {
+      status.textContent = "That SharePoint site is already saved.";
       return;
     }
     status.textContent = "";
@@ -916,7 +996,50 @@ function renderSharePointSitesControl(panel) {
     sites.push(site);
     renderRow(site);
     persist();
+    refreshAllButton.disabled = false;
     urlInput.value = "";
+  });
+
+  refreshAllButton.addEventListener("click", async () => {
+    if (!sites.length) {
+      return;
+    }
+    refreshAllButton.disabled = true;
+    status.textContent = "Refreshing all saved sites...";
+    const origins = Array.from(new Set(sites.flatMap((site) => {
+      try {
+        return [`${new URL(site.webUrl).origin}/*`];
+      } catch {
+        return [];
+      }
+    })));
+    if (!origins.length) {
+      status.textContent = "None of the saved sites has a valid SharePoint URL.";
+      refreshAllButton.disabled = false;
+      return;
+    }
+    let granted = false;
+    try {
+      // One permission request keeps the Refresh all click within Chrome's
+      // user-gesture requirement, even when several tenants are saved.
+      granted = await chrome.permissions.request({ origins });
+    } catch {
+      granted = false;
+    }
+    if (!granted) {
+      status.textContent = "Permission needed to refresh the saved sites.";
+      refreshAllButton.disabled = false;
+      return;
+    }
+    let refreshed = 0;
+    for (const site of sites) {
+      const controller = rowControllers.get(site.id);
+      if (controller && await controller.refresh({ permissionGranted: true })) {
+        refreshed += 1;
+      }
+    }
+    status.textContent = `Refreshed ${refreshed} of ${sites.length} saved site${sites.length === 1 ? "" : "s"}.`;
+    refreshAllButton.disabled = false;
   });
 
   loadSites().then((loaded) => {
@@ -924,20 +1047,55 @@ function renderSharePointSitesControl(panel) {
     for (const site of sites) {
       renderRow(site);
     }
+    refreshAllButton.disabled = sites.length === 0;
   });
 }
 
 // Show up to 10 discovered pages: title (or FileRef basename) plus a
 // readable Modified date, if present.
-function renderDiscoveredPages(list, pages) {
+function renderDiscoveredPages(list, pages, changeTypes = {}) {
   list.replaceChildren();
   for (const page of pages.slice(0, 10)) {
     const item = document.createElement("li");
     const modified = page.modified ? new Date(page.modified) : null;
     const modifiedText = modified && !Number.isNaN(modified.getTime()) ? ` (${modified.toLocaleDateString()})` : "";
-    item.textContent = `${page.title}${modifiedText}`;
+    const text = document.createElement("span");
+    text.textContent = `${page.title}${modifiedText}`;
+    item.append(text);
+    const changeType = changeTypes[pageIdentity(page)];
+    if (changeType) {
+      const badge = document.createElement("span");
+      badge.className = `site-change-badge is-${changeType}`;
+      badge.textContent = changeType === "new" ? "New" : "Updated";
+      item.append(badge);
+    }
     list.append(item);
   }
+  if (pages.length > 10) {
+    const more = document.createElement("li");
+    more.className = "site-results-more";
+    more.textContent = `+ ${pages.length - 10} more page${pages.length - 10 === 1 ? "" : "s"}`;
+    list.append(more);
+  }
+}
+
+function formatDateTime(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "recently" : date.toLocaleString();
+}
+
+function describeRefreshResult(result, previousRefresh, refreshedAt) {
+  if (!result.pages.length) {
+    return "No pages found (the site may have no modern pages, or the list is named differently).";
+  }
+  if (!previousRefresh) {
+    return `Found ${result.pages.length} page${result.pages.length === 1 ? "" : "s"} · checked ${formatDateTime(refreshedAt)}.`;
+  }
+  const changes = [];
+  if (result.newCount) changes.push(`${result.newCount} new`);
+  if (result.updatedCount) changes.push(`${result.updatedCount} updated`);
+  if (result.removedCount) changes.push(`${result.removedCount} removed`);
+  return `${result.pages.length} page${result.pages.length === 1 ? "" : "s"} · ${changes.length ? changes.join(" · ") : "no changes"} · checked ${formatDateTime(refreshedAt)}.`;
 }
 
 // Translate a discoverSitePages() failure into a message a non-technical

@@ -505,6 +505,11 @@ legend {
   gap: 8px;
 }
 
+.sites-toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .sites-add-row {
   display: flex;
   gap: 8px;
@@ -524,6 +529,8 @@ legend {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
 }
 
 .site-row-top {
@@ -531,6 +538,40 @@ legend {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+.site-toggle {
+  width: 28px;
+  min-height: 28px;
+  padding: 4px;
+  flex: 0 0 auto;
+  border-color: transparent;
+  background: transparent;
+}
+
+.site-toggle svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 120ms ease;
+}
+
+.site-toggle.is-collapsed svg {
+  transform: rotate(-90deg);
+}
+
+.site-details {
+  display: grid;
+  gap: 6px;
+  padding-left: 36px;
+}
+
+.site-details[hidden] {
+  display: none;
 }
 
 .site-info {
@@ -575,6 +616,34 @@ legend {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.site-discover-results li {
+  padding-left: 2px;
+}
+
+.site-change-badge {
+  display: inline-flex;
+  margin-left: 7px;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.site-change-badge.is-new {
+  color: var(--accent-hover);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.site-results-more {
+  color: var(--text-muted);
+  list-style: none;
+  margin-left: -16px;
+  padding-top: 2px;
 }
 
 .site-discover-results:empty {

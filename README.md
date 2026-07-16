@@ -5,7 +5,7 @@ SharePoint. Copy, download, save into a local knowledge vault, or export whole s
 preserving their structure.
 
 > **Status:** 1.1.0 plus the `feature/clipper-expansion` preview. The preview is covered by
-> 294 automated tests but still requires the
+> 298 automated tests but still requires the
 > [browser verification checklist](docs/browser-verification-checklist.md). Load the unpacked
 > `extension/` before testing. See
 > [CHANGELOG.md](CHANGELOG.md) for details.
@@ -16,6 +16,8 @@ preserving their structure.
   the Markdown in a new tab.
 - **SharePoint-aware** — scrolls to trigger lazy-loaded sections and uses a scored content-root
   finder to skip chrome/navigation and keep the real page content.
+- **Saved SharePoint inventories** — save sites, collapse their page lists, and refresh one or all
+  sites to detect new, updated, and removed pages without accumulating duplicates.
 - **Works on any page** — general webpages use Mozilla Readability article extraction, with a
   full-page fallback. A capture **mode** setting (auto / sharepoint / article / full) lets you
   override.
