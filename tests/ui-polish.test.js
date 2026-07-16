@@ -153,3 +153,15 @@ test("every Theme option is outlined and the active option uses a filled surface
   assert.match(css, /\.segmented-field\[data-key="theme"\] \.segmented-option\s*\{[^}]*border-color:\s*var\(--border\);[^}]*background:\s*transparent;/s);
   assert.match(css, /\.segmented-field\[data-key="theme"\] \.segmented-option\.is-active\s*\{[^}]*background:\s*var\(--surface-muted\);/s);
 });
+
+test("Options provides a permission-free close-tab control in its header", async () => {
+  const html = await readFile(new URL("../extension/src/options/index.html", import.meta.url), "utf8");
+  const css = await readFile(new URL("../extension/src/options/styles.css", import.meta.url), "utf8");
+  const source = await readFile(new URL("../extension/src/options/options.js", import.meta.url), "utf8");
+  const manifest = JSON.parse(await readFile(new URL("../extension/manifest.json", import.meta.url), "utf8"));
+  assert.match(html, /id="close-options"[^>]*title="Close Options tab"[^>]*aria-label="Close Options tab"/);
+  assert.match(css, /\.page-close-button\s*\{[^}]*width:\s*30px;[^}]*height:\s*30px;[^}]*background:\s*transparent;/s);
+  assert.match(source, /chrome\.tabs\.getCurrent\(\)/);
+  assert.match(source, /chrome\.tabs\.remove\(tab\.id\)/);
+  assert.equal(manifest.permissions.includes("tabs"), false);
+});

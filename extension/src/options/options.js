@@ -2388,8 +2388,19 @@ async function initialize() {
   const form = document.getElementById("options-form");
   const statusElement = document.getElementById("status");
   const saveButton = document.getElementById("save");
+  const closeButton = document.getElementById("close-options");
   const navElement = document.getElementById("settings-nav");
   const panelsElement = document.getElementById("panels");
+
+  closeButton.addEventListener("click", async () => {
+    try {
+      const tab = await chrome.tabs.getCurrent();
+      if (tab?.id != null) return chrome.tabs.remove(tab.id);
+    } catch {
+      // Fall through for an unusual non-tab options context.
+    }
+    window.close();
+  });
 
   const { fillForm, readForm, controls } = createOptionsForm(SETTINGS_SCHEMA, {
     navElement,
