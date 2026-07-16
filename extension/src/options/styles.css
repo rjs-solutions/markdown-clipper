@@ -937,6 +937,33 @@ legend {
   gap: 7px;
 }
 
+.collection-storage-badge {
+  display: inline-grid;
+  place-items: center;
+  color: var(--accent-hover);
+  line-height: 0;
+}
+
+.collection-storage-badge svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.collection-storage-status {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-size: 0.84em;
+}
+
+.collection-storage-status.is-stored {
+  color: var(--accent-hover);
+}
+
 .collection-icon-action {
   display: inline-grid;
   place-items: center;

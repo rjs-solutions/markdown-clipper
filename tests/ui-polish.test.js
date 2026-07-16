@@ -36,7 +36,10 @@ test("popup exposes a clipped-state detail popover and collection link", async (
   const source = await readFile(new URL("../extension/src/popup/popup.js", import.meta.url), "utf8");
   assert.match(html, /id="clip-state"[^>]*aria-controls="clip-state-popover"/s);
   assert.match(html, /id="clip-state-collection"/);
+  assert.match(html, /id="clip-state-library-path"/);
   assert.match(source, /previewFingerprint: fingerprintMarkdown/);
+  assert.match(source, /Individual clip:/);
+  assert.match(source, /Collection copy:/);
   assert.match(source, /openCollectionsSettings\(clipStateCollectionId\)/);
 });
 

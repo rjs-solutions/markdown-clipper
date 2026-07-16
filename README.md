@@ -27,8 +27,9 @@ while preserving their structure.
   own type/name folder as normal Markdown files with `index.md`, `collection.json`, and a
   non-destructive sync report suitable for LLMs, desktop search, backup, or sharing. Incremental
   sync skips unchanged files, multi-host lists stay grouped by host, and a root catalog links all
-  synced collections. Collections can be safely moved to a new subfolder or assigned a new path
-  for future syncs without touching existing files.
+  synced collections. Collection rows distinguish verified library copies from snapshots in Chrome
+  Downloads; verified collections can be safely moved to a new subfolder while their stored path
+  and popup indicator stay current.
 - **Works on any page** — general webpages use Mozilla Readability article extraction, with a
   full-page fallback. A capture **mode** setting (auto / sharepoint / article / full) lets you
   override.

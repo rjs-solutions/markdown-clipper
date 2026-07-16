@@ -13,6 +13,9 @@ import { openCollectionWindow } from "../lib/window-placement.js";
 import { compareMarkdownFingerprint, fingerprintMarkdown } from "../lib/content-fingerprint.js";
 import { loadCollections } from "../lib/collections.js";
 import { matchSavedCollection } from "../lib/collection-export.js";
+import { comparableUrl } from "../lib/discover.js";
+import { collectionLibraryPath, loadCollectionLibraryManifest } from "../lib/collection-library.js";
+import { ensurePermission, loadCollectionLibraryHandle } from "../lib/vault-handle.js";
 
 const el = {
   optionsButton: document.getElementById("open-options"),
@@ -22,6 +25,7 @@ const el = {
   clipStateTitle: document.getElementById("clip-state-title"),
   clipStateDetail: document.getElementById("clip-state-detail"),
   clipStatePath: document.getElementById("clip-state-path"),
+  clipStateLibraryPath: document.getElementById("clip-state-library-path"),
   clipStateCollection: document.getElementById("clip-state-collection"),
   expand: document.getElementById("do-expand"),
   sidepanel: document.getElementById("do-sidepanel"),
@@ -488,21 +492,44 @@ function formatClippedDate(value) {
 
 async function refreshClipState(result) {
   const existing = await findClipByUrl(result && result.url);
-  if (!existing) {
+  let collection = null;
+  let libraryCopy = null;
+  let libraryName = "";
+  let librarySyncedAt = "";
+  try {
+    collection = matchSavedCollection(await loadCollections(), result.url);
+    if (collection) {
+      const libraryHandle = await loadCollectionLibraryHandle();
+      if (libraryHandle && await ensurePermission(libraryHandle) === "granted") {
+        const manifest = await loadCollectionLibraryManifest(libraryHandle, collection);
+        libraryCopy = manifest?.files?.find((file) => comparableUrl(file.url) === comparableUrl(result.url)) || null;
+        libraryName = libraryHandle.name || "Library";
+        librarySyncedAt = manifest?.syncedAt || "";
+      }
+    }
+  } catch (error) {
+    console.error("Markdown Clipper collection storage match failed:", error);
+  }
+
+  if (!existing && !libraryCopy) {
     el.clipStateWrap.hidden = true;
     closeClipStatePopover();
     return;
   }
 
-  const storedFingerprint = existing.previewFingerprint
-    || (result.mode === "sharepoint" ? "" : existing.contentFingerprint);
-  const state = existing.type === "selection" ? "known" : compareMarkdownFingerprint(storedFingerprint, result.markdown);
-  const title = state === "current" ? "Appears current" : state === "changed" ? "Page changed" : "Previously clipped";
+  const storedFingerprint = existing && (existing.previewFingerprint
+    || (result.mode === "sharepoint" ? "" : existing.contentFingerprint));
+  const state = existing
+    ? (existing.type === "selection" ? "known" : compareMarkdownFingerprint(storedFingerprint, result.markdown))
+    : "stored";
+  const title = state === "current" ? "Appears current" : state === "changed" ? "Page changed" : state === "stored" ? "Stored in collection" : "Previously clipped";
   const detail = state === "current"
     ? `Matches the visible page content. Clipped ${formatClippedDate(existing.updatedAt || existing.clipped)}.`
     : state === "changed"
       ? `Visible page content differs from the clip saved ${formatClippedDate(existing.updatedAt || existing.clipped)}.`
-      : `Clipped ${formatClippedDate(existing.updatedAt || existing.clipped)}. Freshness will be available after the next save.`;
+      : state === "stored"
+        ? `A locally synced collection copy was saved ${formatClippedDate(librarySyncedAt)}.`
+        : `Clipped ${formatClippedDate(existing.updatedAt || existing.clipped)}. Freshness will be available after the next save.`;
 
   el.clipState.classList.toggle("is-current", state === "current");
   el.clipState.classList.toggle("is-changed", state === "changed");
@@ -510,15 +537,13 @@ async function refreshClipState(result) {
   el.clipState.setAttribute("aria-label", `${title}. Click for details.`);
   el.clipStateTitle.textContent = title;
   el.clipStateDetail.textContent = detail;
-  el.clipStatePath.textContent = existing.path ? `Saved as ${existing.path}` : "";
-  el.clipStatePath.hidden = !existing.path;
-
-  let collection = null;
-  try {
-    collection = matchSavedCollection(await loadCollections(), result.url);
-  } catch (error) {
-    console.error("Markdown Clipper collection match failed:", error);
-  }
+  el.clipStatePath.textContent = existing?.path ? `Individual clip: ${existing.path}` : "";
+  el.clipStatePath.hidden = !existing?.path;
+  const collectionLocation = libraryCopy
+    ? `${libraryName} / ${collectionLibraryPath(collection)} / ${libraryCopy.path}`
+    : "";
+  el.clipStateLibraryPath.textContent = collectionLocation ? `Collection copy: ${collectionLocation}` : "";
+  el.clipStateLibraryPath.hidden = !collectionLocation;
   clipStateCollectionId = collection && collection.id || "";
   el.clipStateCollection.hidden = !clipStateCollectionId;
   if (collection) el.clipStateCollection.textContent = `View ${collection.name}`;

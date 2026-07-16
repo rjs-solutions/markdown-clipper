@@ -44,10 +44,13 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
       handoff to same-site crawl when neither exists.
 - [ ] Import TXT, CSV, and XLSX URL lists in Capture Collection; save one as a custom collection.
 - [ ] Export one collection and all collections as CSV; verify labels, types, sources, and URLs.
-- [ ] Choose a **Local Collections Library** folder. Each collection shows a unique relative path;
-      changing it reveals **Move existing files** and **Future syncs only**. Move one synced
-      collection and confirm the old folder is removed only after the new copy is complete;
-      duplicate and nested destinations are rejected. Verify future-sync-only leaves old files.
+- [ ] Choose a **Local Collections Library** folder. Before syncing, the collection explicitly says
+      it is not stored there and that snapshot exports remain in Chrome Downloads. After syncing,
+      verify the row shows the library root, relative folder, page count, sync time, and folder badge.
+- [ ] Choose **Move…**, enter a different subfolder, and select **Move files…**. Confirm the old
+      folder is removed only after the new copy is complete, then reopen the page and verify the
+      popup's stored indicator reports the new collection path. Duplicate and nested destinations
+      are rejected. Verify **Future syncs only** leaves old files in place.
 - [ ] Sync a collection and verify normal Markdown page files, `index.md`, `collection.json`, and
       `_sync-report.md` appear under `<type>/<collection>`. Sync again after editing a page and
       confirm its file is updated rather than duplicated.

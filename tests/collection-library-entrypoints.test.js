@@ -14,13 +14,18 @@ test("Collections settings expose one library root, per-collection paths, and sy
   assert.match(source, /destination=library/);
   assert.match(source, /"Move existing files"/);
   assert.match(source, /"Future syncs only"/);
-  assert.match(source, /"Apply change…"/);
+  assert.match(source, /"Move files…"/);
+  assert.match(source, /Stored in \$\{location\}/);
+  assert.match(source, /Downloaded snapshots remain in Chrome Downloads/);
+  assert.match(source, /refreshStorageLocation/);
   assert.match(source, /library-folder-button/);
   assert.match(source, /moveCollectionLibraryFolder/);
   assert.match(source, /writeCollectionLibraryCatalog/);
   assert.match(css, /\.collection-move-choice\[hidden\]/);
   assert.match(css, /\.collection-library-inline-actions\s*\{[^}]*margin-left:\s*auto;/s);
   assert.match(css, /\.quiet-icon-button\s*\{[^}]*width:\s*26px;[^}]*border-color:\s*transparent;[^}]*background:\s*transparent;/s);
+  assert.match(css, /\.collection-storage-badge/);
+  assert.match(css, /\.collection-storage-status\.is-stored/);
   assert.doesNotMatch(source, /collection-library-buttons/);
 });
 

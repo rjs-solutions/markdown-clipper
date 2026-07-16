@@ -5,6 +5,11 @@ All notable changes to Markdown Clipper are documented here. This project follow
 
 ## [Unreleased]
 
+- Clarify the difference between Chrome Downloads snapshots and verified Local Collections
+  Library copies. Saved collection rows now show the verified root/subfolder, page count, and
+  sync time; moving a collection uses an explicit **Move files…** action and updates the stored
+  badge and popup location after the verified move.
+
 ## [1.1.0] — 2026-07-16
 
 - Turn Capture Collection's disabled Export Markdown action into a determinate progress bar with

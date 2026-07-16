@@ -1075,6 +1075,7 @@ function renderCollectionsControl(panel) {
         regrantLibraryButton.hidden = true;
         forgetLibraryButton.hidden = true;
         syncAllLibraryButton.disabled = true;
+        for (const controller of rowControllers.values()) controller.refreshStorageLocation();
         return;
       }
       const permission = await ensurePermission(libraryHandle);
@@ -1083,7 +1084,10 @@ function renderCollectionsControl(panel) {
       regrantLibraryButton.hidden = permission === "granted";
       forgetLibraryButton.hidden = false;
       syncAllLibraryButton.disabled = false;
-      for (const controller of rowControllers.values()) controller.reviewHealth();
+      for (const controller of rowControllers.values()) {
+        controller.reviewHealth();
+        controller.refreshStorageLocation();
+      }
     } catch (error) {
       showLibraryMessage(`Could not read the library folder: ${error && error.message ? error.message : error}`);
     }
@@ -1148,6 +1152,7 @@ function renderCollectionsControl(panel) {
   });
 
   refreshLibraryStatus();
+  window.addEventListener("focus", refreshLibraryStatus);
   const selectSchedule = (frequency) => {
     for (const [value, button] of scheduleButtons) {
       const active = value === frequency;
@@ -1199,7 +1204,11 @@ function renderCollectionsControl(panel) {
     url.textContent = site.webUrl || site.url;
     const nameLine = document.createElement("span");
     nameLine.className = "collection-name-line";
-    nameLine.append(name, badge);
+    const storedBadge = document.createElement("span");
+    storedBadge.className = "collection-storage-badge";
+    storedBadge.innerHTML = ACTION_ICONS.folder;
+    storedBadge.hidden = true;
+    nameLine.append(name, badge, storedBadge);
     info.append(nameLine, url);
 
     const actions = document.createElement("div");
@@ -1258,7 +1267,9 @@ function renderCollectionsControl(panel) {
 
     const discoverStatus = document.createElement("p");
     discoverStatus.className = "site-discover-status";
-    details.append(discoverStatus);
+    const storageStatus = document.createElement("p");
+    storageStatus.className = "collection-storage-status";
+    details.append(storageStatus, discoverStatus);
 
     const folderRow = document.createElement("div");
     folderRow.className = "collection-folder-row";
@@ -1275,8 +1286,7 @@ function renderCollectionsControl(panel) {
     configureLabeledButton(resetFolderButton, "Default", ACTION_ICONS.reset, "Use the default type and collection-name subfolder");
     const moveFolderButton = document.createElement("button");
     moveFolderButton.type = "button";
-    configureLabeledButton(moveFolderButton, "Apply change…", ACTION_ICONS.folder, "Edit the subfolder path first, then apply it to future syncs or move existing files");
-    moveFolderButton.disabled = true;
+    configureLabeledButton(moveFolderButton, "Change…", ACTION_ICONS.folder, "Choose a different library subfolder for this collection");
     folderActions.append(resetFolderButton, moveFolderButton);
     folderRow.append(folderLabel, folderInput, folderActions);
     const folderHelp = document.createElement("p");
@@ -1367,28 +1377,66 @@ function renderCollectionsControl(panel) {
     const folderPathUsedByAnotherCollection = (candidate) => sites.some((item) => (
       item.id !== site.id && collectionLibraryPath(item).toLowerCase() === candidate.toLowerCase()
     ));
+    let storedManifest = null;
     const updateMoveButton = () => {
       moveChoice.hidden = true;
       const ready = proposedFolderPath().toLowerCase() !== collectionLibraryPath(site).toLowerCase();
-      moveFolderButton.disabled = !ready;
+      moveFolderButton.disabled = false;
       moveFolderButton.classList.toggle("is-primary-action", ready);
+      setLabeledButtonText(moveFolderButton, ready ? (storedManifest ? "Move files…" : "Use location") : (storedManifest ? "Move…" : "Change…"));
+      moveFolderButton.title = ready
+        ? (storedManifest ? "Move the existing local files into this subfolder" : "Use this subfolder for the next local sync")
+        : "Choose a different library subfolder for this collection";
       folderHelp.textContent = ready
-        ? "Apply this path to future syncs, or move existing files if this collection was already synced."
-        : "Edit the path to change where this collection syncs. Existing files can be moved after its first local sync.";
+        ? (storedManifest ? "Apply the new path and move the verified local files." : "Apply this path to the next local sync.")
+        : (storedManifest ? "This is the collection's verified local folder. Choose Move… to relocate it." : "Choose Change… to set where the collection will be stored on its next local sync.");
+    };
+    const refreshStorageLocation = async () => {
+      storedManifest = null;
+      storedBadge.hidden = true;
+      storageStatus.classList.remove("is-stored");
+      storedBadge.removeAttribute("title");
+      storedBadge.removeAttribute("aria-label");
+      if (!libraryHandle) {
+        storageStatus.textContent = "Not stored in a Local Collections Library. Downloaded snapshots remain in Chrome Downloads.";
+        updateMoveButton();
+        return;
+      }
+      if (!libraryPermissionGranted) {
+        storageStatus.textContent = `Storage in ${libraryHandle.name || "the selected library"} cannot be verified until folder access is restored.`;
+        updateMoveButton();
+        return;
+      }
+      try {
+        storedManifest = await loadCollectionLibraryManifest(libraryHandle, site);
+      } catch (error) {
+        console.error("Markdown Clipper collection storage lookup failed:", error);
+      }
+      if (storedManifest) {
+        const location = `${libraryHandle.name || "Library"} / ${collectionLibraryPath(site)}`;
+        const count = storedManifest.files?.length || 0;
+        storageStatus.textContent = `Stored in ${location} · ${count} page${count === 1 ? "" : "s"} · synced ${formatDateTime(storedManifest.syncedAt)}.`;
+        storageStatus.classList.add("is-stored");
+        storedBadge.hidden = false;
+        storedBadge.title = `Stored in ${location}`;
+        storedBadge.setAttribute("aria-label", `Stored in ${location}`);
+      } else {
+        storageStatus.textContent = `Not stored in ${libraryHandle.name || "the selected library"}. Downloaded snapshots remain in Chrome Downloads until you sync this collection.`;
+        storageStatus.classList.remove("is-stored");
+      }
+      updateMoveButton();
     };
     const applyFolderPath = async (candidate) => {
       site.libraryPath = candidate === defaultFolderPath() ? "" : candidate;
       folderInput.value = collectionLibraryPath(site);
       await saveSites(sites);
-      moveFolderButton.disabled = true;
-      moveFolderButton.classList.remove("is-primary-action");
       moveChoice.hidden = true;
-      folderHelp.textContent = "Edit the path to change where this collection syncs. Existing files can be moved after its first local sync.";
       if (libraryHandle && libraryPermissionGranted) {
         try { await writeCollectionLibraryCatalog(libraryHandle, sites); } catch (error) {
           console.error("Markdown Clipper library catalog refresh failed:", error);
         }
       }
+      await refreshStorageLocation();
     };
 
     folderInput.addEventListener("input", updateMoveButton);
@@ -1399,6 +1447,14 @@ function renderCollectionsControl(panel) {
     moveFolderButton.addEventListener("click", async () => {
       const candidate = proposedFolderPath();
       const current = collectionLibraryPath(site);
+      if (candidate.toLowerCase() === current.toLowerCase()) {
+        folderInput.focus();
+        folderInput.select();
+        folderHelp.textContent = storedManifest
+          ? "Enter a new subfolder, then choose Move files… to relocate the verified local copy."
+          : "Enter a subfolder, then choose Use location. The collection will be written there on its next local sync.";
+        return;
+      }
       if (folderPathUsedByAnotherCollection(candidate)) {
         discoverStatus.textContent = "Another collection already uses that local folder.";
         folderInput.value = current;
@@ -1615,7 +1671,7 @@ function renderCollectionsControl(panel) {
       healthReview.append(listElement);
     }
 
-    const controller = { refresh, discoverButton, reviewHealth };
+    const controller = { refresh, discoverButton, reviewHealth, refreshStorageLocation };
     rowControllers.set(site.id, controller);
     Promise.resolve(initialInventory || loadSiteInventory(site.id)).then((inventory) => {
       if (inventory.lastRefreshedAt) {
@@ -1630,6 +1686,7 @@ function renderCollectionsControl(panel) {
       console.error("Markdown Clipper collection inventory load failed:", error);
     });
     reviewHealth().catch((error) => console.error("Markdown Clipper collection health load failed:", error));
+    refreshStorageLocation().catch((error) => console.error("Markdown Clipper collection storage load failed:", error));
 
     return controller;
   }
