@@ -78,6 +78,17 @@ body {
   height: 26px;
 }
 
+.app-header > .icon-button {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+}
+
+.app-header > .icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+
 .header-subtitle {
   padding-left: 8px;
   border-left: 1px solid var(--border);

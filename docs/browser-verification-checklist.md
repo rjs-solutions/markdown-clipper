@@ -27,7 +27,7 @@ independent once the extension is loaded.
 - [ ] Collapse/expand the site row; the chevron and saved state agree after reopening Options.
 - [ ] Refresh with no SharePoint edits → “no changes,” the same page count, and no duplicates.
 - [ ] Edit or add a test page, refresh again → the page is labeled Updated or New. Refresh all handles every saved site sequentially.
-- [ ] On a page within the saved site, open **Capture a collection** → the selector chooses that collection and loads its refreshed page inventory. Its Manage button and the popup header Collections icon both open Options directly on Collections.
+- [ ] On a page within the saved site, open **Capture Collection** → the selector chooses that collection and loads its refreshed page inventory. Its top-right Manage Collections icon opens Options directly on Collections.
 - [ ] Add a website and confirm `llms.txt` or sitemap auto-discovery, with crawl offered as fallback.
 - [ ] Import a URL list from TXT, CSV, and XLSX. Save one custom collection, then export its CSV and the all-collections CSV.
 - [ ] Choose a Local Collections Library root, adjust one collection's relative folder, and click
@@ -86,8 +86,9 @@ independent once the extension is loaded.
 - [ ] Save a page, reopen its clipper, and confirm the header indicator says **Appears current**.
       Change visible page content and reopen to confirm **Page changed**. Click the indicator to
       see its saved date/path and, for a saved collection, open that collection expanded in Options.
-- [ ] Header icon hover tiles are centered. Capture Collection appears before Manage Collections,
-      and a divider separates Manage Collections from Options.
+- [ ] The clipper header contains surface controls and Options, without duplicate collection/settings icons.
+- [ ] Download and Copy form the taller primary action row. Capture Collection appears left of
+      Edit Markdown in a shorter, muted second row, and every action has an icon.
 - [ ] Collections intake gives the URL a full row; platform, discovery, and Add & discover remain
       readable below it. Saved names/URLs have room to wrap or truncate cleanly, clicking the
       identity expands the row, and every compact action has a clear tooltip.

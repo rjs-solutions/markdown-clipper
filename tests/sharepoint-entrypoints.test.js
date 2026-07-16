@@ -2,10 +2,13 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-test("popup exposes a direct Collections settings shortcut", async () => {
+test("collection management is contextual instead of duplicating the popup Settings action", async () => {
   const html = await readFile(new URL("../extension/src/popup/index.html", import.meta.url), "utf8");
   const source = await readFile(new URL("../extension/src/popup/popup.js", import.meta.url), "utf8");
-  assert.match(html, /id="open-collections"[^>]*title="Manage collections"/);
+  const captureHtml = await readFile(new URL("../extension/src/crawl/index.html", import.meta.url), "utf8");
+  assert.doesNotMatch(html, /id="open-collections"/);
+  assert.doesNotMatch(source, /collectionsButton/);
+  assert.match(captureHtml, /<header class="app-header">[\s\S]*id="manage-collections"[^>]*title="Manage collections"/);
   assert.match(source, /src\/options\/index\.html\?section=collections/);
 });
 

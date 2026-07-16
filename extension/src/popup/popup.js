@@ -16,7 +16,6 @@ import { matchSavedCollection } from "../lib/collection-export.js";
 
 const el = {
   optionsButton: document.getElementById("open-options"),
-  collectionsButton: document.getElementById("open-collections"),
   clipStateWrap: document.getElementById("clip-state-wrap"),
   clipState: document.getElementById("clip-state"),
   clipStatePopover: document.getElementById("clip-state-popover"),
@@ -139,7 +138,6 @@ async function initialize() {
 
 function wireEvents() {
   el.optionsButton.addEventListener("click", () => chrome.runtime.openOptionsPage());
-  el.collectionsButton.addEventListener("click", openCollectionsSettings);
   el.expand.addEventListener("click", openEditor);
   el.download.addEventListener("click", () => run("download"));
   el.downloadLocation.addEventListener("click", () => run("save-as"));
@@ -906,7 +904,7 @@ function showEmpty(message) {
 }
 
 function setBusy(isBusy) {
-  for (const button of [el.download, el.downloadLocation, el.copy, el.copyFull, el.expand]) {
+  for (const button of [el.download, el.downloadLocation, el.copy, el.copyFull, el.export, el.expand]) {
     button.disabled = isBusy;
   }
 }

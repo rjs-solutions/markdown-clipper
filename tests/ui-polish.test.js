@@ -2,13 +2,19 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-test("popup header centers icons and orders Capture before Manage before Options", async () => {
+test("popup header stays focused while collection capture and editing use a shorter second row", async () => {
   const html = await readFile(new URL("../extension/src/popup/index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../extension/src/popup/styles.css", import.meta.url), "utf8");
-  assert.ok(html.indexOf('id="do-export"') < html.indexOf('id="open-collections"'));
-  assert.ok(html.indexOf('id="open-collections"') < html.indexOf('id="open-options"'));
+  assert.doesNotMatch(html, /id="open-collections"/);
+  assert.ok(html.indexOf('id="open-options"') < html.indexOf('id="do-export"'));
+  assert.ok(html.indexOf('id="do-export"') < html.indexOf('id="do-expand"'));
+  assert.match(html, /class="actions-row actions-row-primary"/);
+  assert.match(html, /class="actions-row actions-row-secondary"/);
+  assert.match(html, /id="do-export"[^>]*>[\s\S]*?<svg[^>]*>[\s\S]*?<span>Capture Collection<\/span>[\s\S]*?id="do-expand"/);
+  assert.match(html, /id="do-expand"[^>]*>[\s\S]*?<svg[^>]*>[\s\S]*?<span>Edit Markdown<\/span>/);
   assert.match(css, /\.icon-button\s*\{[^}]*padding:\s*0;/s);
   assert.match(css, /\.icon-button svg\s*\{[^}]*display:\s*block;/s);
+  assert.match(css, /\.act-workflow\s*\{[^}]*min-height:\s*30px;[^}]*background:\s*var\(--surface-muted\);/s);
 });
 
 test("popup exposes a clipped-state detail popover and collection link", async () => {
@@ -105,7 +111,7 @@ test("Capture Collection uses branded flat sections and icon-led source choices"
   const css = await readFile(new URL("../extension/src/crawl/styles.css", import.meta.url), "utf8");
   assert.match(html, /<title>Capture Collection — Markdown Clipper<\/title>/);
   assert.match(html, /class="header-subtitle">Capture Collection<\/span>/);
-  assert.match(popupHtml, /title="Capture a collection" aria-label="Capture a collection"/);
+  assert.match(popupHtml, /id="do-export"[^>]*title="Capture multiple pages as a collection"/);
   assert.doesNotMatch(html, /id="close-window"/);
   assert.doesNotMatch(source, /close-window/);
   assert.doesNotMatch(html, /radio-mark/);
