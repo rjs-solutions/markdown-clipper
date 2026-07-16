@@ -5,11 +5,18 @@ All notable changes to Markdown Clipper are documented here. This project follow
 
 ## [Unreleased]
 
-- Integrate saved SharePoint sites with collection export: select a refreshed inventory as the exact URL list, fall back to a constrained Site Pages crawl when needed, and open SharePoint settings from new compact shortcuts.
+- Generalize saved SharePoint sites into **Collections** for SharePoint, Confluence, websites,
+  and custom URL lists, with automatic classification and sitemap, `llms.txt`, crawl, or manual
+  discovery modes.
+- Add TXT, CSV, and XLSX URL-list import to Export Collection, plus per-collection and all-
+  collections CSV inventory export.
+- Redesign Export Collection with branded, collapsible sections and open it beside the in-page
+  clipper when space allows.
 
 - Add an accessible split Download action: the main segment keeps one-click download/vault behavior, while a folder segment opens Chrome's native location chooser in the popup, side panel, in-page overlay, and full editor.
 
-- Persist SharePoint page inventories locally, with collapsible saved-site rows, per-site refresh, refresh-all, and new/updated/removed change detection without duplicate pages.
+- Persist collection page inventories locally, with collapsible rows, per-collection refresh,
+  refresh-all, and new/updated/removed change detection without duplicate pages.
 
 ### Added
 - Preview expansion with popup/side-panel/in-page action modes, draggable and resizable in-page

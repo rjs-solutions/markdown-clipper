@@ -1,28 +1,29 @@
-// Controller for the site-export page. The crawl itself runs in the
-// background service worker (extension/src/background/service-worker.js) so
-// it survives this window being closed; this page just starts/pauses/
-// resumes/cancels a job by messaging the worker and renders progress read
-// straight out of the persisted job (chrome.storage.local), so reopening the
-// window shows the crawl exactly where it left off.
-
 import { loadSettings } from "../lib/settings.js";
 import { parseUrlList, parseSitemap } from "../lib/discover.js";
 import { fetchSitemapPages } from "../lib/crawl.js";
+import { fetchLlmsPages } from "../lib/llms.js";
+import { readCollectionFile } from "../lib/collection-import.js";
 import { buildPageFiles, buildIndexMarkdown, buildAggregateMarkdown } from "../lib/aggregate.js";
 import { createZip } from "../lib/zip.js";
 import { downloadBlob, downloadText } from "../lib/download.js";
 import { slugify } from "../lib/slug.js";
 import { applyTheme } from "../lib/theme.js";
 import { loadJob, saveJob, getJobBodies } from "../lib/crawl-state.js";
-import { loadSites } from "../lib/sharepoint-sites.js";
+import { createCustomCollection, loadCollections, saveCollections } from "../lib/collections.js";
 import { loadSiteInventories } from "../lib/sharepoint-inventory.js";
-import { matchSavedSite, savedSiteExportPreset } from "../lib/sharepoint-export.js";
+import { collectionExportPreset, matchSavedCollection } from "../lib/collection-export.js";
 
 const CURRENT_JOB_KEY = "crawl-ui-current-job";
 const POLL_MS = 700;
 
 const form = document.getElementById("crawl-form");
 const urlsInput = document.getElementById("urls");
+const urlCount = document.getElementById("url-count");
+const fileInput = document.getElementById("url-file");
+const importFileButton = document.getElementById("import-file");
+const importStatus = document.getElementById("import-status");
+const collectionNameInput = document.getElementById("collection-name");
+const saveCollectionButton = document.getElementById("save-collection");
 const startInput = document.getElementById("start");
 const startLabel = document.getElementById("start-label");
 const maxPagesInput = document.getElementById("max-pages");
@@ -36,116 +37,153 @@ const resumeButton = document.getElementById("resume-btn");
 const stopButton = document.getElementById("stop-btn");
 const summary = document.getElementById("summary");
 const logList = document.getElementById("log");
-const savedSiteSelect = document.getElementById("saved-site");
-const savedSiteHint = document.getElementById("saved-site-hint");
-const manageSitesButton = document.getElementById("manage-sites");
+const progressSection = document.getElementById("progress-section");
+const progressSummary = document.getElementById("progress-summary");
+const savedCollectionSelect = document.getElementById("saved-collection");
+const savedCollectionHint = document.getElementById("saved-collection-hint");
+const manageCollectionsButton = document.getElementById("manage-collections");
 
 let pollTimer = null;
 let renderedLogLines = 0;
 let currentSettings = null;
-let savedSiteEntries = [];
+let savedCollectionEntries = [];
+let cachedJobId = null;
 
 document.addEventListener("DOMContentLoaded", initialize);
 
 async function initialize() {
   currentSettings = await loadSettings();
   applyTheme(currentSettings.theme);
-
-  const seed = new URLSearchParams(location.search).get("seed");
+  const params = new URLSearchParams(location.search);
+  const seed = params.get("seed") || "";
   if (seed) {
     urlsInput.value = seed;
     startInput.value = seed;
   }
-  manageSitesButton.addEventListener("click", openSharePointSettings);
-  savedSiteSelect.addEventListener("change", () => applySavedSite(savedSiteSelect.value));
-  await populateSavedSites(seed);
-  for (const radio of form.querySelectorAll("input[name='mode']")) {
-    radio.addEventListener("change", reflectMode);
-  }
+
+  document.getElementById("close-window").addEventListener("click", () => window.close());
+  manageCollectionsButton.addEventListener("click", openCollectionsSettings);
+  savedCollectionSelect.addEventListener("change", () => applySavedCollection(savedCollectionSelect.value));
+  importFileButton.addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", importSelectedFile);
+  saveCollectionButton.addEventListener("click", saveUrlListCollection);
+  urlsInput.addEventListener("input", updateUrlCount);
+  await populateSavedCollections(seed, params.get("collection"));
+
+  const requestedMode = params.get("mode");
+  const requestedRadio = requestedMode && form.querySelector(`input[name="mode"][value="${requestedMode}"]`);
+  if (requestedRadio) requestedRadio.checked = true;
+  for (const radio of form.querySelectorAll("input[name='mode']")) radio.addEventListener("change", reflectMode);
   reflectMode();
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    start();
-  });
+  updateUrlCount();
+
+  form.addEventListener("submit", (event) => { event.preventDefault(); start(); });
   pauseButton.addEventListener("click", () => sendMessage({ type: "crawl:pause", id: getCurrentJobId() }));
   resumeButton.addEventListener("click", () => sendMessage({ type: "crawl:resume", id: getCurrentJobId() }));
   stopButton.addEventListener("click", () => sendMessage({ type: "crawl:cancel", id: getCurrentJobId() }));
 
-  // A worker that was killed while this window was closed only resumes on
-  // its next wake-up; give it one now instead of waiting for the 1-minute
-  // alarm watchdog.
   await sendMessage({ type: "crawl:resume-check" });
-
   const existingId = await getStoredJobId();
   if (existingId) {
     const job = await loadJob(existingId);
-    if (job && job.status !== "done" && job.status !== "cancelled" && job.status !== "failed") {
+    if (job && !["done", "cancelled", "failed"].includes(job.status)) {
       setCurrentJobId(existingId);
-      renderedLogLines = 0;
-      logList.replaceChildren();
+      showProgress();
       setRunning(job.status);
       startPolling(existingId);
     } else if (job) {
+      showProgress();
       renderJobSnapshot(job);
     }
   }
 }
 
-async function populateSavedSites(seed) {
-  const sites = await loadSites();
-  const inventories = await loadSiteInventories(sites.map((site) => site.id));
-  savedSiteEntries = sites.map((site) => ({
-    site,
-    inventory: inventories[site.id]
-  }));
-  for (const entry of savedSiteEntries) {
-    const option = document.createElement("option");
-    option.value = entry.site.id;
-    const count = entry.inventory.pages.length;
-    option.textContent = `${entry.site.name} (${count} page${count === 1 ? "" : "s"})`;
-    savedSiteSelect.append(option);
+async function populateSavedCollections(seed = "", selectedId = "") {
+  const collections = await loadCollections();
+  const inventories = await loadSiteInventories(collections.map((collection) => collection.id));
+  savedCollectionEntries = collections.map((collection) => ({ collection, inventory: inventories[collection.id] }));
+  savedCollectionSelect.replaceChildren(new Option("Choose a saved collection…", ""));
+  for (const entry of savedCollectionEntries) {
+    const count = collectionExportPreset(entry.collection, entry.inventory).inventoryCount;
+    savedCollectionSelect.append(new Option(`${entry.collection.name} · ${typeLabel(entry.collection.type)} · ${count} page${count === 1 ? "" : "s"}`, entry.collection.id));
   }
-  savedSiteSelect.disabled = savedSiteEntries.length === 0;
-  if (!savedSiteEntries.length) {
-    savedSiteHint.textContent = "No saved sites yet. Use the SharePoint button to add one.";
+  savedCollectionSelect.disabled = savedCollectionEntries.length === 0;
+  if (!savedCollectionEntries.length) {
+    savedCollectionHint.textContent = "No saved collections yet. Import a URL list here or add a site in Manage Collections.";
     return;
   }
-
-  const matched = matchSavedSite(sites, seed);
+  const matched = selectedId
+    ? collections.find((collection) => collection.id === selectedId)
+    : matchSavedCollection(collections, seed);
   if (matched) {
-    savedSiteSelect.value = matched.id;
-    applySavedSite(matched.id);
+    savedCollectionSelect.value = matched.id;
+    applySavedCollection(matched.id);
   }
 }
 
-function applySavedSite(siteId) {
-  if (!siteId) {
-    savedSiteHint.textContent = "";
+function applySavedCollection(collectionId) {
+  if (!collectionId) {
+    savedCollectionHint.textContent = "";
     return;
   }
-  const entry = savedSiteEntries.find((candidate) => candidate.site.id === siteId);
-  if (!entry) {
-    return;
-  }
-  const preset = savedSiteExportPreset(entry.site, entry.inventory);
+  const entry = savedCollectionEntries.find((candidate) => candidate.collection.id === collectionId);
+  if (!entry) return;
+  const preset = collectionExportPreset(entry.collection, entry.inventory);
   const radio = form.querySelector(`input[name="mode"][value="${preset.mode}"]`);
-  radio.checked = true;
+  if (radio) radio.checked = true;
   urlsInput.value = preset.urls.join("\n");
   startInput.value = preset.startUrl;
   maxPagesInput.value = String(preset.maxPages);
-  if (preset.includePatterns) {
-    includePatternsInput.value = preset.includePatterns;
-  }
+  includePatternsInput.value = preset.includePatterns || "";
+  collectionNameInput.value = entry.collection.name;
   reflectMode();
-  savedSiteHint.textContent = preset.inventoryCount
-    ? `Loaded ${preset.inventoryCount} refreshed page${preset.inventoryCount === 1 ? "" : "s"} from SharePoint settings.`
-    : "No refreshed inventory yet; using a Site Pages link crawl. Refresh this site in SharePoint settings for a precise page list.";
+  updateUrlCount();
+  savedCollectionHint.textContent = preset.inventoryCount
+    ? `Loaded ${preset.inventoryCount} saved page${preset.inventoryCount === 1 ? "" : "s"}.`
+    : `Using ${sourceLabel(preset.mode)} discovery for this ${typeLabel(entry.collection.type).toLowerCase()} collection.`;
 }
 
-function openSharePointSettings() {
-  return chrome.tabs.create({
-    url: chrome.runtime.getURL("src/options/index.html?section=sharepoint")
-  });
+async function importSelectedFile() {
+  const file = fileInput.files && fileInput.files[0];
+  if (!file) return;
+  importStatus.textContent = `Reading ${file.name}…`;
+  importFileButton.disabled = true;
+  try {
+    const urls = await readCollectionFile(file);
+    urlsInput.value = urls.join("\n");
+    if (!collectionNameInput.value) collectionNameInput.value = file.name.replace(/\.(txt|csv|xlsx)$/i, "");
+    updateUrlCount();
+    importStatus.textContent = urls.length ? `Imported ${urls.length} unique URL${urls.length === 1 ? "" : "s"}.` : "No HTTP or HTTPS URLs were found in that file.";
+  } catch (error) {
+    importStatus.textContent = error && error.message ? error.message : String(error);
+  } finally {
+    importFileButton.disabled = false;
+    fileInput.value = "";
+  }
+}
+
+async function saveUrlListCollection() {
+  const urls = parseUrlList(urlsInput.value);
+  if (!urls.length) {
+    importStatus.textContent = "Paste or import at least one URL before saving a collection.";
+    return;
+  }
+  const collection = createCustomCollection(collectionNameInput.value, urls);
+  const collections = await loadCollections();
+  const duplicate = collections.find((item) => item.name.toLowerCase() === collection.name.toLowerCase());
+  if (duplicate) {
+    duplicate.urls = collection.urls;
+    duplicate.updatedAt = Date.now();
+  } else {
+    collections.push(collection);
+  }
+  await saveCollections(collections);
+  await populateSavedCollections("", duplicate ? duplicate.id : collection.id);
+  importStatus.textContent = duplicate ? `Updated ${duplicate.name}.` : `Saved ${collection.name} to Collections.`;
+}
+
+function openCollectionsSettings() {
+  return chrome.tabs.create({ url: chrome.runtime.getURL("src/options/index.html?section=collections") });
 }
 
 function currentMode() {
@@ -155,109 +193,74 @@ function currentMode() {
 function reflectMode() {
   const mode = currentMode();
   for (const field of form.querySelectorAll("[data-mode]")) {
-    const modes = field.getAttribute("data-mode").split(" ");
-    field.style.display = modes.includes(mode) ? "" : "none";
+    field.style.display = field.getAttribute("data-mode").split(" ").includes(mode) ? "" : "none";
   }
-  startLabel.textContent = mode === "sitemap" ? "Sitemap URL" : "Start URL";
+  startLabel.textContent = mode === "sitemap" ? "Sitemap URL" : mode === "llms" ? "llms.txt URL" : "Start URL";
+}
+
+function updateUrlCount() {
+  const count = parseUrlList(urlsInput.value).length;
+  urlCount.textContent = `${count} URL${count === 1 ? "" : "s"}`;
 }
 
 function sendMessage(message) {
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(message, (response) => resolve(response));
-  });
+  return new Promise((resolve) => chrome.runtime.sendMessage(message, (response) => resolve(response)));
 }
 
-let cachedJobId = null;
-
-function getCurrentJobId() {
-  return cachedJobId;
-}
-
-function setCurrentJobId(id) {
-  cachedJobId = id;
-  chrome.storage.local.set({ [CURRENT_JOB_KEY]: id });
-}
-
-async function getStoredJobId() {
-  const stored = await chrome.storage.local.get(CURRENT_JOB_KEY);
-  cachedJobId = stored[CURRENT_JOB_KEY] || null;
-  return cachedJobId;
-}
+function getCurrentJobId() { return cachedJobId; }
+function setCurrentJobId(id) { cachedJobId = id; chrome.storage.local.set({ [CURRENT_JOB_KEY]: id }); }
+async function getStoredJobId() { const stored = await chrome.storage.local.get(CURRENT_JOB_KEY); cachedJobId = stored[CURRENT_JOB_KEY] || null; return cachedJobId; }
 
 function parsePatterns(text) {
-  return String(text || "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
+  return String(text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
 }
 
 async function start() {
   logList.replaceChildren();
   renderedLogLines = 0;
   summary.textContent = "";
-
+  showProgress();
   try {
     const mode = currentMode();
     const maxPages = clampInt(maxPagesInput.value, 1, 500, 25);
     const maxDepth = clampInt(maxDepthInput.value, 0, 20, 5);
-    const includePatterns = parsePatterns(includePatternsInput.value);
-    const excludePatterns = parsePatterns(excludePatternsInput.value);
-
     let seeds = [];
     let followLinks = false;
 
-    // Resolve seeds and request host permission FIRST, before any other
-    // await, so the Start click's user activation is still valid when we
-    // call chrome.permissions.request (which requires it). Permissions
-    // granted here are extension-wide, so the background service worker
-    // that actually runs the crawl already has them -- nothing to hand off.
     if (mode === "list") {
       seeds = parseUrlList(urlsInput.value);
-      if (!seeds.length) {
-        throw new Error("Enter at least one http(s) URL.");
-      }
+      if (!seeds.length) throw new Error("Enter or import at least one HTTP(S) URL.");
       await requestOrigins(seeds);
-    } else if (mode === "sitemap") {
-      const sitemapUrl = startInput.value.trim();
-      if (!/^https?:\/\//i.test(sitemapUrl)) {
-        throw new Error("Enter a sitemap URL.");
-      }
-      await requestOrigins([sitemapUrl]);
-      log(`Fetching sitemap: ${sitemapUrl}`);
-      seeds = await fetchSitemapPages(sitemapUrl, { maxPages, parse: parseSitemap });
-      if (!seeds.length) {
-        throw new Error("No URLs found in that sitemap.");
-      }
-      log(`Found ${seeds.length} URL(s) in the sitemap.`);
+    } else if (mode === "sitemap" || mode === "llms") {
+      const sourceUrl = startInput.value.trim();
+      if (!/^https?:\/\//i.test(sourceUrl)) throw new Error(`Enter a valid ${mode === "sitemap" ? "sitemap" : "llms.txt"} URL.`);
+      await requestOrigins([sourceUrl]);
+      log(`Loading ${sourceUrl}`);
+      seeds = mode === "sitemap"
+        ? await fetchSitemapPages(sourceUrl, { maxPages, parse: parseSitemap })
+        : await fetchLlmsPages(sourceUrl, { maxPages });
+      if (!seeds.length) throw new Error(`No page URLs found in that ${mode === "sitemap" ? "sitemap" : "llms.txt"}.`);
       const permitted = await keepPermittedUrls(seeds);
-      if (permitted.length !== seeds.length) {
-        log(`Skipped ${seeds.length - permitted.length} URL(s) on unapproved origins. Use URL-list mode to approve multiple hosts.`);
-      }
+      if (permitted.length !== seeds.length) log(`Skipped ${seeds.length - permitted.length} URL(s) on unapproved origins.`, true);
       seeds = permitted;
-      if (!seeds.length) {
-        throw new Error("The sitemap did not contain pages on an approved origin.");
-      }
+      if (!seeds.length) throw new Error("No discovered pages were on an approved origin.");
     } else {
       const startUrl = startInput.value.trim();
-      if (!/^https?:\/\//i.test(startUrl)) {
-        throw new Error("Enter a start URL.");
-      }
+      if (!/^https?:\/\//i.test(startUrl)) throw new Error("Enter a start URL.");
       seeds = [startUrl];
       followLinks = true;
       await requestOrigins(seeds);
     }
 
-    const settings = await loadSettings();
-    currentSettings = settings;
+    currentSettings = await loadSettings();
     const captureOptions = {
-      mode: settings.mode,
-      scrollBeforeCapture: settings.scrollBeforeCapture,
-      maxScrollMs: settings.maxScrollMs,
-      scrollPauseMs: settings.scrollPauseMs,
-      dropHidden: settings.dropHidden
+      mode: currentSettings.mode,
+      scrollBeforeCapture: currentSettings.scrollBeforeCapture,
+      maxScrollMs: currentSettings.maxScrollMs,
+      scrollPauseMs: currentSettings.scrollPauseMs,
+      dropHidden: currentSettings.dropHidden
     };
-
-    log(`Capturing up to ${maxPages} page(s)...`);
+    log(`Capturing up to ${maxPages} page(s)…`);
     const response = await sendMessage({
       type: "crawl:start",
       seeds,
@@ -267,16 +270,14 @@ async function start() {
         maxDepth,
         followLinks,
         sameHostOnly: true,
-        includePatterns,
-        excludePatterns,
+        includePatterns: parsePatterns(includePatternsInput.value),
+        excludePatterns: parsePatterns(excludePatternsInput.value),
         retries: 2,
         retryDelayMs: 500,
         outputMode: outputSelect.value
       }
     });
-    if (!response || !response.id) {
-      throw new Error((response && response.error) || "Could not start the crawl.");
-    }
+    if (!response || !response.id) throw new Error(response && response.error || "Could not start the crawl.");
     setCurrentJobId(response.id);
     setRunning("running");
     startPolling(response.id);
@@ -286,62 +287,45 @@ async function start() {
   }
 }
 
-function startPolling(jobId) {
-  stopPolling();
-  pollTimer = setInterval(() => pollJob(jobId), POLL_MS);
-  pollJob(jobId);
+function showProgress() {
+  progressSection.hidden = false;
+  progressSection.open = true;
 }
 
-function stopPolling() {
-  if (pollTimer) {
-    clearInterval(pollTimer);
-    pollTimer = null;
-  }
-}
+function startPolling(jobId) { stopPolling(); pollTimer = setInterval(() => pollJob(jobId), POLL_MS); pollJob(jobId); }
+function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
 
 async function pollJob(jobId) {
   const job = await loadJob(jobId);
-  if (!job) {
-    return;
-  }
+  if (!job) return;
   renderJobSnapshot(job);
   setRunning(job.status);
-
   if (job.status === "done" || job.status === "failed") {
     stopPolling();
-    if (job.status === "done" && !job.exported) {
-      await exportJob(job);
-    }
+    if (job.status === "done" && !job.exported) await exportJob(job);
   }
 }
 
 function renderJobSnapshot(job) {
   const lines = job.log || [];
-  for (let i = renderedLogLines; i < lines.length; i += 1) {
-    log(lines[i], /failed/i.test(lines[i]));
-  }
+  for (let index = renderedLogLines; index < lines.length; index += 1) log(lines[index], /failed/i.test(lines[index]));
   renderedLogLines = lines.length;
-  summary.textContent = `${job.status} — ${job.results.length} page(s) captured, ${job.errors.length} error(s), ${job.queue.length} queued.`;
+  const message = `${job.status} — ${job.results.length} captured, ${job.errors.length} error(s), ${job.queue.length} queued.`;
+  summary.textContent = message;
+  progressSummary.textContent = message;
 }
 
 async function exportJob(job) {
   try {
-    log(`Captured ${job.results.length} page(s). Building output...`);
+    log(`Captured ${job.results.length} page(s). Building output…`);
     const bodies = await getJobBodies(job.id);
     const bodyByUrl = new Map(bodies.map((body) => [body.url, body]));
-    const pages = job.results
-      .map((meta) => {
-        const body = bodyByUrl.get(meta.url);
-        return body ? { url: body.url, title: body.title, markdown: body.markdown, metadata: body.metadata } : null;
-      })
-      .filter(Boolean);
-
-    if (!pages.length) {
-      throw new Error("No pages were captured.");
-    }
-
+    const pages = job.results.map((meta) => bodyByUrl.get(meta.url)).filter(Boolean)
+      .map((body) => ({ url: body.url, title: body.title, markdown: body.markdown, metadata: body.metadata }));
+    if (!pages.length) throw new Error("No pages were captured.");
     await buildOutputs(pages, currentSettings, job.options.outputMode);
     summary.textContent = `Exported ${pages.length} page(s).`;
+    progressSummary.textContent = "Export complete";
     log("Done.");
     await saveJob({ ...job, exported: true });
   } catch (error) {
@@ -352,74 +336,41 @@ async function exportJob(job) {
 async function buildOutputs(pages, settings, outputMode) {
   const siteTitle = deriveSiteTitle(pages);
   const base = slugify(siteTitle, { fallback: "site-export" });
-  const options = {
-    metadataStyle: settings.metadataStyle,
-    includeTitleHeading: settings.includeTitleHeading
-  };
-  const output = outputMode || "zip";
-
-  if (output === "zip" || output === "both") {
+  const options = { metadataStyle: settings.metadataStyle, includeTitleHeading: settings.includeTitleHeading };
+  if (outputMode === "zip" || outputMode === "both" || !outputMode) {
     const files = buildPageFiles(pages, options);
-    const index = buildIndexMarkdown(files, { siteTitle });
     const entries = files.map((file) => ({ name: file.path, data: file.content }));
-    entries.push({ name: "index.md", data: index });
+    entries.push({ name: "index.md", data: buildIndexMarkdown(files, { siteTitle }) });
     await downloadBlob(createZip(entries), `${base}.zip`);
     log(`Wrote ${files.length} file(s) + index.md to ${base}.zip`);
   }
-  if (output === "aggregate" || output === "both") {
+  if (outputMode === "aggregate" || outputMode === "both") {
     await downloadText(buildAggregateMarkdown(pages, { siteTitle }), `${base}.md`);
     log(`Wrote ${base}.md`);
   }
 }
 
-function deriveSiteTitle(pages) {
-  try {
-    return new URL(pages[0].url).hostname;
-  } catch {
-    return "site-export";
-  }
-}
+function deriveSiteTitle(pages) { try { return new URL(pages[0].url).hostname; } catch { return "site-export"; } }
 
 async function requestOrigins(urls) {
   const origins = [...new Set(urls.map(originPattern).filter(Boolean))];
-  if (!origins.length) {
-    return;
-  }
-  // Call request() as the first asynchronous operation from the Start click.
-  // Chrome resolves already-granted origins without showing another prompt.
-  const granted = await chrome.permissions.request({ origins });
-  if (!granted) {
-    throw new Error("Permission to access those sites was declined.");
-  }
+  if (!origins.length) return;
+  if (!await chrome.permissions.request({ origins })) throw new Error("Permission to access those sites was declined.");
 }
 
 async function keepPermittedUrls(urls) {
   const allowed = [];
   for (const url of urls) {
     const origin = originPattern(url);
-    if (origin && await chrome.permissions.contains({ origins: [origin] })) {
-      allowed.push(url);
-    }
+    if (origin && await chrome.permissions.contains({ origins: [origin] })) allowed.push(url);
   }
   return allowed;
 }
 
-function originPattern(url) {
-  try {
-    const parsed = new URL(url);
-    return `${parsed.protocol}//${parsed.host}/*`;
-  } catch {
-    return "";
-  }
-}
-
-function clampInt(value, min, max, fallback) {
-  const number = Math.floor(Number(value));
-  if (!Number.isFinite(number)) {
-    return fallback;
-  }
-  return Math.max(min, Math.min(max, number));
-}
+function originPattern(url) { try { const parsed = new URL(url); return `${parsed.protocol}//${parsed.host}/*`; } catch { return ""; } }
+function clampInt(value, min, max, fallback) { const number = Math.floor(Number(value)); return Number.isFinite(number) ? Math.max(min, Math.min(max, number)) : fallback; }
+function typeLabel(type) { return ({ sharepoint: "SharePoint", confluence: "Confluence", website: "Website", custom: "Custom list" })[type] || "Collection"; }
+function sourceLabel(mode) { return ({ list: "saved URL", sitemap: "sitemap", llms: "llms.txt", crawl: "same-site crawl" })[mode] || "automatic"; }
 
 function setRunning(status) {
   const running = status === "running" || status === "queued";
@@ -431,11 +382,10 @@ function setRunning(status) {
 }
 
 function log(message, isError = false) {
+  showProgress();
   const item = document.createElement("li");
   item.textContent = message;
-  if (isError) {
-    item.classList.add("is-error");
-  }
-  logList.appendChild(item);
+  if (isError) item.classList.add("is-error");
+  logList.append(item);
   logList.scrollTop = logList.scrollHeight;
 }

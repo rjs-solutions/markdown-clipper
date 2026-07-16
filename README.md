@@ -5,7 +5,7 @@ SharePoint. Copy, download, save into a local knowledge vault, or export whole s
 preserving their structure.
 
 > **Status:** 1.1.0 plus the `feature/clipper-expansion` preview. The preview is covered by
-> 309 automated tests but still requires the
+> 320 automated tests but still requires the
 > [browser verification checklist](docs/browser-verification-checklist.md). Load the unpacked
 > `extension/` before testing. See
 > [CHANGELOG.md](CHANGELOG.md) for details.
@@ -16,9 +16,9 @@ preserving their structure.
   the Markdown in a new tab.
 - **SharePoint-aware** — scrolls to trigger lazy-loaded sections and uses a scored content-root
   finder to skip chrome/navigation and keep the real page content.
-- **Saved SharePoint inventories** — save sites, collapse their page lists, and refresh one or all
-  sites to detect new, updated, and removed pages without accumulating duplicates. Collection
-  export can load a refreshed saved-site inventory directly as its exact URL list.
+- **Saved collections** — save SharePoint, Confluence, general websites, or custom URL lists;
+  refresh inventories to detect changes without duplicates; and export one inventory or all
+  collection metadata as CSV.
 - **Works on any page** — general webpages use Mozilla Readability article extraction, with a
   full-page fallback. A capture **mode** setting (auto / sharepoint / article / full) lets you
   override.
@@ -26,9 +26,9 @@ preserving their structure.
   define your own note + filename templates with `{{variable|filter}}` substitution
   (`{{title}}`, `{{author}}`, `{{date}}`, `{{meta:…}}`, `{{schema:…}}`, `{{selector:…}}`),
   inspired by the Obsidian Web Clipper.
-- **Export a whole site** — discover pages from a URL list, a `sitemap.xml`, or by crawling
-  same-host links, then export per-page Markdown preserving the site structure (ZIP + `index.md`)
-  and/or a single aggregate Markdown file. Host access is requested per-site, only when you start.
+- **Export a collection** — import URLs from TXT, CSV, or XLSX; discover them from a sitemap,
+  `llms.txt`, saved collection, or same-site crawl; then export a structure-preserving ZIP and/or
+  aggregate Markdown file. Host access is requested per-site, only when you start.
 - **Flexible surfaces** — use the toolbar popup, Chrome side panel, or a draggable/resizable
   in-page panel; selection clipping is also available from the context menu.
 - **Knowledge vault workflow** — save clips to a chosen local folder, maintain a wiki-style

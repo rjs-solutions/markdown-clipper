@@ -3,89 +3,84 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Export a collection to Markdown</title>
+    <title>Export Collection — Markdown Clipper</title>
     <link rel="stylesheet" href="../theme.css">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
     <main class="crawl">
-      <h1>Export a collection to Markdown</h1>
-      <p class="lead">
-        Capture many pages as a Markdown collection. Pages open in background tabs so even
-        JavaScript-rendered SharePoint pages are captured. You'll be asked for permission to
-        access the site before the export starts.
-      </p>
+      <header class="app-header">
+        <h1><img src="../../assets/icons/icon-48.png" alt=""> <span>Markdown Clipper</span><span class="header-subtitle">Export Collection</span></h1>
+        <button id="close-window" class="icon-button" type="button" title="Close" aria-label="Close Export Collection">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"></path></svg>
+        </button>
+      </header>
+
+      <p class="lead">Collect pages from a saved collection, file, sitemap, llms.txt, or same-site crawl.</p>
 
       <form id="crawl-form">
-        <section class="group">
-          <h2 class="group-title">What to capture</h2>
-
-          <div class="saved-site-field">
-            <label for="saved-site">Saved SharePoint site</label>
-            <div class="saved-site-controls">
-              <select id="saved-site">
-                <option value="">Choose a saved site…</option>
-              </select>
-              <button id="manage-sites" class="icon-button" type="button" title="Manage SharePoint sites" aria-label="Manage SharePoint sites">
-                <svg aria-hidden="true" viewBox="0 0 24 24">
-                  <circle cx="8" cy="8" r="3.5"></circle>
-                  <circle cx="16.5" cy="7" r="2.5"></circle>
-                  <circle cx="16.5" cy="16.5" r="2.5"></circle>
-                  <path d="M11 9.5l3.2-1.4M10.5 10.5l4.2 4.2M5.5 15.5h5M8 13v5"></path>
-                </svg>
-              </button>
+        <details class="group" open>
+          <summary><span>Source</span><small>Choose pages to export</small></summary>
+          <div class="group-body">
+            <div class="saved-collection-field">
+              <label for="saved-collection">Saved collection</label>
+              <div class="inline-controls">
+                <select id="saved-collection"><option value="">Choose a saved collection…</option></select>
+                <button id="manage-collections" class="icon-button" type="button" title="Manage collections" aria-label="Manage collections">
+                  <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m12 3 8 4-8 4-8-4 8-4Z"></path><path d="m4 12 8 4 8-4M4 17l8 4 8-4"></path></svg>
+                </button>
+              </div>
+              <p id="saved-collection-hint" class="hint"></p>
             </div>
-            <p id="saved-site-hint" class="hint"></p>
+
+            <div class="modes" role="radiogroup" aria-label="Collection source">
+              <label><input type="radio" name="mode" value="list" checked><span class="radio-mark" aria-hidden="true"></span><span><strong>URL list</strong><small>Paste or import a file</small></span></label>
+              <label><input type="radio" name="mode" value="sitemap"><span class="radio-mark" aria-hidden="true"></span><span><strong>Sitemap</strong><small>XML or sitemap index</small></span></label>
+              <label><input type="radio" name="mode" value="llms"><span class="radio-mark" aria-hidden="true"></span><span><strong>llms.txt</strong><small>Markdown link inventory</small></span></label>
+              <label><input type="radio" name="mode" value="crawl"><span class="radio-mark" aria-hidden="true"></span><span><strong>Crawl</strong><small>Follow same-site links</small></span></label>
+            </div>
+
+            <div class="field" data-mode="list">
+              <div class="field-heading"><label for="urls">Page URLs</label><span id="url-count" class="count">0 URLs</span></div>
+              <textarea id="urls" rows="4" spellcheck="false" placeholder="Paste one or more URLs, or import TXT, CSV, or XLSX."></textarea>
+              <div class="import-row">
+                <input id="url-file" type="file" accept=".txt,.csv,.xlsx,text/plain,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+                <button id="import-file" type="button">Import TXT, CSV, or XLSX</button>
+                <input id="collection-name" type="text" placeholder="Collection name" aria-label="Collection name">
+                <button id="save-collection" type="button">Save collection</button>
+              </div>
+              <p id="import-status" class="hint" role="status" aria-live="polite"></p>
+            </div>
+
+            <label class="field" data-mode="sitemap llms crawl">
+              <span id="start-label">Start URL</span>
+              <input id="start" type="url" placeholder="https://example.com/">
+            </label>
           </div>
+        </details>
 
-          <div class="modes" role="radiogroup" aria-label="Discovery mode">
-            <label><input type="radio" name="mode" value="list" checked> Paste a list of URLs</label>
-            <label><input type="radio" name="mode" value="sitemap"> From a sitemap.xml</label>
-            <label><input type="radio" name="mode" value="crawl"> Crawl links from a start page</label>
+        <details class="group">
+          <summary><span>Scope &amp; discovery</span><small>Limits and crawl rules</small></summary>
+          <div class="group-body compact-grid">
+            <label class="field"><span>Maximum pages</span><input id="max-pages" type="number" min="1" max="500" step="1" value="25"></label>
+            <label class="field" data-mode="crawl"><span>Maximum link depth</span><input id="max-depth" type="number" min="0" max="20" step="1" value="5"></label>
+            <label class="field field-wide" data-mode="crawl"><span>Include patterns <small>(regex, optional)</small></span><textarea id="include-patterns" rows="2" spellcheck="false" placeholder="/SitePages/"></textarea></label>
+            <label class="field field-wide" data-mode="crawl"><span>Exclude patterns <small>(regex, optional)</small></span><textarea id="exclude-patterns" rows="2" spellcheck="false" placeholder="/_layouts/"></textarea></label>
+            <p class="hint field-wide" data-mode="crawl">Crawls stay on the starting host. Use URL list for intentional multi-host exports.</p>
           </div>
+        </details>
 
-          <label class="field" data-mode="list">
-            <span>Page URLs (one per line)</span>
-            <textarea id="urls" rows="4" spellcheck="false" placeholder="https://contoso.sharepoint.com/sites/team/SitePages/Home.aspx"></textarea>
-          </label>
+        <details class="group">
+          <summary><span>Output</span><small>ZIP, aggregate Markdown, or both</small></summary>
+          <div class="group-body">
+            <label class="field"><span>Output format</span><select id="output"><option value="zip">ZIP: page files + index.md</option><option value="aggregate">Single aggregate Markdown file</option><option value="both">Both formats</option></select></label>
+          </div>
+        </details>
 
-          <label class="field" data-mode="sitemap crawl">
-            <span id="start-label">Start URL</span>
-            <input id="start" type="url" placeholder="https://contoso.sharepoint.com/...">
-          </label>
-        </section>
-
-        <section class="group">
-          <h2 class="group-title">Options</h2>
-          <label class="field">
-            <span>Maximum pages</span>
-            <input id="max-pages" type="number" min="1" max="500" step="1" value="25">
-          </label>
-          <label class="field" data-mode="crawl">
-            <span>Maximum link depth</span>
-            <input id="max-depth" type="number" min="0" max="20" step="1" value="5">
-          </label>
-          <p class="field hint" data-mode="crawl">
-            For safety, link crawling stays on the start URL's host. Use the URL-list mode
-            when you intentionally need to export pages from multiple hosts.
-          </p>
-          <label class="field" data-mode="crawl">
-            <span>Include URL patterns (regex, one per line, optional)</span>
-            <textarea id="include-patterns" rows="2" spellcheck="false" placeholder="/SitePages/"></textarea>
-          </label>
-          <label class="field" data-mode="crawl">
-            <span>Exclude URL patterns (regex, one per line, optional)</span>
-            <textarea id="exclude-patterns" rows="2" spellcheck="false" placeholder="/_layouts/"></textarea>
-          </label>
-          <label class="field">
-            <span>Output</span>
-            <select id="output">
-              <option value="zip">ZIP archive (one file per page + index.md)</option>
-              <option value="aggregate">Single aggregate Markdown file</option>
-              <option value="both">Both</option>
-            </select>
-          </label>
-        </section>
+        <details id="progress-section" class="group progress-group" hidden>
+          <summary><span>Progress</span><small id="progress-summary">Preparing…</small></summary>
+          <div class="group-body"><p id="summary" class="summary" role="status" aria-live="polite"></p><ol id="log" class="log" aria-label="Progress log"></ol></div>
+        </details>
 
         <div class="buttons">
           <button id="start-btn" type="submit">Start export</button>
@@ -94,9 +89,6 @@
           <button id="stop-btn" type="button" disabled>Cancel</button>
         </div>
       </form>
-
-      <p id="summary" class="summary" role="status" aria-live="polite"></p>
-      <ol id="log" class="log" aria-label="Progress log"></ol>
     </main>
     <script type="module" src="crawl.js"></script>
   </body>

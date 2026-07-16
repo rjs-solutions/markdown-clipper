@@ -34,7 +34,7 @@ extension/
     ├── popup/               copy / download / open / "export a whole site"
     ├── options/             capture + output settings, template editor
     ├── report/              Markdown preview + download
-    ├── crawl/               site-export UI (list / sitemap / crawl)
+    ├── crawl/               collection-export UI (file/list/sitemap/llms/crawl)
     ├── content/             DOM-bound, injected:
     │   ├── collect.js         orchestrator -> { markdown, metadata, variables }
     │   ├── scroll.js          scroll-to-load lazy content
@@ -54,8 +54,12 @@ extension/
     │   ├── capture.js         executeScript injection wrapper (reused by spider)
     │   ├── download.js        Blob downloads
     │   ├── discover.js        URL list / sitemap parsing
+    │   ├── llms.js            llms.txt discovery
+    │   ├── collection-import.js TXT / CSV / XLSX URL intake
+    │   ├── collections.js     versioned saved-collection model + legacy migration
+    │   ├── collection-csv.js  collection/inventory CSV export
     │   ├── sharepoint-inventory.js local page snapshots + refresh reconciliation
-    │   ├── sharepoint-export.js saved-site matching + collection-export presets
+    │   ├── collection-export.js saved-collection matching + export presets
     │   ├── sitepath.js        URL -> structure-preserving .md path
     │   ├── aggregate.js       per-page files + index + aggregate doc
     │   ├── zip.js             store-only ZIP writer
@@ -77,7 +81,7 @@ popup → compose.js (front matter + title + body)   [default]
 
 **Site export (spider)**
 ```
-crawl page → discover seeds (URL list | sitemap fetch | start URL)
+crawl page → discover seeds (file/list | sitemap | llms.txt | saved collection | start URL)
            → request host permission for the target origin(s)
            → crawl.js: for each URL — open background tab, wait for load,
              capture.js, (optionally) collect same-host links, close tab
@@ -113,7 +117,7 @@ flat map.
 
 ## Testing
 
-`npm test` runs `node --test` (309 cases), including Markdown conversion, settings, capture
+`npm test` runs `node --test` (320 cases), including Markdown conversion, settings, capture
 adapters, SharePoint discovery/inventory reconciliation, crawling, templating, the vault, and
 DOM integration coverage in jsdom. Browser-only behavior on real authenticated pages is covered
 by the manual checklist in [TESTING.md](TESTING.md).
@@ -130,7 +134,7 @@ final gate after real listing screenshots and the promotional tile are produced.
 The plain-module approach remains a good fit: it keeps the shipped source reviewable, avoids
 remote code and build-time indirection, and lets browser pages and tests share the same logic.
 Two controllers are now natural future extraction points rather than release blockers:
-`options/options.js` can split into vault, tag-rule, SharePoint, prompt, and maintenance controls;
+`options/options.js` can split into vault, tag-rule, Collections, prompt, and maintenance controls;
 `popup/popup.js` can split surface coordination from capture/action handling.
 
 The movable in-page panel intentionally embeds the packaged popup as a web-accessible extension

@@ -14,13 +14,13 @@ or export results. Page conversion and export happen in the browser.
 
 ## Data the extension processes
 
-The extension acts only after a user invokes a capture, selection clip, saved SharePoint-site
+The extension acts only after a user invokes a capture, selection clip, saved-collection
 refresh, or collection export. It may process:
 
 - the URL, rendered website content, headings, links, images, tables, selected text, and page
   metadata such as title, author, and dates for the page or pages the user chose;
-- the URLs discovered during a user-started sitemap, same-site crawl, or SharePoint discovery;
-- the user's capture settings, templates, tag rules, saved SharePoint site definitions, and
+- the URLs discovered during a user-started sitemap, `llms.txt`, same-site crawl, or platform discovery;
+- the user's capture settings, templates, tag rules, saved collection definitions, and
   chosen vault folder; and
 - generated Markdown, filenames, crawl progress, and local clip-history metadata needed to
   complete or update the requested export.
@@ -31,10 +31,10 @@ cookies or passwords.
 
 ## Local and browser storage
 
-- Settings, templates, tag rules, and saved SharePoint site definitions use
+- Settings, templates, tag rules, and saved collection definitions use
   `chrome.storage.sync`. Chrome may sync this configuration between browsers signed into the
   same Chrome profile, according to the user's Chrome sync settings.
-- SharePoint page inventories, crawl job metadata, the active crawl reference, and in-page panel
+- Collection page inventories, crawl job metadata, the active crawl reference, and in-page panel
   geometry use extension-local browser storage.
 - Crawl page bodies, clip-history records, and the chosen vault directory handle use IndexedDB
   in the extension's browser profile. A chosen directory handle is only used to write files after
@@ -50,7 +50,7 @@ files are ordinary user files and are not deleted automatically.
 ## Network access and sharing
 
 - Single-page capture uses temporary `activeTab` access after the user invokes the extension.
-- Collection export and saved SharePoint discovery request access at runtime to the exact site
+- Collection export and saved-collection discovery request access at runtime to the exact site
   origin selected by the user. The extension may open background tabs for those pages and uses
   the user's existing browser session. It does not monitor unrelated browsing or run persistently
   on websites.
@@ -67,7 +67,7 @@ libraries are packaged with the extension; it does not execute remote code.
 - **`activeTab`** — access the current page after a user invokes a capture.
 - **`scripting`** — run the on-demand collector in a user-selected page or export tab.
 - **`downloads`** — save a requested Markdown file or collection archive.
-- **`storage`** — keep settings, saved-site definitions, inventories, and resumable work state.
+- **`storage`** — keep settings, saved-collection definitions, inventories, and resumable work state.
 - **`sidePanel`** — show the clip card in Chrome's side panel when the user chooses that surface.
 - **`alarms`** — wake the service worker to resume a user-started crawl after Chrome suspends it.
 - **`contextMenus`** — provide explicit page and selection clipping commands.
@@ -75,7 +75,7 @@ libraries are packaged with the extension; it does not execute remote code.
   clips it.
 - **Optional `http://*/*` and `https://*/*` host access** — establish the maximum runtime scope;
   the extension requests the specific origin needed for a user-selected collection export or
-  saved SharePoint-site refresh.
+  saved-collection refresh.
 
 ## Limited Use
 

@@ -250,8 +250,8 @@ export const SETTINGS_SCHEMA = [
     ]
   },
   {
-    id: "sharepoint",
-    label: "SharePoint",
+    id: "collections",
+    label: "Collections",
     fields: []
   },
   {

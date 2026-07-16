@@ -38,11 +38,13 @@ Get cleaner, site-aware output:
 - X/Twitter posts can include quotes, article previews, and the author's follow-up thread.
 - Add YAML front matter, a plain metadata list, or custom note and filename templates.
 
-Export collections and SharePoint sites:
+Export and revisit collections:
 
-- Discover pages from a URL list, sitemap, same-site crawl, or a saved SharePoint inventory.
-- Save SharePoint sites and refresh one or all inventories to identify new, updated, unchanged,
-  and removed pages without creating duplicates.
+- Import URL lists from TXT, CSV, or XLSX, or discover pages from a sitemap, `llms.txt`,
+  same-site crawl, or saved collection.
+- Save SharePoint, Confluence, website, and custom URL-list collections; refresh inventories to
+  identify new, updated, unchanged, and removed pages without duplicates.
+- Export one collection inventory or all saved collection metadata as CSV.
 - Export structure-preserving Markdown files with `index.md` in a ZIP, one aggregate Markdown
   document, or both.
 - Pause and resume longer exports; progress survives service-worker suspension.
@@ -51,7 +53,7 @@ Private by design:
 
 - Conversion runs locally in Chrome. There is no developer backend, account, analytics, or
   advertising, and no remote code.
-- Normal page clipping uses temporary `activeTab` access. Collection export and saved-site
+- Normal page clipping uses temporary `activeTab` access. Collection export and saved-collection
   refresh ask for access to the selected site's origin only when needed.
 - The developer cannot see captured pages, settings, vault files, or export results.
 
@@ -61,8 +63,8 @@ It does not monitor ordinary browsing.
 ## Suggested release notes
 
 Markdown Clipper 1.1 adds a movable in-page clip panel, configurable toolbar behavior, direct
-vault saving, saved SharePoint inventories with refresh/change detection, collection export from
-saved sites, selection clipping, richer site adapters, and a split Download / Save as control.
+vault saving, generalized Collections with refresh/change detection and URL-list imports,
+selection clipping, richer site adapters, and a split Download / Save as control.
 
 ## Single purpose
 
@@ -78,7 +80,7 @@ knowledge-vault, and user-started collection-export workflows.
   a user-started collection export. No persistent content script is installed.
 - **downloads** — save a Markdown file or ZIP archive after the user clicks Download or completes
   an export.
-- **storage** — store settings, templates, tag rules, saved SharePoint definitions and
+- **storage** — store settings, templates, tag rules, saved collection definitions and
   inventories, panel geometry, resumable crawl metadata, and short-lived handoff data.
 - **sidePanel** — open the clip interface in Chrome's docked side panel when the user explicitly
   selects that surface.
@@ -89,7 +91,7 @@ knowledge-vault, and user-started collection-export workflows.
   an X/Twitter status only when the user clips that status. Only the public status ID is sent.
 - **Optional HTTP/HTTPS host access** — declare the maximum runtime scope required for arbitrary
   user-selected sites. At runtime the extension requests the exact origin needed for a collection
-  export or saved SharePoint-site refresh; it does not monitor other sites.
+  export or saved-collection refresh; it does not monitor other sites.
 
 ## Remote code
 

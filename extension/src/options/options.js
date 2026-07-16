@@ -7,9 +7,11 @@ import { SETTINGS_SCHEMA, schemaFields, findField } from "../lib/settings-schema
 import { applyTheme } from "../lib/theme.js";
 import { saveHandle, loadHandle, clearHandle, ensurePermission } from "../lib/vault-handle.js";
 import { loadRules, saveRules } from "../lib/tag-rules.js";
-import { loadSites, saveSites, generateSiteId } from "../lib/sharepoint-sites.js";
-import { parseSharePointSite } from "../lib/sharepoint-site.js";
+import { createCollectionFromUrl, loadCollections, saveCollections } from "../lib/collections.js";
 import { discoverSitePages } from "../lib/sharepoint-fetch.js";
+import { fetchSitemapPages } from "../lib/crawl.js";
+import { parseSitemap } from "../lib/discover.js";
+import { fetchLlmsPages } from "../lib/llms.js";
 import {
   loadSiteInventory,
   loadSiteInventories,
@@ -20,8 +22,14 @@ import {
 } from "../lib/sharepoint-inventory.js";
 import { exportSettings, importSettings } from "../lib/settings-backup.js";
 import { downloadText } from "../lib/download.js";
+import { collectionsToCsv } from "../lib/collection-csv.js";
+import { openCollectionWindow } from "../lib/window-placement.js";
+import { slugify } from "../lib/slug.js";
 import { listClips } from "../lib/clip-log.js";
 import { TASK_PRESETS, buildPrompt } from "../lib/prompt-templates.js";
+
+const loadSites = loadCollections;
+const saveSites = saveCollections;
 
 export function fieldId(key) {
   return `f-${key.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
@@ -327,9 +335,12 @@ export function createOptionsForm(schema, { navElement, panelsElement, onThemeCh
       control = document.createElement("input");
       control.type = "checkbox";
       control.id = id;
+      const switchVisual = document.createElement("span");
+      switchVisual.className = "switch-visual";
+      switchVisual.setAttribute("aria-hidden", "true");
       const span = document.createElement("span");
       span.textContent = field.label;
-      label.append(control, span);
+      label.append(control, switchVisual, span);
       wrapper.append(label);
     } else {
       const label = document.createElement("label");
@@ -758,22 +769,55 @@ function renderTagRulesControl(panel) {
   });
 }
 
-// ---- Bespoke SharePoint sites editor ---------------------------------------
-// A saved-sites list for the upcoming "sync a SharePoint site" feature. Like
-// tag-rules and the vault folder, it persists under its own chrome.storage.sync
-// key ("sharepointSites", via sharepoint-sites.js) rather than a schema field,
-// and auto-saves on every edit. Page inventories are kept separately in
-// chrome.storage.local (sharepoint-inventory.js) so large sites do not consume
-// the sync quota. Discovery/refresh opens the site in a background tab and
-// reads its Site Pages list; collection export can consume that inventory.
-function renderSharePointSitesControl(panel) {
+// ---- Saved collections editor ----------------------------------------------
+// Generalized from the original SharePoint-only list. Collection definitions
+// sync through collections.js; larger page inventories remain local.
+function collectionTypeLabel(type) {
+  return ({ sharepoint: "SharePoint", confluence: "Confluence", website: "Website", custom: "Custom list" })[type] || "Collection";
+}
+
+function pageFromUrl(url) {
+  try {
+    const parsed = new URL(url);
+    const segment = parsed.pathname.split("/").filter(Boolean).at(-1) || parsed.hostname;
+    return { url: parsed.href, title: decodeURIComponent(segment), modified: "" };
+  } catch {
+    return { url, title: url, modified: "" };
+  }
+}
+
+async function discoverCollectionPages(collection) {
+  if (collection.type === "sharepoint") return discoverSitePages(collection);
+  if (collection.type === "custom") return { ok: true, pages: (collection.urls || []).map(pageFromUrl), sourceMode: "list" };
+  const source = collection.sourceUrl || collection.webUrl || collection.url;
+  const mode = collection.sourceMode || "auto";
+  if (mode === "llms") return { ok: true, pages: (await fetchLlmsPages(source)).map(pageFromUrl), sourceMode: "llms" };
+  if (mode === "sitemap") return { ok: true, pages: (await fetchSitemapPages(source, { parse: parseSitemap })).map(pageFromUrl), sourceMode: "sitemap" };
+  if (mode === "crawl") return { ok: false, reason: "crawl-required" };
+
+  const base = new URL(source);
+  const llmsUrl = new URL("/llms.txt", base).href;
+  try {
+    const urls = await fetchLlmsPages(llmsUrl);
+    if (urls.length) return { ok: true, pages: urls.map(pageFromUrl), sourceMode: "llms", sourceUrl: llmsUrl };
+  } catch {
+    // Fall through to the conventional sitemap location.
+  }
+  const sitemapUrl = new URL("/sitemap.xml", base).href;
+  const urls = await fetchSitemapPages(sitemapUrl, { parse: parseSitemap });
+  return urls.length
+    ? { ok: true, pages: urls.map(pageFromUrl), sourceMode: "sitemap", sourceUrl: sitemapUrl }
+    : { ok: false, reason: "crawl-required" };
+}
+
+function renderCollectionsControl(panel) {
   if (!panel) {
     return;
   }
 
   const heading = document.createElement("h3");
   heading.className = "group-heading";
-  heading.textContent = "Sites";
+  heading.textContent = "Add a collection";
   panel.append(heading);
 
   const wrapper = document.createElement("div");
@@ -781,16 +825,22 @@ function renderSharePointSitesControl(panel) {
 
   const help = document.createElement("p");
   help.className = "help-text";
-  help.textContent = "Save SharePoint sites, discover their pages, and refresh to find changes without duplicates.";
+  help.textContent = "Add a site once, refresh its page inventory, and reuse it for future exports.";
   wrapper.append(help);
 
   const toolbar = document.createElement("div");
   toolbar.className = "sites-toolbar";
+  const importListButton = document.createElement("button");
+  importListButton.type = "button";
+  importListButton.textContent = "Import URL list…";
+  const exportAllButton = document.createElement("button");
+  exportAllButton.type = "button";
+  exportAllButton.textContent = "Export all CSV";
   const refreshAllButton = document.createElement("button");
   refreshAllButton.type = "button";
-  refreshAllButton.textContent = "Refresh all sites";
+  refreshAllButton.textContent = "Refresh all collections";
   refreshAllButton.disabled = true;
-  toolbar.append(refreshAllButton);
+  toolbar.append(importListButton, exportAllButton, refreshAllButton);
   wrapper.append(toolbar);
 
   const list = document.createElement("div");
@@ -802,14 +852,26 @@ function renderSharePointSitesControl(panel) {
 
   const urlInput = document.createElement("input");
   urlInput.type = "text";
-  urlInput.placeholder = "https://tenant.sharepoint.com/sites/YourSite";
-  urlInput.setAttribute("aria-label", "SharePoint site URL");
+  urlInput.placeholder = "https://example.com or a sitemap / llms.txt URL";
+  urlInput.setAttribute("aria-label", "Collection URL");
+
+  const typeSelect = document.createElement("select");
+  typeSelect.setAttribute("aria-label", "Collection platform");
+  for (const [value, label] of [["auto", "Detect platform"], ["website", "Website"], ["confluence", "Confluence"], ["sharepoint", "SharePoint"]]) {
+    typeSelect.append(new Option(label, value));
+  }
+
+  const sourceSelect = document.createElement("select");
+  sourceSelect.setAttribute("aria-label", "Discovery method");
+  for (const [value, label] of [["auto", "Auto discovery"], ["sitemap", "Sitemap"], ["llms", "llms.txt"], ["crawl", "Same-site crawl"]]) {
+    sourceSelect.append(new Option(label, value));
+  }
 
   const addButton = document.createElement("button");
   addButton.type = "button";
-  addButton.textContent = "Add";
+  addButton.textContent = "Add & discover";
 
-  addRow.append(urlInput, addButton);
+  addRow.append(urlInput, typeSelect, sourceSelect, addButton);
   wrapper.append(addRow);
 
   const status = document.createElement("p");
@@ -823,7 +885,7 @@ function renderSharePointSitesControl(panel) {
 
   function persist() {
     saveSites(sites).catch((error) => {
-      console.error("Markdown Clipper sharepoint sites save failed:", error);
+      console.error("Markdown Clipper collections save failed:", error);
     });
   }
 
@@ -844,25 +906,41 @@ function renderSharePointSitesControl(panel) {
     const name = document.createElement("span");
     name.className = "site-name";
     name.textContent = site.name;
+    const badge = document.createElement("span");
+    badge.className = `collection-type is-${site.type || "sharepoint"}`;
+    badge.textContent = collectionTypeLabel(site.type || "sharepoint");
     const url = document.createElement("span");
     url.className = "site-url";
     url.textContent = site.webUrl || site.url;
-    info.append(name, url);
+    const nameLine = document.createElement("span");
+    nameLine.className = "collection-name-line";
+    nameLine.append(name, badge);
+    info.append(nameLine, url);
 
     const actions = document.createElement("div");
     actions.className = "site-actions";
 
     const discoverButton = document.createElement("button");
     discoverButton.type = "button";
-    discoverButton.textContent = "Discover pages";
-    discoverButton.setAttribute("aria-label", `Discover pages on ${site.name}`);
+    discoverButton.textContent = site.type === "custom" ? "Review URLs" : "Refresh";
+    discoverButton.setAttribute("aria-label", `${site.type === "custom" ? "Review" : "Refresh"} ${site.name}`);
+
+    const runButton = document.createElement("button");
+    runButton.type = "button";
+    runButton.textContent = "Export";
+    runButton.setAttribute("aria-label", `Export ${site.name} to Markdown`);
+
+    const csvButton = document.createElement("button");
+    csvButton.type = "button";
+    csvButton.textContent = "CSV";
+    csvButton.setAttribute("aria-label", `Export ${site.name} URL inventory as CSV`);
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
     removeButton.textContent = "Remove";
     removeButton.setAttribute("aria-label", `Remove ${site.name}`);
 
-    actions.append(discoverButton, removeButton);
+    actions.append(discoverButton, runButton, csvButton, removeButton);
     top.append(toggleButton, info, actions);
     row.append(top);
 
@@ -899,12 +977,22 @@ function renderSharePointSitesControl(panel) {
       row.remove();
       persist();
       removeSiteInventory(site.id).catch((error) => {
-        console.error("Markdown Clipper sharepoint inventory removal failed:", error);
+        console.error("Markdown Clipper collection inventory removal failed:", error);
       });
       refreshAllButton.disabled = sites.length === 0;
     });
 
+    runButton.addEventListener("click", () => openCollectionWindow(`collection=${encodeURIComponent(site.id)}`));
+    csvButton.addEventListener("click", async () => {
+      const inventory = await loadSiteInventory(site.id);
+      await downloadText(collectionsToCsv([site], { [site.id]: inventory }), `${slugify(site.name, { fallback: "collection" })}-urls.csv`, { type: "text/csv;charset=utf-8" });
+    });
+
     async function refresh({ permissionGranted = false } = {}) {
+      if (site.type === "custom" || site.sourceMode === "crawl") {
+        openCollectionWindow(`collection=${encodeURIComponent(site.id)}`);
+        return true;
+      }
       discoverStatus.textContent = "Checking for page changes...";
       discoverButton.disabled = true;
       details.hidden = false;
@@ -932,13 +1020,17 @@ function renderSharePointSitesControl(panel) {
       }
 
       try {
-        const result = await discoverSitePages(site);
+        const result = await discoverCollectionPages(site);
         if (result.ok) {
           const previous = await loadSiteInventory(site.id);
           const comparison = reconcileSitePages(previous.pages, result.pages || []);
           const refreshedAt = Date.now();
           await saveSiteInventory(site.id, { pages: comparison.pages, lastRefreshedAt: refreshedAt });
-          discoverButton.textContent = "Refresh";
+          if (result.sourceMode && site.sourceMode === "auto") {
+            site.sourceMode = result.sourceMode;
+            site.sourceUrl = result.sourceUrl || site.sourceUrl;
+          }
+          discoverButton.textContent = site.type === "custom" ? "Review URLs" : "Refresh";
           discoverStatus.textContent = describeRefreshResult(comparison, previous.lastRefreshedAt, refreshedAt);
           renderDiscoveredPages(
             discoverResults,
@@ -948,7 +1040,9 @@ function renderSharePointSitesControl(panel) {
           persist();
           return true;
         } else {
-          discoverStatus.textContent = describeDiscoveryError(result);
+          discoverStatus.textContent = result.reason === "crawl-required"
+            ? "No sitemap or llms.txt was found. Open Export to run a same-site crawl."
+            : describeDiscoveryError(result);
         }
       } catch (error) {
         discoverStatus.textContent = describeDiscoveryError({ reason: "fetch-failed", message: error && error.message ? error.message : String(error) });
@@ -967,38 +1061,51 @@ function renderSharePointSitesControl(panel) {
         discoverButton.textContent = "Refresh";
         discoverStatus.textContent = `Last checked ${formatDateTime(inventory.lastRefreshedAt)} · ${inventory.pages.length} page${inventory.pages.length === 1 ? "" : "s"}.`;
         renderDiscoveredPages(discoverResults, inventory.pages);
+      } else if (site.urls?.length) {
+        const pages = site.urls.map(pageFromUrl);
+        discoverButton.textContent = "Review URLs";
+        discoverStatus.textContent = `${pages.length} saved URL${pages.length === 1 ? "" : "s"}.`;
+        renderDiscoveredPages(discoverResults, pages);
       }
     }).catch((error) => {
-      console.error("Markdown Clipper sharepoint inventory load failed:", error);
+      console.error("Markdown Clipper collection inventory load failed:", error);
     });
 
     return controller;
   }
 
-  addButton.addEventListener("click", () => {
-    const result = parseSharePointSite(urlInput.value);
+  importListButton.addEventListener("click", () => openCollectionWindow("mode=list&save=1"));
+
+  exportAllButton.addEventListener("click", async () => {
+    const inventories = await loadSiteInventories(sites.map((site) => site.id));
+    await downloadText(collectionsToCsv(sites, inventories), "markdown-clipper-collections.csv", { type: "text/csv;charset=utf-8" });
+  });
+
+  addButton.addEventListener("click", async () => {
+    const result = createCollectionFromUrl(urlInput.value, { type: typeSelect.value, sourceMode: sourceSelect.value });
     if (!result.ok) {
       status.textContent = result.reason;
       return;
     }
-    if (sites.some((site) => (site.webUrl || site.url).toLowerCase() === result.webUrl.toLowerCase())) {
-      status.textContent = "That SharePoint site is already saved.";
+    const site = result.collection;
+    if (sites.some((saved) => (saved.webUrl || saved.url).toLowerCase() === site.webUrl.toLowerCase())) {
+      status.textContent = "That collection is already saved.";
       return;
     }
-    status.textContent = "";
-    const site = {
-      id: generateSiteId(),
-      name: result.name,
-      url: result.webUrl,
-      webUrl: result.webUrl,
-      apiBase: result.apiBase,
-      addedAt: Date.now()
-    };
+    let granted = false;
+    try {
+      granted = await chrome.permissions.request({ origins: [`${new URL(site.webUrl).origin}/*`] });
+    } catch {
+      granted = false;
+    }
     sites.push(site);
-    renderRow(site);
+    const controller = renderRow(site);
     persist();
     refreshAllButton.disabled = false;
+    exportAllButton.disabled = false;
     urlInput.value = "";
+    status.textContent = granted ? `Added ${site.name}; discovering pages…` : `Added ${site.name}. Site permission is needed to discover pages.`;
+    if (granted) await controller.refresh({ permissionGranted: true });
   });
 
   refreshAllButton.addEventListener("click", async () => {
@@ -1006,8 +1113,9 @@ function renderSharePointSitesControl(panel) {
       return;
     }
     refreshAllButton.disabled = true;
-    status.textContent = "Refreshing all saved sites...";
-    const origins = Array.from(new Set(sites.flatMap((site) => {
+    status.textContent = "Refreshing saved collections…";
+    const refreshable = sites.filter((site) => site.type !== "custom" && site.sourceMode !== "crawl");
+    const origins = Array.from(new Set(refreshable.flatMap((site) => {
       try {
         return [`${new URL(site.webUrl).origin}/*`];
       } catch {
@@ -1015,7 +1123,7 @@ function renderSharePointSitesControl(panel) {
       }
     })));
     if (!origins.length) {
-      status.textContent = "None of the saved sites has a valid SharePoint URL.";
+      status.textContent = "No saved collections can be refreshed automatically.";
       refreshAllButton.disabled = false;
       return;
     }
@@ -1028,18 +1136,18 @@ function renderSharePointSitesControl(panel) {
       granted = false;
     }
     if (!granted) {
-      status.textContent = "Permission needed to refresh the saved sites.";
+      status.textContent = "Permission is needed to refresh the saved collections.";
       refreshAllButton.disabled = false;
       return;
     }
     let refreshed = 0;
-    for (const site of sites) {
+    for (const site of refreshable) {
       const controller = rowControllers.get(site.id);
       if (controller && await controller.refresh({ permissionGranted: true })) {
         refreshed += 1;
       }
     }
-    status.textContent = `Refreshed ${refreshed} of ${sites.length} saved site${sites.length === 1 ? "" : "s"}.`;
+    status.textContent = `Refreshed ${refreshed} of ${refreshable.length} collection${refreshable.length === 1 ? "" : "s"}.`;
     refreshAllButton.disabled = false;
   });
 
@@ -1050,6 +1158,7 @@ function renderSharePointSitesControl(panel) {
       renderRow(site, inventories[site.id]);
     }
     refreshAllButton.disabled = sites.length === 0;
+    exportAllButton.disabled = sites.length === 0;
   });
 }
 
@@ -1669,8 +1778,8 @@ async function initialize() {
   renderTagRulesControl(knowledgeBasePanel);
   renderPromptGeneratorControl(knowledgeBasePanel);
 
-  const sharepointPanel = panelsElement.querySelector('[data-section="sharepoint"]');
-  renderSharePointSitesControl(sharepointPanel);
+  const collectionsPanel = panelsElement.querySelector('[data-section="collections"]');
+  renderCollectionsControl(collectionsPanel);
 
   const advancedPanel = panelsElement.querySelector('[data-section="advanced"]');
   renderBackupControl(advancedPanel, { fillForm: fillFormAndSync });

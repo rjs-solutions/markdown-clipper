@@ -13,6 +13,10 @@ export function pageIdentity(page) {
   if (guid) {
     return `guid:${guid}`;
   }
+  const url = String(page && page.url || "").trim().toLowerCase();
+  if (url) {
+    return `url:${url}`;
+  }
   return `id:${String(page && page.id || "").trim().toLowerCase()}`;
 }
 

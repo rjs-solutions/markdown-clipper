@@ -9,10 +9,11 @@ import { appendClip, updateClip, findClipByUrl, listClips } from "../lib/clip-lo
 import { buildWikiIndexMarkdown } from "../lib/wiki-index.js";
 import { applyTheme } from "../lib/theme.js";
 import { applyTagRules, loadRules } from "../lib/tag-rules.js";
+import { openCollectionWindow } from "../lib/window-placement.js";
 
 const el = {
   optionsButton: document.getElementById("open-options"),
-  sharepointButton: document.getElementById("open-sharepoint"),
+  collectionsButton: document.getElementById("open-collections"),
   expand: document.getElementById("do-expand"),
   sidepanel: document.getElementById("do-sidepanel"),
   panel: document.getElementById("do-panel"),
@@ -126,7 +127,7 @@ async function initialize() {
 
 function wireEvents() {
   el.optionsButton.addEventListener("click", () => chrome.runtime.openOptionsPage());
-  el.sharepointButton.addEventListener("click", openSharePointSettings);
+  el.collectionsButton.addEventListener("click", openCollectionsSettings);
   el.expand.addEventListener("click", openEditor);
   el.download.addEventListener("click", () => run("download"));
   el.downloadLocation.addEventListener("click", () => run("save-as"));
@@ -743,9 +744,9 @@ function closeSelf() {
   }
 }
 
-async function openSharePointSettings() {
+async function openCollectionsSettings() {
   await chrome.tabs.create({
-    url: chrome.runtime.getURL("src/options/index.html?section=sharepoint")
+    url: chrome.runtime.getURL("src/options/index.html?section=collections")
   });
   if (!inIframe) {
     window.close();
@@ -754,13 +755,8 @@ async function openSharePointSettings() {
 
 async function exportWholeSite() {
   const seedUrl = tab && /^https?:\/\//i.test(tab.url || "") ? tab.url : "";
-  const suffix = seedUrl ? `?seed=${encodeURIComponent(seedUrl)}` : "";
-  await chrome.windows.create({
-    url: chrome.runtime.getURL(`src/crawl/index.html${suffix}`),
-    type: "popup",
-    width: 560,
-    height: 760
-  });
+  const query = seedUrl ? `seed=${encodeURIComponent(seedUrl)}` : "";
+  await openCollectionWindow(query);
   if (!inIframe) {
     window.close();
   }

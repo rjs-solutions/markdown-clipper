@@ -8,7 +8,7 @@ raw captures so a future release can reproduce the same framing.
 | File | Content | Size |
 | --- | --- | --- |
 | `screenshots/01-capture-1280x800.png` | Popup or in-page panel with metadata and primary actions | 1280×800 |
-| `screenshots/02-sharepoint-1280x800.png` | Saved SharePoint site, collapsed inventory, refresh controls | 1280×800 |
+| `screenshots/02-collections-1280x800.png` | Saved Collections, collapsed inventory, refresh and CSV controls | 1280×800 |
 | `screenshots/03-collection-1280x800.png` | Collection export setup or completed progress | 1280×800 |
 | `screenshots/04-vault-template-1280x800.png` | Knowledge-base/vault or template settings | 1280×800 |
 | `screenshots/05-editor-1280x800.png` | Full-page editor with Copy, Download, Save as, and Close | 1280×800 |

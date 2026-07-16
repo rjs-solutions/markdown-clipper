@@ -29,17 +29,21 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 - [ ] Merely opening the popup does not move the SharePoint page. Choosing Copy, Download,
       Open, or the editor shows a brief loading overlay, then restores the original position.
 
-### Saved SharePoint sites
+### Saved collections
 
-- [ ] Options → SharePoint → add a signed-in site and discover its pages; the permission prompt
+- [ ] Options → Collections → add a signed-in SharePoint site and discover its pages; the permission prompt
       appears once and the page count/list persists after closing and reopening Options.
 - [ ] Collapse and expand the saved site; the state persists after reopening Options.
 - [ ] Refresh the site without changes → the same page count, no duplicate rows, and “no changes.”
 - [ ] After a SharePoint page is created or edited, Refresh reports it as new or updated. Removing
-      a page reports it as removed. **Refresh all sites** processes every saved site once.
+      a page reports it as removed. **Refresh all collections** processes every refreshable collection once.
 - [ ] From a page in that saved site, **Export a collection** automatically selects the site and
-      loads its refreshed inventory as the URL list. The SharePoint shortcut opens Options directly
-      on the SharePoint section from the popup, in-page panel, and native side panel.
+      loads its refreshed inventory as the URL list. The Collections shortcut opens Options directly
+      on the Collections section from the popup, in-page panel, and native side panel.
+- [ ] Add a general website and confirm automatic sitemap or `llms.txt` discovery, or a clear
+      handoff to same-site crawl when neither exists.
+- [ ] Import TXT, CSV, and XLSX URL lists in Export Collection; save one as a custom collection.
+- [ ] Export one collection and all collections as CSV; verify labels, types, sources, and URLs.
 
 ## 3. Single-page capture — general webpage
 
@@ -48,7 +52,7 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 
 ## 4. Options, side panel, and templating
 
-- [ ] Options uses the General / Clipping / Knowledge base / SharePoint / Advanced left navigation; switching panes,
+- [ ] Options uses the General / Clipping / Knowledge base / Collections / Advanced left navigation; switching panes,
       Save, and Reset all work.
 - [ ] From the popup, **Open in side panel** opens a docked, full-width clip card; Copy,
       Download, and Open work there.
@@ -60,7 +64,7 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 
 ## 5. Site export
 
-- [ ] Run URL-list, sitemap, and same-host crawl modes once each.
+- [ ] Run URL-list, sitemap, `llms.txt`, and same-host crawl modes once each.
 - [ ] The host-access prompt appears when needed and does not repeat for an already-approved
       host.
 - [ ] ZIP output contains per-page Markdown plus `index.md`; aggregate output downloads when

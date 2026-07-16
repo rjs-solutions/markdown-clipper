@@ -1,0 +1,39 @@
+function normalizedBase(collection) {
+  return String(collection && (collection.webUrl || collection.url || collection.sourceUrl) || "").replace(/\/+$/, "");
+}
+
+export function matchSavedCollection(collections, pageUrl) {
+  const target = String(pageUrl || "");
+  return (Array.isArray(collections) ? collections : [])
+    .filter((collection) => {
+      const base = normalizedBase(collection);
+      return base && (target === base || target.startsWith(`${base}/`) || target.startsWith(`${base}?`));
+    })
+    .sort((a, b) => normalizedBase(b).length - normalizedBase(a).length)[0] || null;
+}
+
+export function collectionExportPreset(collection, inventory, { maxPages = 500 } = {}) {
+  const inventoryUrls = (Array.isArray(inventory && inventory.pages) ? inventory.pages : [])
+    .map((page) => String(page && page.url || "").trim());
+  const storedUrls = Array.isArray(collection && collection.urls) ? collection.urls : [];
+  const pageUrls = [...new Set([...inventoryUrls, ...storedUrls].filter((url) => /^https?:\/\//i.test(url)))];
+  const startUrl = normalizedBase(collection);
+
+  if (pageUrls.length) {
+    return { mode: "list", urls: pageUrls, startUrl, maxPages: Math.min(pageUrls.length, maxPages), inventoryCount: pageUrls.length };
+  }
+
+  const mode = collection && collection.sourceMode;
+  if (mode === "sitemap" || mode === "llms") {
+    return { mode, urls: [], startUrl: collection.sourceUrl || startUrl, maxPages: 100, inventoryCount: 0 };
+  }
+
+  return {
+    mode: "crawl",
+    urls: [],
+    startUrl,
+    maxPages: 25,
+    inventoryCount: 0,
+    includePatterns: collection && (collection.type === "sharepoint" || /\.sharepoint\.com\//i.test(startUrl)) ? "/SitePages/" : ""
+  };
+}

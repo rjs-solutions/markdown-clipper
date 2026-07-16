@@ -202,6 +202,50 @@ legend {
   gap: 8px;
 }
 
+.checkbox-field input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.switch-visual {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.switch-visual::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  left: 2px;
+  top: 2px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+.checkbox-field input:checked + .switch-visual {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.checkbox-field input:checked + .switch-visual::after {
+  transform: translateX(14px);
+  background: var(--accent);
+}
+
+.checkbox-field input:focus-visible + .switch-visual {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* Icon-segmented control (theme in the header, toolbar-icon action in
    Clipping > Behavior). */
 .segmented-field {
@@ -468,8 +512,7 @@ legend {
 
 /* Bespoke tag-rules editor (not schema-driven, see options.js). */
 .rules-field {
-  padding-top: 4px;
-  border-top: 1px solid var(--border);
+  padding-top: 0;
 }
 
 .rules-list {
@@ -493,10 +536,9 @@ legend {
   color: var(--text);
 }
 
-/* Bespoke SharePoint sites editor (not schema-driven, see options.js). */
+/* Bespoke saved Collections editor (not schema-driven, see options.js). */
 .sites-field {
-  padding-top: 4px;
-  border-top: 1px solid var(--border);
+  padding-top: 0;
 }
 
 .sites-list {
@@ -508,10 +550,13 @@ legend {
 .sites-toolbar {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .sites-add-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 130px 140px auto;
   gap: 8px;
 }
 
@@ -598,6 +643,24 @@ legend {
   display: flex;
   gap: 8px;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.collection-name-line {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.collection-type {
+  display: inline-flex;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 500;
 }
 
 /* Phase 1b discovery probe results, per site row. */
@@ -685,6 +748,15 @@ legend {
 }
 
 @media (max-width: 560px) {
+  .sites-add-row {
+    grid-template-columns: 1fr;
+  }
+
+  .site-row-top {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
   .prompt-filters-row {
     flex-direction: column;
     gap: 0;
@@ -700,8 +772,7 @@ legend {
 .backup-field,
 .activity-field,
 .reset-field {
-  padding-top: 4px;
-  border-top: 1px solid var(--border);
+  padding-top: 0;
 }
 
 .backup-label,

@@ -1,6 +1,6 @@
 # Browser verification checklist — feature/clipper-expansion
 
-Everything on this branch passes 309 automated tests and a static load-safety audit
+Everything on this branch passes 320 automated tests and a static load-safety audit
 (service worker has no load-fatal DOM globals, no `createObjectURL` in the worker tree,
 all manifest-referenced files exist). What remains can only be checked in a real Chrome
 because it needs the extension loaded, the File System Access API, real IndexedDB, or a
@@ -22,12 +22,14 @@ independent once the extension is loaded.
 - [ ] On a real Confluence page (Cloud `*.atlassian.net/wiki/...` or Server/DC) → popup mode auto-detects "Confluence"; captured body is the page, not nav/sidebar chrome.
 - [ ] On a **Jira** page (`*.atlassian.net` with NO `/wiki` path) → mode does NOT say Confluence. *(This is the false-positive guard.)*
 
-## 2a. Saved SharePoint site refresh
-- [ ] Options → SharePoint → add a site and discover pages. The inventory persists after Options is closed and reopened.
+## 2a. Saved Collections refresh and intake
+- [ ] Options → Collections → add a SharePoint site and discover pages. The inventory persists after Options is closed and reopened.
 - [ ] Collapse/expand the site row; the chevron and saved state agree after reopening Options.
 - [ ] Refresh with no SharePoint edits → “no changes,” the same page count, and no duplicates.
 - [ ] Edit or add a test page, refresh again → the page is labeled Updated or New. Refresh all handles every saved site sequentially.
-- [ ] On a page within the saved site, open **Export a collection** → the saved-site selector chooses that site and loads its refreshed page inventory. Its Manage button and the popup header SharePoint icon both open Options directly on SharePoint.
+- [ ] On a page within the saved site, open **Export a collection** → the selector chooses that collection and loads its refreshed page inventory. Its Manage button and the popup header Collections icon both open Options directly on Collections.
+- [ ] Add a website and confirm `llms.txt` or sitemap auto-discovery, with crawl offered as fallback.
+- [ ] Import a URL list from TXT, CSV, and XLSX. Save one custom collection, then export its CSV and the all-collections CSV.
 
 ## 3. Crawler v2 — durability  *(THE acceptance test; also the only check of IndexedDB body storage)*
 - [ ] Start a follow-links crawl (max pages ~15) on a site you may crawl; approve the permission prompt. Watch a few pages capture.
