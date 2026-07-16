@@ -6,7 +6,7 @@ A Chrome extension that turns web pages into clean Markdown — with first-class
 SharePoint. Copy, download, save into a local knowledge vault, or export whole sites while
 preserving their structure.
 
-> **Release candidate:** 1.1.0 on `feature/clipper-expansion`. The source passes 359 automated
+> **Release candidate:** 1.1.0 on `feature/clipper-expansion`. The source passes 360 automated
 > tests, lint, and release validation. Complete the
 > [browser verification checklist](docs/browser-verification-checklist.md) before publishing.
 > See [CHANGELOG.md](CHANGELOG.md) for the full release history.

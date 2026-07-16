@@ -46,6 +46,8 @@ All notable changes to Markdown Clipper are documented here. This project follow
 - Use secondary text sizing for Activity statistics so the optional summary stays visually quiet.
 - Add a reusable Chrome Web Store release kit with sanitized five-shot capture automation,
   branded screenshot framing, promo tiles, a GitHub social preview, and dashboard-ready copy.
+- Bring Export Collection into the main visual system with a compact branded header, flat
+  Settings-style sections, clearer input surfaces, icon-led source choices, and one close control.
 
 - Add an accessible split Download action: the main segment keeps one-click download/vault behavior, while a folder segment opens Chrome's native location chooser in the popup, side panel, in-page overlay, and full editor.
 

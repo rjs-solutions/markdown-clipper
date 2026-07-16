@@ -1,6 +1,6 @@
 # Browser verification checklist — feature/clipper-expansion
 
-Everything on this branch passes 359 automated tests and a static load-safety audit
+Everything on this branch passes 360 automated tests and a static load-safety audit
 (service worker has no load-fatal DOM globals, no `createObjectURL` in the worker tree,
 all manifest-referenced files exist). What remains can only be checked in a real Chrome
 because it needs the extension loaded, the File System Access API, real IndexedDB, or a

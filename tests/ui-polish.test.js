@@ -98,6 +98,25 @@ test("options and collection export use padded custom select chevrons", async ()
   }
 });
 
+test("Export Collection uses branded flat sections and icon-led source choices", async () => {
+  const html = await readFile(new URL("../extension/src/crawl/index.html", import.meta.url), "utf8");
+  const source = await readFile(new URL("../extension/src/crawl/crawl.js", import.meta.url), "utf8");
+  const css = await readFile(new URL("../extension/src/crawl/styles.css", import.meta.url), "utf8");
+  assert.doesNotMatch(html, /id="close-window"/);
+  assert.doesNotMatch(source, /close-window/);
+  assert.doesNotMatch(html, /radio-mark/);
+  assert.match(html, /class="form-panel"/);
+  assert.match(html, /id="source-heading" class="group-heading"/);
+  assert.match(html, /id="scope-heading" class="group-heading"/);
+  assert.match(html, /id="output-heading" class="group-heading"/);
+  assert.equal((html.match(/class="mode-icon"/g) || []).length, 4);
+  assert.match(html, />Import URL file</);
+  assert.match(html, />Save as collection</);
+  assert.match(html, />Export collection</);
+  assert.match(css, /\.modes label:has\(input:checked\)\s*\{[^}]*background:\s*var\(--surface-muted\);/s);
+  assert.match(css, /textarea,[\s\S]*?background-color:\s*var\(--bg\);/s);
+});
+
 test("every Theme option is outlined and the active option uses a filled surface", async () => {
   const css = await readFile(new URL("../extension/src/options/styles.css", import.meta.url), "utf8");
   assert.match(css, /\.segmented-field\[data-key="theme"\] \.segmented-option\s*\{[^}]*border-color:\s*var\(--border\);[^}]*background:\s*transparent;/s);

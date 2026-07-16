@@ -11,17 +11,16 @@
     <main class="crawl">
       <header class="app-header">
         <h1><img src="../../assets/icons/icon-48.png" alt=""> <span>Markdown Clipper</span><span class="header-subtitle">Export Collection</span></h1>
-        <button id="close-window" class="icon-button" type="button" title="Close" aria-label="Close Export Collection">
-          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"></path></svg>
-        </button>
       </header>
 
-      <p class="lead">Collect pages from a saved collection, file, sitemap, llms.txt, or same-site crawl.</p>
+      <p class="lead">Collect related pages, then export a Markdown snapshot or sync them into your local library.</p>
 
       <form id="crawl-form">
-        <details class="group" open>
-          <summary><span>Source</span><small>Choose pages to export</small></summary>
+        <div class="form-panel">
+        <section class="group" aria-labelledby="source-heading">
+          <h2 id="source-heading" class="group-heading">Source</h2>
           <div class="group-body">
+            <p class="section-description">Start from a saved collection or choose how pages should be discovered.</p>
             <div class="saved-collection-field">
               <label for="saved-collection">Saved collection</label>
               <div class="inline-controls">
@@ -34,20 +33,20 @@
             </div>
 
             <div class="modes" role="radiogroup" aria-label="Collection source">
-              <label><input type="radio" name="mode" value="list" checked><span class="radio-mark" aria-hidden="true"></span><span><strong>URL list</strong><small>Paste or import a file</small></span></label>
-              <label><input type="radio" name="mode" value="sitemap"><span class="radio-mark" aria-hidden="true"></span><span><strong>Sitemap</strong><small>XML or sitemap index</small></span></label>
-              <label><input type="radio" name="mode" value="llms"><span class="radio-mark" aria-hidden="true"></span><span><strong>llms.txt</strong><small>Markdown link inventory</small></span></label>
-              <label><input type="radio" name="mode" value="crawl"><span class="radio-mark" aria-hidden="true"></span><span><strong>Crawl</strong><small>Follow same-site links</small></span></label>
+              <label><input type="radio" name="mode" value="list" checked><span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"></path><path d="M4 6h.01M4 12h.01M4 18h.01"></path></svg></span><span class="mode-copy"><strong>URL list</strong><small>Paste or import a file</small></span></label>
+              <label><input type="radio" name="mode" value="sitemap"><span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4v5M5 20v-5h14v5M5 15v-3h14v3"></path><circle cx="12" cy="4" r="2"></circle><circle cx="5" cy="20" r="2"></circle><circle cx="19" cy="20" r="2"></circle></svg></span><span class="mode-copy"><strong>Sitemap</strong><small>XML or sitemap index</small></span></label>
+              <label><input type="radio" name="mode" value="llms"><span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"></path><path d="M15 3v5h4M9 12h7M9 16h7"></path></svg></span><span class="mode-copy"><strong>llms.txt</strong><small>Markdown link inventory</small></span></label>
+              <label><input type="radio" name="mode" value="crawl"><span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="m15 9-2 4-4 2 2-4z"></path></svg></span><span class="mode-copy"><strong>Crawl</strong><small>Follow same-site links</small></span></label>
             </div>
 
             <div class="field" data-mode="list">
               <div class="field-heading"><label for="urls">Page URLs</label><span id="url-count" class="count">0 URLs</span></div>
-              <textarea id="urls" rows="4" spellcheck="false" placeholder="Paste one or more URLs, or import TXT, CSV, or XLSX."></textarea>
+              <textarea id="urls" rows="3" spellcheck="false" placeholder="Paste one or more URLs, or import TXT, CSV, or XLSX."></textarea>
               <div class="import-row">
                 <input id="url-file" type="file" accept=".txt,.csv,.xlsx,text/plain,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
-                <button id="import-file" type="button">Import TXT, CSV, or XLSX</button>
+                <button id="import-file" class="button-with-icon" type="button" title="Import URLs from a TXT, CSV, or XLSX file"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4"></path><path d="M4 17v3h16v-3"></path></svg><span>Import URL file</span></button>
                 <input id="collection-name" type="text" placeholder="Collection name" aria-label="Collection name">
-                <button id="save-collection" type="button">Save collection</button>
+                <button id="save-collection" class="button-with-icon" type="button" title="Save these URLs as a reusable collection"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 4h12l2 2v14H5z"></path><path d="M8 4v6h8V4M8 20v-6h8v6"></path></svg><span>Save as collection</span></button>
               </div>
               <p id="import-status" class="hint" role="status" aria-live="polite"></p>
             </div>
@@ -57,35 +56,38 @@
               <input id="start" type="url" placeholder="https://example.com/">
             </label>
           </div>
-        </details>
+        </section>
 
-        <details class="group">
-          <summary><span>Scope &amp; discovery</span><small>Limits and crawl rules</small></summary>
+        <section class="group" aria-labelledby="scope-heading">
+          <h2 id="scope-heading" class="group-heading">Scope &amp; discovery</h2>
           <div class="group-body compact-grid">
+            <p class="section-description field-wide">Set a page limit. Same-site crawls also support depth and optional path rules.</p>
             <label class="field"><span>Maximum pages</span><input id="max-pages" type="number" min="1" max="500" step="1" value="25"></label>
             <label class="field" data-mode="crawl"><span>Maximum link depth</span><input id="max-depth" type="number" min="0" max="20" step="1" value="5"></label>
             <label class="field field-wide" data-mode="crawl"><span>Include patterns <small>(regex, optional)</small></span><textarea id="include-patterns" rows="2" spellcheck="false" placeholder="/SitePages/"></textarea></label>
             <label class="field field-wide" data-mode="crawl"><span>Exclude patterns <small>(regex, optional)</small></span><textarea id="exclude-patterns" rows="2" spellcheck="false" placeholder="/_layouts/"></textarea></label>
             <p class="hint field-wide" data-mode="crawl">Crawls stay on the starting host. Use URL list for intentional multi-host exports.</p>
           </div>
-        </details>
+        </section>
 
-        <details class="group">
-          <summary><span>Output</span><small>Download a snapshot or sync normal files locally</small></summary>
-          <div class="group-body">
+        <section class="group" aria-labelledby="output-heading">
+          <h2 id="output-heading" class="group-heading">Output</h2>
+          <div class="group-body output-grid">
+            <p class="section-description field-wide">Download a portable snapshot or sync normal Markdown files into the Local Collections Library.</p>
             <label class="field"><span>Destination</span><select id="destination"><option value="download">Download snapshot</option><option value="library">Local Collections Library</option></select></label>
             <label class="field"><span>Output format</span><select id="output"><option value="zip">ZIP: page files + index.md</option><option value="aggregate">Single aggregate Markdown file</option><option value="both">Both formats</option></select></label>
-            <p id="output-hint" class="hint">Snapshots are saved through Chrome Downloads.</p>
+            <p id="output-hint" class="hint field-wide">Snapshots are saved through Chrome Downloads.</p>
           </div>
-        </details>
+        </section>
 
         <details id="progress-section" class="group progress-group" hidden>
           <summary><span>Progress</span><small id="progress-summary">Preparing…</small></summary>
-          <div class="group-body"><p id="summary" class="summary" role="status" aria-live="polite"></p><ol id="log" class="log" aria-label="Progress log"></ol></div>
+          <div class="progress-body"><p id="summary" class="summary" role="status" aria-live="polite"></p><ol id="log" class="log" aria-label="Progress log"></ol></div>
         </details>
+        </div>
 
         <div class="buttons">
-          <button id="start-btn" type="submit">Start export</button>
+          <button id="start-btn" class="button-with-icon" type="submit"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4"></path><path d="M4 17v3h16v-3"></path></svg><span>Export collection</span></button>
           <button id="pause-btn" type="button" disabled>Pause</button>
           <button id="resume-btn" type="button" disabled>Resume</button>
           <button id="stop-btn" type="button" disabled>Cancel</button>

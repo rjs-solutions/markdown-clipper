@@ -70,7 +70,6 @@ async function initialize() {
     startInput.value = seed;
   }
 
-  document.getElementById("close-window").addEventListener("click", () => window.close());
   manageCollectionsButton.addEventListener("click", openCollectionsSettings);
   savedCollectionSelect.addEventListener("change", () => applySavedCollection(savedCollectionSelect.value));
   importFileButton.addEventListener("click", () => fileInput.click());
@@ -113,7 +112,7 @@ async function initialize() {
     }
   }
   if (syncQueue.length && !handledExisting) {
-    startButton.textContent = `Sync all (${syncQueue.length})`;
+    setPrimaryActionLabel(`Sync all (${syncQueue.length})`);
     await start();
   }
 }
@@ -229,6 +228,17 @@ function reflectDestination() {
   outputHint.textContent = library
     ? "Writes page files, index.md, collection.json, and a sync report into this collection's local folder."
     : "Snapshots are saved through Chrome Downloads.";
+  updatePrimaryActionLabel();
+}
+
+function updatePrimaryActionLabel() {
+  if (syncQueue.length) return;
+  setPrimaryActionLabel(destinationSelect.value === "library" ? "Sync collection" : "Export collection");
+}
+
+function setPrimaryActionLabel(text) {
+  const label = startButton.querySelector("span");
+  if (label) label.textContent = text;
 }
 
 function selectedCollection() {
@@ -417,11 +427,12 @@ async function exportJob(job) {
       if (syncQueue[0] === job.options.collectionId) syncQueue.shift();
       await saveSyncQueue(syncQueue);
       if (syncQueue.length) {
-        startButton.textContent = `Sync all (${syncQueue.length} remaining)`;
+        setPrimaryActionLabel(`Sync all (${syncQueue.length} remaining)`);
         await populateSavedCollections("", syncQueue[0]);
         await start();
       } else {
-        startButton.textContent = "Start export";
+        syncQueue = [];
+        updatePrimaryActionLabel();
         await markCollectionSyncCompleted();
         try { await chrome.action.setBadgeText({ text: "" }); } catch { /* Optional badge surface. */ }
       }
