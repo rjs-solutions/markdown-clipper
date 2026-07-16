@@ -59,7 +59,6 @@ extension/
     │   ├── collections.js     versioned saved-collection model + legacy migration
     │   ├── collection-csv.js  collection/inventory CSV export
     │   ├── collection-library.js incremental local sync + catalog/manifest/review
-    │   ├── collection-backup.js portable collection-definition import/export
     │   ├── collection-health.js last crawl results for explicit page review
     │   ├── collection-schedule.js optional sync-due reminder state
     │   ├── sharepoint-inventory.js local page snapshots + refresh reconciliation

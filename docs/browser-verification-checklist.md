@@ -39,8 +39,7 @@ independent once the extension is loaded.
       should show a `SYNC` toolbar badge only when due; they do not run unattended.
 - [ ] Confirm the library root contains `_collections.md` and `_collections.json`; a second sync
       with no source edits reports unchanged files rather than rewriting them.
-- [ ] Export collection definitions to JSON, import them again, and confirm existing definitions
-      update without duplicates. For a multi-host custom list, confirm page files are grouped by host.
+- [ ] For a multi-host custom list, confirm page files are grouped by host.
 - [ ] After a failed capture or removed source page, confirm Page health marks it red. Open failed
       URLs for review, and explicitly Archive or Delete stale local files.
 

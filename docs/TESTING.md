@@ -54,8 +54,6 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 - [ ] Use **Sync all collections**, close/reopen mid-batch, and confirm already completed
       collections do not repeat. Verify the optional weekly/monthly reminder badge without
       expecting unattended folder writes.
-- [ ] Export and re-import portable collection definitions JSON; existing collections merge
-      without duplicates and retain discovery and local-path settings.
 - [ ] Remove a page from the source and sync again. The sync report lists it, but the prior local
       file remains until the user explicitly archives or deletes it. Failed pages appear red and
       can be opened for review; failed custom-list URLs can also be removed from the definition.

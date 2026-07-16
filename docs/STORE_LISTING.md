@@ -46,12 +46,11 @@ Export and revisit collections:
   same-site crawl, or saved collection.
 - Save SharePoint, Confluence, website, and custom URL-list collections; refresh inventories to
   identify new, updated, unchanged, and removed pages without duplicates.
-- Export one collection inventory or all saved collection metadata as CSV.
+- Export one collection's URL inventory as CSV or TXT, or all saved URL inventories as CSV.
 - Choose a Local Collections Library and sync every saved collection into a separate folder of
   directly readable Markdown files, with an index, machine-readable manifest, root catalog, and
   safe page-health/change review. Incremental sync avoids rewriting unchanged files.
-- Back up or share complete collection definitions as portable JSON, and optionally enable a
-  weekly or monthly reminder when a manual Sync all is due.
+- Optionally enable a weekly or monthly reminder when a manual Sync all is due.
 - Export structure-preserving Markdown files with `index.md` in a ZIP, one aggregate Markdown
   document, or both.
 - Pause and resume longer exports; progress survives service-worker suspension.
@@ -71,7 +70,7 @@ It does not monitor ordinary browsing.
 
 Markdown Clipper 1.1 adds a movable in-page clip panel, configurable toolbar behavior, direct
 vault saving, generalized Collections with refresh/change detection, URL-list imports, and direct
-local library sync and review, portable collection definitions, selection clipping, richer site
+local library sync and review, selection clipping, richer site
 adapters, and split Copy and Download controls.
 
 ## Single purpose

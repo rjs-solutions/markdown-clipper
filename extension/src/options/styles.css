@@ -561,6 +561,9 @@ legend {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
 }
 
 .sites-toolbar {
@@ -607,10 +610,9 @@ legend {
 .collection-library-field {
   display: grid;
   gap: 8px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface-muted);
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .collection-library-field .help-text,
@@ -739,6 +741,21 @@ legend {
   gap: 4px;
   flex-shrink: 0;
   align-items: center;
+}
+
+.site-actions .collection-icon-action {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  border-color: transparent;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.site-actions .collection-icon-action:hover,
+.site-actions .collection-action-menu[open] > summary {
+  border-color: transparent;
+  background: var(--accent-soft);
 }
 
 .collection-name-line {

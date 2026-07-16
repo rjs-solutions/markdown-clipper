@@ -33,7 +33,6 @@ import { downloadText } from "../lib/download.js";
 import { collectionsToCsv } from "../lib/collection-csv.js";
 import { openCollectionWindow } from "../lib/window-placement.js";
 import { collectionLibraryPath, loadCollectionLibraryManifest, normalizeLibraryPath, reviewRemovedCollectionFile, uniqueCollectionLibraryPath } from "../lib/collection-library.js";
-import { exportCollectionDefinitions, mergeCollectionDefinitions, parseCollectionDefinitions } from "../lib/collection-backup.js";
 import { loadCollectionSchedule, saveCollectionSchedule } from "../lib/collection-schedule.js";
 import { loadCollectionHealth, removeCollectionHealth } from "../lib/collection-health.js";
 import { slugify } from "../lib/slug.js";
@@ -885,31 +884,9 @@ function renderCollectionsControl(panel) {
   const importListButton = document.createElement("button");
   importListButton.type = "button";
   configureLabeledButton(importListButton, "Import URL list…", ACTION_ICONS.upload, "Create a collection from URLs in a TXT, CSV, or XLSX file");
-  const importDefinitionsButton = document.createElement("button");
-  importDefinitionsButton.type = "button";
-  configureCollectionIcon(
-    importDefinitionsButton,
-    "Restore collections from a JSON backup",
-    '<path d="M6 3h8l4 4v14H6Z"></path><path d="M13 3v5h5M12 17V10m-3 3 3-3 3 3"></path>'
-  );
-  const importDefinitionsInput = document.createElement("input");
-  importDefinitionsInput.type = "file";
-  importDefinitionsInput.accept = ".json,application/json";
-  importDefinitionsInput.hidden = true;
-  const exportDefinitionsButton = document.createElement("button");
-  exportDefinitionsButton.type = "button";
-  configureCollectionIcon(
-    exportDefinitionsButton,
-    "Back up all collection settings as JSON",
-    '<path d="M6 3h8l4 4v14H6Z"></path><path d="M13 3v5h5M12 10v7m-3-3 3 3 3-3"></path>'
-  );
   const exportAllButton = document.createElement("button");
   exportAllButton.type = "button";
-  configureCollectionIcon(
-    exportAllButton,
-    "Export every collection URL inventory as CSV",
-    '<path d="M4 5h16v14H4Z"></path><path d="M4 10h16M9 5v14M15 12v6m-3-3 3 3 3-3"></path>'
-  );
+  configureLabeledButton(exportAllButton, "Export all URLs", ACTION_ICONS.download, "Download every saved collection's URL inventory as one CSV file");
   const refreshAllButton = document.createElement("button");
   refreshAllButton.type = "button";
   configureCollectionIcon(
@@ -920,7 +897,7 @@ function renderCollectionsControl(panel) {
   refreshAllButton.disabled = true;
   const utilityActions = document.createElement("div");
   utilityActions.className = "collection-utility-actions";
-  utilityActions.append(importDefinitionsButton, exportDefinitionsButton, exportAllButton, refreshAllButton);
+  utilityActions.append(exportAllButton, refreshAllButton);
   toolbar.append(importListButton, utilityActions);
 
   const list = document.createElement("div");
@@ -963,13 +940,13 @@ function renderCollectionsControl(panel) {
   const libraryHeading = document.createElement("h3");
   libraryHeading.className = "group-heading collection-library-heading";
   libraryHeading.textContent = "Local Collections Library";
-  wrapper.append(libraryHeading);
-
-  const libraryField = document.createElement("div");
-  libraryField.className = "collection-library-field";
   const libraryDescription = document.createElement("p");
   libraryDescription.className = "help-text";
   libraryDescription.textContent = "Choose one local root folder. Each saved collection syncs to its own subfolder as ordinary Markdown files for LLMs, search, backup, or sharing.";
+  wrapper.append(libraryHeading, libraryDescription);
+
+  const libraryField = document.createElement("div");
+  libraryField.className = "collection-library-field";
   const libraryStatus = document.createElement("p");
   libraryStatus.className = "sites-status";
   const libraryButtons = document.createElement("div");
@@ -987,7 +964,7 @@ function renderCollectionsControl(panel) {
   syncAllLibraryButton.type = "button";
   configureLabeledButton(syncAllLibraryButton, "Sync all collections", ACTION_ICONS.sync, "Update every saved collection in the Local Collections Library");
   libraryButtons.append(chooseLibraryButton, regrantLibraryButton, forgetLibraryButton, syncAllLibraryButton);
-  libraryField.append(libraryDescription, libraryStatus, libraryButtons);
+  libraryField.append(libraryStatus, libraryButtons);
   const scheduleRow = document.createElement("label");
   scheduleRow.className = "collection-schedule-row";
   const scheduleLabel = document.createElement("span");
@@ -1003,7 +980,10 @@ function renderCollectionsControl(panel) {
   const savedHeading = document.createElement("h3");
   savedHeading.className = "group-heading collection-saved-heading";
   savedHeading.textContent = "Saved collections";
-  wrapper.append(savedHeading, toolbar, importDefinitionsInput, list);
+  const savedDescription = document.createElement("p");
+  savedDescription.className = "help-text";
+  savedDescription.textContent = "Refresh, sync, export, or remove collections you have already saved.";
+  wrapper.append(savedHeading, savedDescription, toolbar, list);
 
   panel.append(wrapper);
 
@@ -1148,10 +1128,6 @@ function renderCollectionsControl(panel) {
       '<path d="M20 12a8 8 0 1 1-2.34-5.66"></path><path d="M20 4v6h-6"></path>'
     );
 
-    const runButton = document.createElement("button");
-    runButton.type = "button";
-    configureCollectionIcon(runButton, `Export ${site.name} to Markdown`, '<path d="M6 3h8l4 4v14H6Z"></path><path d="M13 3v5h5M9 14h6"></path><path d="m12 11 3 3-3 3"></path>');
-
     const syncButton = document.createElement("button");
     syncButton.type = "button";
     configureCollectionIcon(syncButton, `Sync ${site.name} to its local library folder`, '<path d="M4 7h12a4 4 0 0 1 4 4v1"></path><path d="m17 9 3 3 3-3"></path><path d="M20 17H8a4 4 0 0 1-4-4v-1"></path><path d="m7 15-3-3-3 3"></path>');
@@ -1160,25 +1136,28 @@ function renderCollectionsControl(panel) {
     inventoryExport.className = "collection-action-menu";
     const inventorySummary = document.createElement("summary");
     inventorySummary.className = "collection-icon-action";
-    inventorySummary.title = `Export ${site.name} URL inventory`;
-    inventorySummary.setAttribute("aria-label", `Export ${site.name} URL inventory`);
+    inventorySummary.title = `Export ${site.name}`;
+    inventorySummary.setAttribute("aria-label", `Export ${site.name}`);
     inventorySummary.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4Z"></path><path d="M4 10h16M9 5v14"></path><path d="m14 14 2 2 4-4"></path></svg>';
     const inventoryMenu = document.createElement("div");
     inventoryMenu.className = "collection-action-menu-popover";
+    const markdownButton = document.createElement("button");
+    markdownButton.type = "button";
+    markdownButton.textContent = "Markdown snapshot";
     const csvButton = document.createElement("button");
     csvButton.type = "button";
     csvButton.textContent = "CSV spreadsheet";
     const txtButton = document.createElement("button");
     txtButton.type = "button";
     txtButton.textContent = "TXT URL list";
-    inventoryMenu.append(csvButton, txtButton);
+    inventoryMenu.append(markdownButton, csvButton, txtButton);
     inventoryExport.append(inventorySummary, inventoryMenu);
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
     configureCollectionIcon(removeButton, `Remove ${site.name}`, '<path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"></path>', "is-danger");
 
-    actions.append(discoverButton, syncButton, runButton, inventoryExport, removeButton);
+    actions.append(discoverButton, syncButton, inventoryExport, removeButton);
     top.append(toggleButton, info, actions);
     row.append(top);
 
@@ -1256,7 +1235,10 @@ function renderCollectionsControl(panel) {
       status.textContent = `Removed ${removedName} from saved collections. Any local library files were left in place.`;
     });
 
-    runButton.addEventListener("click", () => openCollectionWindow(`collection=${encodeURIComponent(site.id)}`));
+    markdownButton.addEventListener("click", () => {
+      inventoryExport.open = false;
+      openCollectionWindow(`collection=${encodeURIComponent(site.id)}`);
+    });
     syncButton.addEventListener("click", () => {
       if (!libraryHandle) {
         discoverStatus.textContent = "Choose a Local Collections Library folder above before syncing.";
@@ -1456,28 +1438,6 @@ function renderCollectionsControl(panel) {
   }
 
   importListButton.addEventListener("click", () => openCollectionWindow("mode=list&save=1"));
-
-  importDefinitionsButton.addEventListener("click", () => importDefinitionsInput.click());
-  importDefinitionsInput.addEventListener("change", async () => {
-    const file = importDefinitionsInput.files && importDefinitionsInput.files[0];
-    if (!file) return;
-    try {
-      const imported = parseCollectionDefinitions(await file.text());
-      const result = mergeCollectionDefinitions(sites, imported);
-      sites = result.collections;
-      await saveSites(sites);
-      await renderSavedRows();
-      status.textContent = `Restored collections: ${result.added} added, ${result.updated} updated.`;
-    } catch (error) {
-      status.textContent = error && error.message ? error.message : String(error);
-    } finally {
-      importDefinitionsInput.value = "";
-    }
-  });
-
-  exportDefinitionsButton.addEventListener("click", async () => {
-    await downloadText(exportCollectionDefinitions(sites), "markdown-clipper-collections.json", { type: "application/json;charset=utf-8" });
-  });
 
   exportAllButton.addEventListener("click", async () => {
     const inventories = await loadSiteInventories(sites.map((site) => site.id));

@@ -30,14 +30,24 @@ test("Collections uses a second-line intake row and compact CSV or TXT export", 
   assert.match(css, /\.site-row-top\s*\{[^}]*grid-template-columns:\s*28px minmax\(0, 1fr\) auto;/s);
 });
 
-test("Saved Collections keeps URL import labeled and groups secondary utilities as icons", async () => {
+test("Saved Collections keeps primary utilities labeled and only Refresh all as an icon", async () => {
   const source = await readFile(new URL("../extension/src/options/options.js", import.meta.url), "utf8");
   assert.match(source, /configureLabeledButton\(importListButton, "Import URL list…", ACTION_ICONS\.upload/);
-  assert.match(source, /"Restore collections from a JSON backup"/);
-  assert.match(source, /"Back up all collection settings as JSON"/);
-  assert.match(source, /"Export every collection URL inventory as CSV"/);
+  assert.match(source, /configureLabeledButton\(exportAllButton, "Export all URLs", ACTION_ICONS\.download/);
   assert.match(source, /"Refresh all saved collection inventories"/);
   assert.match(source, /utilityActions\.className = "collection-utility-actions"/);
+  assert.doesNotMatch(source, /importDefinitionsButton|exportDefinitionsButton/);
+});
+
+test("saved collection rows use quiet actions and one combined export menu", async () => {
+  const source = await readFile(new URL("../extension/src/options/options.js", import.meta.url), "utf8");
+  const css = await readFile(new URL("../extension/src/options/styles.css", import.meta.url), "utf8");
+  assert.match(source, /markdownButton\.textContent = "Markdown snapshot"/);
+  assert.match(source, /inventoryMenu\.append\(markdownButton, csvButton, txtButton\)/);
+  assert.match(source, /actions\.append\(discoverButton, syncButton, inventoryExport, removeButton\)/);
+  assert.match(css, /\.site-actions \.collection-icon-action\s*\{[^}]*border-color:\s*transparent;[^}]*background:\s*transparent;/s);
+  assert.match(css, /\.sites-list\s*\{[^}]*border-top:\s*1px solid var\(--border\);/s);
+  assert.match(css, /\.collection-library-field\s*\{[^}]*border:\s*0;[^}]*background:\s*transparent;/s);
 });
 
 test("settings actions use clear labels, meaningful icons, and explanatory hover text", async () => {
