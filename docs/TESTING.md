@@ -48,7 +48,7 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 
 ## 4. Options, side panel, and templating
 
-- [ ] Options uses the General / Capture / Output / Template left navigation; switching panes,
+- [ ] Options uses the General / Clipping / Knowledge base / SharePoint / Advanced left navigation; switching panes,
       Save, and Reset all work.
 - [ ] From the popup, **Open in side panel** opens a docked, full-width clip card; Copy,
       Download, and Open work there.

@@ -14,6 +14,6 @@ test("collection export exposes saved SharePoint sites and management", async ()
   const source = await readFile(new URL("../extension/src/crawl/crawl.js", import.meta.url), "utf8");
   assert.match(html, /id="saved-site"/);
   assert.match(html, /id="manage-sites"[^>]*title="Manage SharePoint sites"/);
-  assert.match(source, /loadSiteInventory/);
+  assert.match(source, /loadSiteInventories/);
   assert.match(source, /savedSiteExportPreset/);
 });

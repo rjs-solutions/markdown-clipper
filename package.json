@@ -7,6 +7,9 @@
   "scripts": {
     "test": "node --test",
     "lint": "eslint extension/src",
+    "check": "npm test && npm run lint",
+    "release:check": "npm run check && node scripts/validate-release.mjs",
+    "store:check": "node scripts/validate-store-assets.mjs",
     "vendor": "node scripts/vendor-libs.mjs",
     "icons": "node scripts/generate-icons.mjs"
   },

@@ -41,13 +41,9 @@
   "host_permissions": [
     "https://cdn.syndication.twimg.com/*"
   ],
-  "optional_permissions": [
-    "tabs"
-  ],
   "optional_host_permissions": [
     "http://*/*",
-    "https://*/*",
-    "https://*.sharepoint.com/*"
+    "https://*/*"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
@@ -56,7 +52,11 @@
     {
       "resources": [
         "src/content/*.js",
-        "src/lib/*.js",
+        "src/lib/markdown.js",
+        "src/lib/settings.js",
+        "src/lib/settings-schema.js",
+        "src/lib/template.js",
+        "src/lib/tweet.js",
         "src/vendor/*.js",
         "src/popup/index.html"
       ],

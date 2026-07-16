@@ -1,6 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { pageIdentity, reconcileSitePages } from "../extension/src/lib/sharepoint-inventory.js";
+import {
+  loadSiteInventories,
+  pageIdentity,
+  reconcileSitePages
+} from "../extension/src/lib/sharepoint-inventory.js";
 
 const home = {
   id: 1,
@@ -49,4 +53,32 @@ test("reconcileSitePages tolerates empty and malformed page lists", () => {
     removedCount: 0,
     changeTypes: {}
   });
+});
+
+test("loadSiteInventories reads the shared map once and normalizes missing sites", async () => {
+  let reads = 0;
+  const previousChrome = globalThis.chrome;
+  globalThis.chrome = {
+    storage: {
+      local: {
+        async get() {
+          reads += 1;
+          return {
+            sharepointSiteInventories: {
+              saved: { pages: [home, { ...home }], lastRefreshedAt: 123 }
+            }
+          };
+        }
+      }
+    }
+  };
+  try {
+    const result = await loadSiteInventories(["saved", "missing"]);
+    assert.equal(reads, 1);
+    assert.equal(result.saved.pages.length, 1);
+    assert.equal(result.saved.lastRefreshedAt, 123);
+    assert.deepEqual(result.missing, { pages: [], lastRefreshedAt: null });
+  } finally {
+    globalThis.chrome = previousChrome;
+  }
 });

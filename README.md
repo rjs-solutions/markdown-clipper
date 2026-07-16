@@ -5,7 +5,7 @@ SharePoint. Copy, download, save into a local knowledge vault, or export whole s
 preserving their structure.
 
 > **Status:** 1.1.0 plus the `feature/clipper-expansion` preview. The preview is covered by
-> 308 automated tests but still requires the
+> 309 automated tests but still requires the
 > [browser verification checklist](docs/browser-verification-checklist.md). Load the unpacked
 > `extension/` before testing. See
 > [CHANGELOG.md](CHANGELOG.md) for details.
@@ -52,6 +52,8 @@ preserving their structure.
 | --- | --- |
 | `npm test` | Run the `node --test` suite. |
 | `npm run lint` | Lint `extension/src` with ESLint. |
+| `npm run release:check` | Run tests, lint, and manifest/release validation. |
+| `npm run store:check` | Validate final Chrome Web Store asset names and dimensions. |
 | `npm run vendor` | Regenerate `extension/src/vendor/` from `node_modules`. |
 
 The extension ships from [`extension/`](extension/); everything else (tests, lint, scripts) is

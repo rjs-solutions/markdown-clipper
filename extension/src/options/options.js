@@ -12,6 +12,7 @@ import { parseSharePointSite } from "../lib/sharepoint-site.js";
 import { discoverSitePages } from "../lib/sharepoint-fetch.js";
 import {
   loadSiteInventory,
+  loadSiteInventories,
   saveSiteInventory,
   removeSiteInventory,
   reconcileSitePages,
@@ -764,7 +765,7 @@ function renderTagRulesControl(panel) {
 // and auto-saves on every edit. Page inventories are kept separately in
 // chrome.storage.local (sharepoint-inventory.js) so large sites do not consume
 // the sync quota. Discovery/refresh opens the site in a background tab and
-// reads its Site Pages list; capture/sync wiring comes later.
+// reads its Site Pages list; collection export can consume that inventory.
 function renderSharePointSitesControl(panel) {
   if (!panel) {
     return;
@@ -826,7 +827,7 @@ function renderSharePointSitesControl(panel) {
     });
   }
 
-  function renderRow(site) {
+  function renderRow(site, initialInventory = null) {
     const row = document.createElement("div");
     row.className = "site-row";
 
@@ -961,7 +962,7 @@ function renderSharePointSitesControl(panel) {
 
     const controller = { refresh, discoverButton };
     rowControllers.set(site.id, controller);
-    loadSiteInventory(site.id).then((inventory) => {
+    Promise.resolve(initialInventory || loadSiteInventory(site.id)).then((inventory) => {
       if (inventory.lastRefreshedAt) {
         discoverButton.textContent = "Refresh";
         discoverStatus.textContent = `Last checked ${formatDateTime(inventory.lastRefreshedAt)} · ${inventory.pages.length} page${inventory.pages.length === 1 ? "" : "s"}.`;
@@ -1042,10 +1043,11 @@ function renderSharePointSitesControl(panel) {
     refreshAllButton.disabled = false;
   });
 
-  loadSites().then((loaded) => {
+  loadSites().then(async (loaded) => {
     sites = loaded;
+    const inventories = await loadSiteInventories(sites.map((site) => site.id));
     for (const site of sites) {
-      renderRow(site);
+      renderRow(site, inventories[site.id]);
     }
     refreshAllButton.disabled = sites.length === 0;
   });

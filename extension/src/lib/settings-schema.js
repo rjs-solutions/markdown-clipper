@@ -110,7 +110,7 @@ export const SETTINGS_SCHEMA = [
             label: "Complete SharePoint capture",
             type: "toggle",
             default: true,
-            help: "Loads virtualized content when you export."
+            help: "Loads virtualized SharePoint sections only when you copy, save, edit, or export; opening the preview stays immediate."
           },
           {
             key: "maxScrollMs",

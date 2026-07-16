@@ -77,10 +77,21 @@ async function loadInventories() {
 
 export async function loadSiteInventory(siteId) {
   const inventories = await loadInventories();
-  const inventory = inventories[siteId];
+  return normalizeInventory(inventories[siteId]);
+}
+
+function normalizeInventory(inventory) {
   return inventory && typeof inventory === "object"
     ? { pages: dedupePages(inventory.pages), lastRefreshedAt: inventory.lastRefreshedAt || null }
     : { pages: [], lastRefreshedAt: null };
+}
+
+// Read the shared local-storage object once when a UI needs several saved
+// sites. This avoids re-reading the full (potentially large) inventories map
+// once per row on Options and the collection-export page.
+export async function loadSiteInventories(siteIds = []) {
+  const inventories = await loadInventories();
+  return Object.fromEntries(siteIds.map((siteId) => [siteId, normalizeInventory(inventories[siteId])]));
 }
 
 export async function saveSiteInventory(siteId, inventory) {

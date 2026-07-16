@@ -2,71 +2,94 @@
 
 _Last updated: July 15, 2026_
 
-Markdown Clipper ("the extension") converts web pages — including SharePoint pages — into
-Markdown. This policy explains what the extension does and does not do with data.
+Markdown Clipper converts user-selected web pages, including SharePoint pages, into Markdown.
+This policy describes the website data it processes, what it stores, and the one limited network
+request it may make.
 
 ## Summary
 
-Markdown Clipper does **not** collect, store, sell, or transmit your personal information.
-All processing happens locally in your browser. There is no external backend and no analytics.
+Markdown Clipper has no developer-operated backend, account, advertising, or analytics. The
+developer does not receive or have access to captured pages, browsing activity, settings, files,
+or export results. Page conversion and export happen in the browser.
 
-## What the extension accesses
+## Data the extension processes
 
-The extension only acts when you click it and choose an action (copy, download, open, or start
-a site export). When you do, it reads the content of the page (or pages) you asked it to
-capture — text, headings, links, images, tables, and page metadata such as title, author, and
-dates — and converts that content to Markdown on your device.
+The extension acts only after a user invokes a capture, selection clip, saved SharePoint-site
+refresh, or collection export. It may process:
 
-- **Single-page capture** uses Chrome's `activeTab` permission: the extension can read the
-  current tab only after you invoke it, and only that tab.
-- **Site export ("spider")** visits the pages you point it at within a site by opening them in
-  Chrome tabs and reading the rendered content. This requires host access, which the extension
-  requests **only when you start an export**, scoped to the site you are exporting.
+- the URL, rendered website content, headings, links, images, tables, selected text, and page
+  metadata such as title, author, and dates for the page or pages the user chose;
+- the URLs discovered during a user-started sitemap, same-site crawl, or SharePoint discovery;
+- the user's capture settings, templates, tag rules, saved SharePoint site definitions, and
+  chosen vault folder; and
+- generated Markdown, filenames, crawl progress, and local clip-history metadata needed to
+  complete or update the requested export.
+
+With the user's existing Chrome session, selected pages can include content behind a login. The
+extension does not request the `cookies` permission and does not read, display, export, or store
+cookies or passwords.
+
+## Local and browser storage
+
+- Settings, templates, tag rules, and saved SharePoint site definitions use
+  `chrome.storage.sync`. Chrome may sync this configuration between browsers signed into the
+  same Chrome profile, according to the user's Chrome sync settings.
+- SharePoint page inventories, crawl job metadata, the active crawl reference, and in-page panel
+  geometry use extension-local browser storage.
+- Crawl page bodies, clip-history records, and the chosen vault directory handle use IndexedDB
+  in the extension's browser profile. A chosen directory handle is only used to write files after
+  browser permission is granted.
+- Short-lived selection and editor handoff data use session storage.
+- Markdown files and ZIP archives are written only when the user chooses Download, Save as, or a
+  configured vault action. Those files remain in the destination the user selected.
+
+The extension provides reset, removal, and activity controls for its stored configuration and
+work history. Uninstalling the extension removes browser-managed extension storage; exported
+files are ordinary user files and are not deleted automatically.
+
+## Network access and sharing
+
+- Single-page capture uses temporary `activeTab` access after the user invokes the extension.
+- Collection export and saved SharePoint discovery request access at runtime to the exact site
+  origin selected by the user. The extension may open background tabs for those pages and uses
+  the user's existing browser session. It does not monitor unrelated browsing or run persistently
+  on websites.
+- When the user clips an X/Twitter status, the extension sends only that public status ID to
+  X's public syndication endpoint to obtain a cleaner public representation. It does not send
+  other captured page content. Protected or unavailable posts fall back to normal page capture.
+
+No captured content, settings, files, or browsing activity is sold, used for advertising or
+credit decisions, or transferred to the developer or data brokers. All executable code and
+libraries are packaged with the extension; it does not execute remote code.
 
 ## Permissions
 
-The extension has one narrow install-time host permission for X/Twitter's public syndication
-endpoint. Broader website access is optional and requested only after you act:
+- **`activeTab`** — access the current page after a user invokes a capture.
+- **`scripting`** — run the on-demand collector in a user-selected page or export tab.
+- **`downloads`** — save a requested Markdown file or collection archive.
+- **`storage`** — keep settings, saved-site definitions, inventories, and resumable work state.
+- **`sidePanel`** — show the clip card in Chrome's side panel when the user chooses that surface.
+- **`alarms`** — wake the service worker to resume a user-started crawl after Chrome suspends it.
+- **`contextMenus`** — provide explicit page and selection clipping commands.
+- **`https://cdn.syndication.twimg.com/*`** — retrieve a public X/Twitter status when the user
+  clips it.
+- **Optional `http://*/*` and `https://*/*` host access** — establish the maximum runtime scope;
+  the extension requests the specific origin needed for a user-selected collection export or
+  saved SharePoint-site refresh.
 
-- **`activeTab`** — read the current page when you invoke the extension to capture it.
-- **`scripting`** — inject the collector that reads the page DOM and builds the Markdown.
-- **`downloads`** — save the Markdown file (or site export archive) you requested.
-- **`storage`** — remember your settings and templates on your device.
-- **`sidePanel`** — display the clip card beside the page when you explicitly open the side
-  panel.
-- **Optional `tabs`** — open and close the background tabs required for a site export.
-- **`https://cdn.syndication.twimg.com/*`** — retrieve the public JSON representation of an
-  X/Twitter status when you clip that status. The request contains the public status ID; protected
-  or unavailable posts fall back to normal page capture.
-- **Optional host access (`http://*/*`, `https://*/*`)** — requested only when you start a
-  site export, so the extension can open and read the pages within the site you chose. It does
-  not monitor your browsing and does not run automatically on websites.
+## Limited Use
 
-With your existing Chrome session, captured pages can include content behind your login (for
-example, your organization's SharePoint). That content is converted to Markdown locally and is
-never transmitted anywhere.
+Markdown Clipper's use of information obtained from Chrome APIs complies with the Chrome Web
+Store User Data Policy, including the Limited Use requirements. Data is used only to provide or
+improve the extension's user-facing clipping and export purpose. It is not transferred except as
+described above where necessary to provide a feature the user requested, and humans do not read
+the user's captured data.
 
-## Data storage and sharing
-
-- **Captured Markdown** stays in your browser until you copy it, download it, or open it in a
-  tab. It is never sent anywhere by the extension.
-- **Preferences and templates** are saved in your browser's storage on your device.
-- The extension does **not** read, display, export, or store cookies.
-- When clipping an X/Twitter status, the extension requests that status from X's public
-  syndication endpoint. It does not send captured page content to that endpoint.
-- The extension does **not** use remote code; all libraries are bundled locally.
-- The extension does **not** sell or transfer user data to third parties.
-
-## Your responsibility
+## User responsibility
 
 Use Markdown Clipper only on pages and sites you are authorized to access and capture.
 
-## Changes to this policy
+## Changes and contact
 
-If this policy changes, the updated version will be posted at the same location with a new
-"Last updated" date.
-
-## Contact
-
-Questions about this policy can be directed to the developer through the Chrome Web Store
-listing's support contact.
+Material changes will be posted at this location with an updated date. Questions can be directed
+to the developer through the Chrome Web Store listing's support contact.

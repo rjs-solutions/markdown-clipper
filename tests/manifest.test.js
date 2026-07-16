@@ -20,14 +20,12 @@ test("host permissions stay limited to the one owner-approved exception", () => 
   // opt-in step. This is a deliberate, owner-approved exception -- any other
   // host_permissions entry is unapproved scope creep and should fail here.
   assert.deepEqual(manifest.host_permissions, ["https://cdn.syndication.twimg.com/*"]);
-  // optional_host_permissions are requested at runtime, never at install. The
-  // *.sharepoint.com entry is an owner-approved narrowing so the SharePoint
-  // sites feature can prompt for just SharePoint instead of the broad
-  // https://*/*. Any entry beyond this approved set is scope creep.
+  // optional_host_permissions are requested at runtime, never at install.
+  // Call sites request the exact origin chosen by the user; these two
+  // declaration patterns only establish the maximum runtime scope.
   assert.deepEqual(manifest.optional_host_permissions, [
     "http://*/*",
-    "https://*/*",
-    "https://*.sharepoint.com/*"
+    "https://*/*"
   ]);
 });
 
@@ -36,7 +34,7 @@ test("base permissions are exactly the expected minimal set", () => {
     [...manifest.permissions].sort(),
     ["activeTab", "alarms", "contextMenus", "downloads", "scripting", "sidePanel", "storage"].sort()
   );
-  assert.deepEqual(manifest.optional_permissions, ["tabs"]);
+  assert.ok(!("optional_permissions" in manifest));
 });
 
 test("the icon always has a safe default_popup fallback, even if the worker never runs", () => {
@@ -56,8 +54,13 @@ test("release versions match and the side-panel entry is packaged", () => {
 test("collector modules are web-accessible for dynamic-import injection", () => {
   const resources = manifest.web_accessible_resources.flatMap((entry) => entry.resources);
   assert.ok(resources.includes("src/content/*.js"));
-  assert.ok(resources.includes("src/lib/*.js"));
+  assert.ok(resources.includes("src/lib/markdown.js"));
+  assert.ok(resources.includes("src/lib/settings.js"));
+  assert.ok(resources.includes("src/lib/settings-schema.js"));
+  assert.ok(resources.includes("src/lib/template.js"));
+  assert.ok(resources.includes("src/lib/tweet.js"));
   assert.ok(resources.includes("src/vendor/*.js"));
+  assert.ok(!resources.includes("src/lib/*.js"));
 });
 
 test("the popup page is web-accessible so the overlay panel can iframe it", () => {

@@ -1,7 +1,7 @@
 # Architecture &amp; Build Report
 
 Markdown Clipper — graduated from the `SharePoint Markdown Exporter` alpha (0.1.0) to a
-general web→Markdown clipper at **1.0.0**. This document is the design overview and the record
+general web→Markdown clipper, now on the **1.1.0 expansion preview**. This document is the design overview and the record
 of what was built. For setup see [DEVELOPMENT.md](DEVELOPMENT.md); for the test gate see
 [TESTING.md](TESTING.md).
 
@@ -99,7 +99,8 @@ X/Twitter's public syndication endpoint for clean status capture. The spider
 can't use `activeTab` (it visits pages you aren't on, and SharePoint is JS-rendered so a raw
 `fetch` returns an empty shell), so it requests **optional host permissions for the specific
 site, only when you press Start**. `downloads` and `storage` are the only other permissions;
-`tabs` is optional (managing the background tabs during a crawl).
+Chrome's Tabs API is used to create, observe, and close those export tabs, but the sensitive
+`tabs` permission is not requested. The exact runtime host grant supplies page access.
 
 ## Templating (Obsidian-inspired)
 
@@ -112,15 +113,28 @@ flat map.
 
 ## Testing
 
-`npm test` runs `node --test` (308 cases), including Markdown conversion, settings, capture
+`npm test` runs `node --test` (309 cases), including Markdown conversion, settings, capture
 adapters, SharePoint discovery/inventory reconciliation, crawling, templating, the vault, and
 DOM integration coverage in jsdom. Browser-only behavior on real authenticated pages is covered
 by the manual checklist in [TESTING.md](TESTING.md).
 
 ## Status &amp; remaining gates
 
-Code-complete at 1.0.0; lint clean; 53 tests green. **Not yet verified in a real browser** —
-load the unpacked `extension/` and walk [TESTING.md](TESTING.md) before publishing. Packaging
-(`scripts/package-extension.ps1`) and the store listing ([STORE_LISTING.md](STORE_LISTING.md),
-[PUBLISHING.md](PUBLISHING.md)) are ready. Icons are still the alpha art — a refresh is the last
-cosmetic task.
+The expansion branch is code-complete and automated checks are green, but it still needs the
+full authenticated browser pass in [browser-verification-checklist.md](browser-verification-checklist.md).
+`npm run release:check` validates code and package metadata; `npm run store:check` remains the
+final gate after real listing screenshots and the promotional tile are produced.
+
+## Maintainability notes
+
+The plain-module approach remains a good fit: it keeps the shipped source reviewable, avoids
+remote code and build-time indirection, and lets browser pages and tests share the same logic.
+Two controllers are now natural future extraction points rather than release blockers:
+`options/options.js` can split into vault, tag-rule, SharePoint, prompt, and maintenance controls;
+`popup/popup.js` can split surface coordination from capture/action handling.
+
+The movable in-page panel intentionally embeds the packaged popup as a web-accessible extension
+page. Only the collector modules and the popup's required dependency chain are exposed, and the
+host accepts panel messages only from the iframe it created. A future Shadow DOM or unprivileged
+iframe architecture could reduce that public extension-page surface further, but would be a
+larger cross-surface rewrite and is not required for the current store gate.

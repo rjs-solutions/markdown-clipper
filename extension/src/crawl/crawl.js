@@ -15,7 +15,7 @@ import { slugify } from "../lib/slug.js";
 import { applyTheme } from "../lib/theme.js";
 import { loadJob, saveJob, getJobBodies } from "../lib/crawl-state.js";
 import { loadSites } from "../lib/sharepoint-sites.js";
-import { loadSiteInventory } from "../lib/sharepoint-inventory.js";
+import { loadSiteInventories } from "../lib/sharepoint-inventory.js";
 import { matchSavedSite, savedSiteExportPreset } from "../lib/sharepoint-export.js";
 
 const CURRENT_JOB_KEY = "crawl-ui-current-job";
@@ -93,10 +93,11 @@ async function initialize() {
 
 async function populateSavedSites(seed) {
   const sites = await loadSites();
-  savedSiteEntries = await Promise.all(sites.map(async (site) => ({
+  const inventories = await loadSiteInventories(sites.map((site) => site.id));
+  savedSiteEntries = sites.map((site) => ({
     site,
-    inventory: await loadSiteInventory(site.id)
-  })));
+    inventory: inventories[site.id]
+  }));
   for (const entry of savedSiteEntries) {
     const option = document.createElement("option");
     option.value = entry.site.id;
