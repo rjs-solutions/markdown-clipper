@@ -37,7 +37,7 @@ import { loadCollectionSchedule, saveCollectionSchedule } from "../lib/collectio
 import { loadCollectionHealth, removeCollectionHealth } from "../lib/collection-health.js";
 import { slugify } from "../lib/slug.js";
 import { listClips } from "../lib/clip-log.js";
-import { TASK_PRESETS, buildPrompt } from "../lib/prompt-templates.js";
+import { TASK_PRESETS, buildPrompt, recordsFromCollectionManifest } from "../lib/prompt-templates.js";
 
 const loadSites = loadCollections;
 const saveSites = saveCollections;
@@ -1681,6 +1681,23 @@ export function renderPromptGeneratorControl(panel) {
   const generator = document.createElement("div");
   generator.className = "prompt-generator";
 
+  const scopeField = document.createElement("div");
+  scopeField.className = "field";
+  const scopeLabel = document.createElement("label");
+  scopeLabel.setAttribute("for", "prompt-scope");
+  scopeLabel.textContent = "Clip scope";
+  const scopeSelect = document.createElement("select");
+  scopeSelect.id = "prompt-scope";
+  scopeSelect.setAttribute("aria-describedby", "prompt-scope-description");
+  const historyScopeOption = document.createElement("option");
+  historyScopeOption.value = "history";
+  historyScopeOption.textContent = "All saved clips — Clip history across sites";
+  scopeSelect.append(historyScopeOption);
+  const scopeDescription = document.createElement("p");
+  scopeDescription.className = "help-text";
+  scopeDescription.id = "prompt-scope-description";
+  scopeField.append(scopeLabel, scopeSelect, scopeDescription);
+
   const taskField = document.createElement("div");
   taskField.className = "field";
   const taskLabel = document.createElement("label");
@@ -1775,10 +1792,12 @@ export function renderPromptGeneratorControl(panel) {
   emptyState.textContent = "No clips yet. Clip some pages, then generate a prompt.";
   emptyState.hidden = true;
 
-  generator.append(taskField, filtersRow, buttons, summary, outputField, emptyState);
+  generator.append(scopeField, taskField, filtersRow, buttons, summary, outputField, emptyState);
   panel.append(generator);
 
   let vaultName = null;
+  let collectionLibraryName = null;
+  const collectionScopes = new Map();
 
   function updateTaskDescription() {
     const preset = TASK_PRESETS.find((item) => item.id === taskSelect.value);
@@ -1802,13 +1821,42 @@ export function renderPromptGeneratorControl(panel) {
     return filters;
   }
 
+  function updateScopeControls() {
+    const collectionScope = collectionScopes.get(scopeSelect.value);
+    typeField.hidden = Boolean(collectionScope);
+    sinceField.hidden = Boolean(collectionScope);
+    scopeDescription.textContent = collectionScope
+      ? `Uses the last locally synced Markdown files for ${collectionScope.collection.name}.`
+      : "Uses individual clips recorded in clip history; downloaded files may be in different folders.";
+  }
+
+  function recordsForCollectionScope(scope) {
+    const records = recordsFromCollectionManifest(scope.collection, scope.manifest);
+    const limit = Number(limitInput.value);
+    return limitInput.value && Number.isFinite(limit) && limit > 0 ? records.slice(0, limit) : records;
+  }
+
   async function generate() {
     generateButton.disabled = true;
     copyButton.disabled = true;
-    summary.textContent = "Loading clip log…";
+    summary.textContent = "Loading selected clips…";
     try {
-      const records = await listClips(currentFilters());
-      const prompt = buildPrompt(taskSelect.value, records, { vaultName });
+      const collectionScope = collectionScopes.get(scopeSelect.value);
+      const records = collectionScope ? recordsForCollectionScope(collectionScope) : await listClips(currentFilters());
+      const promptOptions = collectionScope
+        ? {
+            sourceLabel: `Saved collection — ${collectionScope.collection.name}`,
+            folderReference: `${collectionLibraryName}/${collectionScope.manifest.folder}`,
+            folderNote: "The first segment is the selected Collections Library folder name; Chrome does not expose its full operating-system path."
+          }
+        : {
+            vaultName,
+            sourceLabel: "All saved clips — Clip history across sites",
+            folderNote: vaultName
+              ? "Chrome exposes only the selected clip-folder name. Clip-history entries saved with Download may be elsewhere."
+              : "No common clip folder is configured; these records may refer to files in different download locations."
+          };
+      const prompt = buildPrompt(taskSelect.value, records, promptOptions);
       output.value = prompt;
       summary.textContent = `${records.length} item${records.length === 1 ? "" : "s"} included`;
       copyButton.disabled = false;
@@ -1822,6 +1870,10 @@ export function renderPromptGeneratorControl(panel) {
   }
 
   generateButton.addEventListener("click", generate);
+  scopeSelect.addEventListener("change", () => {
+    updateScopeControls();
+    generate();
+  });
 
   copyButton.addEventListener("click", async () => {
     try {
@@ -1851,6 +1903,29 @@ export function renderPromptGeneratorControl(panel) {
       console.error("Markdown Clipper could not read the clip log:", error);
     }
 
+    try {
+      const [collections, libraryHandle] = await Promise.all([loadSites(), loadCollectionLibraryHandle()]);
+      collectionLibraryName = libraryHandle && libraryHandle.name ? libraryHandle.name : "Collections Library";
+      if (collections.length) {
+        const group = document.createElement("optgroup");
+        group.label = "Saved collections";
+        for (const collection of collections) {
+          const manifest = libraryHandle ? await loadCollectionLibraryManifest(libraryHandle, collection) : null;
+          const option = document.createElement("option");
+          option.value = `collection:${collection.id}`;
+          option.textContent = manifest && manifest.files?.length
+            ? `${collection.name} — ${manifest.files.length} synced page${manifest.files.length === 1 ? "" : "s"}`
+            : `${collection.name} — Sync locally to enable`;
+          option.disabled = !manifest || !manifest.files?.length;
+          if (!option.disabled) collectionScopes.set(option.value, { collection, manifest });
+          group.append(option);
+        }
+        scopeSelect.append(group);
+      }
+    } catch (error) {
+      console.error("Markdown Clipper could not load collection prompt scopes:", error);
+    }
+
     // Content types come from the clips actually in the vault (rather than a
     // hardcoded list) so the filter always matches what's really there,
     // including modes like "tweet"/"full"/"selection" that the old
@@ -1863,7 +1938,12 @@ export function renderPromptGeneratorControl(panel) {
       typeSelect.append(option);
     }
 
-    if (!allClips.length) {
+    if (!allClips.length && collectionScopes.size) {
+      scopeSelect.value = collectionScopes.keys().next().value;
+    }
+    updateScopeControls();
+
+    if (!allClips.length && !collectionScopes.size) {
       generateButton.disabled = true;
       copyButton.disabled = true;
       summary.hidden = true;

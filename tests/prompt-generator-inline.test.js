@@ -140,6 +140,13 @@ function installDom() {
   globalThis.window = dom.window;
   globalThis.Event = dom.window.Event;
   globalThis.document = dom.window.document;
+  globalThis.chrome = {
+    storage: {
+      sync: {
+        get: async (defaults) => defaults
+      }
+    }
+  };
   return dom;
 }
 
@@ -221,7 +228,9 @@ test("non-empty vault: content-type filter is derived dynamically from the clips
   assert.match(summary.textContent, /3 items included/);
 
   const output = panel.querySelector("#prompt-output");
-  assert.match(output.value, /VAULT: your clip folder/);
+  assert.match(output.value, /SCOPE: All saved clips/);
+  assert.match(output.value, /SOURCE FOLDER: Not configured/);
+  assert.match(output.value, /ask the user to attach the files or grant access/i);
 });
 
 test("non-empty vault: Generate re-runs with the selected filters and Copy writes to the clipboard", async () => {
@@ -303,6 +312,7 @@ test("the generator's controls never register as schema controls (Save button st
 
   assert.equal(controls.has("prompt-task"), false);
   assert.equal(controls.has("prompt-type-filter"), false);
+  assert.equal(controls.has("prompt-scope"), false);
 
   const generateButton = knowledgeBasePanel.querySelector(".prompt-buttons button");
   assert.equal(generateButton.getAttribute("type"), "button");

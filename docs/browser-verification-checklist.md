@@ -64,7 +64,11 @@ independent once the extension is loaded.
 
 ## 6. Prompt generator
 - [ ] Popup → "Generate LLM prompt…" → a new tab opens, no console errors.
-- [ ] "N items included" matches your clip log. For each preset (Synthesis / Comparison / Gap), Generate → the textarea shows a goal line, a `VAULT:` line, an inventory table of your clips, and the task instruction.
+- [ ] "N items included" matches the selected scope. Generate once for All saved clips and once
+      for a locally synced collection. The prompt identifies the scope and browser-visible folder,
+      asks for folder access when needed, includes an inventory table, and uses the selected task.
+- [ ] Task choices read Aggregate — Group clips into themes, Timeline — Trace changes over time,
+      and Coverage review — Find gaps and duplicates.
 - [ ] Copy → paste elsewhere → matches the textarea.
 - [ ] Change the type filter / since date / limit → the count and rows change.
 - [ ] With an empty clip log → the page shows an "empty vault" prompt, not a broken table.
@@ -94,7 +98,7 @@ independent once the extension is loaded.
       “Choose download location” on hover and opens Chrome's Save As dialog.
 - [ ] On a modern SharePoint Site Page with a Page details description, confirm Description is
       prefilled even when no ordinary meta-description tag exists.
-- [ ] Settings > Knowledge Base has an **Open prompt generator** button (the popup no longer does).
+- [ ] Settings > Knowledge Base contains the inline **Prompt generator**; the popup does not duplicate it.
 - [ ] Open in Page: panel is noticeably bigger, the bottom-right **resize grip is visible** and drags; Description/Markdown fields are taller than in the plain popup.
 - [ ] Side panel: an **X** closes it (only shown there).
 - [ ] Settings > General > **Toolbar icon click**: set to Popup / Side panel / Open in page, save, click the icon each time — behavior matches. Fresh reload still opens the popup before the worker adjusts.

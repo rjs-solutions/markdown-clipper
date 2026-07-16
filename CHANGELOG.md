@@ -39,6 +39,8 @@ All notable changes to Markdown Clipper are documented here. This project follow
   each section before scanning its controls.
 - Emphasize Add & discover only when collection input is ready, replace the sync reminder select
   with an accessible three-choice control, and group Saved Collections utilities without dead space.
+- Make Prompt Generator folder references honest about Chrome's path limits, add all-history or
+  locally synced collection scope, request LLM file access when needed, and clarify task labels.
 
 - Add an accessible split Download action: the main segment keeps one-click download/vault behavior, while a folder segment opens Chrome's native location chooser in the popup, side panel, in-page overlay, and full editor.
 

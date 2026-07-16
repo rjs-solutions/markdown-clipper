@@ -5,8 +5,8 @@
 // and tells the LLM to read the actual files itself.
 //
 // The File System Access API only exposes a directory NAME, never a full OS
-// path, so the prompt refers to the vault by name (or a generic phrase when
-// no vault is configured) plus the relative paths already in the inventory.
+// path. Callers therefore supply an honest source label and folder reference
+// rather than implying that the extension knows an absolute filesystem path.
 
 function escapeCell(value) {
   return String(value == null ? "" : value)
@@ -33,24 +33,24 @@ function formatClipped(clipped) {
 export const TASK_PRESETS = [
   {
     id: "synthesis",
-    label: "Synthesis",
-    description: "Group sources into themes and summarize key points.",
+    label: "Aggregate — Group clips into themes",
+    description: "Organize the selected clips into themes and summarize their key points.",
     taskText:
       "Group the clipped sources into 3 to 5 themes. For each theme: name the sources, " +
       "summarize the key points, and cite the source_url from each file's frontmatter."
   },
   {
     id: "comparison",
-    label: "Comparison",
-    description: "Build a timeline of how the topic evolved across the capture window.",
+    label: "Timeline — Trace changes over time",
+    description: "Show how the topic evolved across the selected capture window.",
     taskText:
       "Build a timeline of how the topic evolved across the capture window using each " +
       "file's clipped date. Note what changed and cite the source_url for each shift."
   },
   {
     id: "gap",
-    label: "Gap / duplication",
-    description: "Find near-duplicate content and coverage gaps.",
+    label: "Coverage review — Find gaps and duplicates",
+    description: "Identify overlapping, contradictory, or missing coverage.",
     taskText:
       "Find near-duplicate or contradictory content across the sources (especially pages " +
       "from the same site). List coverage gaps. Cite source_url for every claim."
@@ -74,18 +74,44 @@ function buildInventoryTable(records) {
   return lines.join("\n");
 }
 
+export function recordsFromCollectionManifest(collection, manifest) {
+  const files = Array.isArray(manifest && manifest.files) ? manifest.files : [];
+  return files.map((file) => ({
+    title: file.title || file.path || "Untitled page",
+    path: file.path || "",
+    url: file.url || "",
+    clipped: "",
+    type: collection && collection.type || "collection",
+    tags: []
+  }));
+}
+
 // records: clip-log entries, in the order they should be numbered (callers
 // typically pass listClips()'s own newest-first order).
-export function buildPrompt(taskId, records = [], { vaultName } = {}) {
+export function buildPrompt(taskId, records = [], {
+  vaultName,
+  sourceLabel = "All saved clips",
+  folderReference,
+  folderNote
+} = {}) {
   const preset = findPreset(taskId) || findPreset(DEFAULT_TASK_ID);
-  const vaultLabel = vaultName || "your clip folder";
+  const folderLabel = folderReference || vaultName || "Not configured; clips may be in different download locations";
+  const locationNote = folderNote || (vaultName
+    ? "Chrome exposes the selected folder name, not its full operating-system path."
+    : "The extension does not know a common folder for these clip-history records.");
   const list = Array.isArray(records) ? records : [];
 
   const lines = [
-    "You are analyzing a local knowledge vault of clipped pages. Read the actual files " +
+    "You are analyzing local Markdown files created from clipped pages. Read the actual files " +
       "on disk before answering; the table below is an index, not a substitute for the content.",
     "",
-    `VAULT: ${vaultLabel}`,
+    `SCOPE: ${sourceLabel}`,
+    `SOURCE FOLDER: ${folderLabel}`,
+    `LOCATION NOTE: ${locationNote}`,
+    "If the files or source folder are not already available in your environment, ask the user " +
+      "to attach the files or grant access to that folder before analyzing them. Do not claim to " +
+      "have read files you cannot access.",
+    "",
     "Read the files listed below, starting with index.md if present, and use each file's " +
       "frontmatter source_url when citing a source.",
     ""
@@ -93,7 +119,7 @@ export function buildPrompt(taskId, records = [], { vaultName } = {}) {
 
   if (!list.length) {
     lines.push(
-      "The vault is empty. No files have been clipped yet, so there is nothing to analyze. " +
+      "The selected scope is empty. No files are available to analyze. " +
         "Tell the user to clip some pages first."
     );
     return lines.join("\n");

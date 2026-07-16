@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { TASK_PRESETS, buildPrompt } from "../extension/src/lib/prompt-templates.js";
+import { TASK_PRESETS, buildPrompt, recordsFromCollectionManifest } from "../extension/src/lib/prompt-templates.js";
 
 const RECORDS = [
   {
@@ -21,10 +21,18 @@ const RECORDS = [
   }
 ];
 
-test("TASK_PRESETS lists exactly synthesis, comparison, and gap in order", () => {
+test("TASK_PRESETS lists the stable ids with clear category-and-purpose labels", () => {
   assert.deepEqual(
     TASK_PRESETS.map((preset) => preset.id),
     ["synthesis", "comparison", "gap"]
+  );
+  assert.deepEqual(
+    TASK_PRESETS.map((preset) => preset.label),
+    [
+      "Aggregate — Group clips into themes",
+      "Timeline — Trace changes over time",
+      "Coverage review — Find gaps and duplicates"
+    ]
   );
 });
 
@@ -34,7 +42,8 @@ for (const preset of ["synthesis", "comparison", "gap"]) {
     const expectedTaskText = TASK_PRESETS.find((p) => p.id === preset).taskText;
     assert.ok(prompt.includes(expectedTaskText), "expected the preset's task text");
     assert.match(prompt, /\| # \| title \| file \| source_url \| clipped \| tags \|/);
-    assert.ok(prompt.includes("VAULT: MyVault"));
+    assert.ok(prompt.includes("SOURCE FOLDER: MyVault"));
+    assert.match(prompt, /ask the user to attach the files or grant access/i);
     assert.match(prompt, /source_url/);
     assert.match(prompt, /does NOT cover/);
   });
@@ -50,9 +59,40 @@ test("buildPrompt inventory table has one row per record, newest-first order pre
   assert.equal(rows.length, 2, "expected exactly one data row per record");
 });
 
-test("buildPrompt without a vaultName falls back to a generic phrase", () => {
+test("buildPrompt without a known folder says the location is not configured", () => {
   const prompt = buildPrompt("synthesis", RECORDS);
-  assert.ok(prompt.includes("VAULT: your clip folder"));
+  assert.match(prompt, /SOURCE FOLDER: Not configured/);
+  assert.match(prompt, /different download locations/);
+});
+
+test("buildPrompt describes a collection scope and its relative library folder honestly", () => {
+  const prompt = buildPrompt("synthesis", RECORDS, {
+    sourceLabel: "Saved collection — CMC AI Central",
+    folderReference: "Markdown Library/sharepoint/cmc-ai-central",
+    folderNote: "Chrome does not expose the full operating-system path."
+  });
+  assert.match(prompt, /SCOPE: Saved collection — CMC AI Central/);
+  assert.match(prompt, /SOURCE FOLDER: Markdown Library\/sharepoint\/cmc-ai-central/);
+  assert.match(prompt, /Chrome does not expose the full operating-system path/);
+});
+
+test("recordsFromCollectionManifest builds file inventory relative to the selected collection folder without inventing clip dates", () => {
+  const records = recordsFromCollectionManifest(
+    { type: "sharepoint" },
+    {
+      folder: "sharepoint/cmc-ai-central",
+      syncedAt: "2026-07-16T12:00:00.000Z",
+      files: [{ path: "SitePages/Home.md", title: "Home", url: "https://example.com/home" }]
+    }
+  );
+  assert.deepEqual(records, [{
+    title: "Home",
+    path: "SitePages/Home.md",
+    url: "https://example.com/home",
+    clipped: "",
+    type: "sharepoint",
+    tags: []
+  }]);
 });
 
 test("buildPrompt escapes an adversarial title (pipe + newline) and tag (pipe) without fracturing the table", () => {
@@ -76,7 +116,7 @@ test("buildPrompt escapes an adversarial title (pipe + newline) and tag (pipe) w
 
 test("buildPrompt with empty records produces an empty-vault prompt, no malformed table", () => {
   const prompt = buildPrompt("synthesis", []);
-  assert.match(prompt, /vault is empty/i);
+  assert.match(prompt, /selected scope is empty/i);
   assert.equal(prompt.includes("| # | title"), false, "no inventory table when there are no records");
 });
 

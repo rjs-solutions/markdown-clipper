@@ -65,11 +65,12 @@ path plus prompt presets covers the same need.
 
 ## Prompt generator
 
-Emits a paste-able prompt: role/goal + an **inline inventory table built from the clip
-log** + the vault path + "read the files, start with the index" + a structured task with
-source_url citations. The "can't read disk" limit is moot because the inventory is
-supplied inline. Task presets: **synthesis** (themes across all), **comparison** (how a
-topic shifted across the capture window), **gap/duplication** (esp. SharePoint estates).
+Emits a paste-able prompt: role/goal + an **inline inventory table built from clip history
+or a synced collection manifest** + the browser-visible folder name and relative path +
+"read the files, start with the index" + a structured task with source_url citations. Because
+Chrome cannot expose an absolute operating-system path, prompts tell the LLM to request the
+folder or files when they are not already available. Task presets use plain-language labels for
+theme aggregation, change timelines, and coverage review.
 
 ## SharePoint: stay on DOM scraping — do NOT make Graph API core
 
@@ -102,7 +103,7 @@ giving any MCP client (Claude Desktop, Cowork, ChatGPT connectors) access to the
    downloads fallback) + a Vault settings section. *(speced first)*
 2. **Wiki preset** — content-type frontmatter + auto `description` + `index.md`
    generation (per-crawl now; living cross-clip once vault mode exists).
-3. **Prompt generator** — inventory-from-log + vault path + task presets.
+3. **Prompt generator** — clip-history or synced-collection inventory + honest folder reference + task presets.
 4. **MCP server** — read-the-vault, then clip-public-URL.
 
 ## Clip routing — tags over folders (decided 2026-07-15)
