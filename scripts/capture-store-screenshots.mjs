@@ -104,18 +104,17 @@ try {
 
   const options = await context.newPage();
   await options.goto(`chrome-extension://${extensionId}/src/options/index.html?section=collections`, { waitUntil: "domcontentloaded" });
-  await options.locator('[data-section="collections"]').waitFor({ state: "visible" });
+  await options.locator('section[data-section="collections"]').waitFor({ state: "visible" });
   await capture(options, "02-collections-raw.png");
 
   const crawl = await context.newPage();
   await crawl.goto(`chrome-extension://${extensionId}/src/crawl/index.html?mode=list`, { waitUntil: "domcontentloaded" });
   await crawl.locator("#urls").fill([`${origin}/`, `${origin}/guide/getting-started`, `${origin}/guide/collections`].join("\n"));
   await crawl.locator("#collection-name").fill("Documentation starter set");
-  await crawl.locator("#output").selectOption("both");
   await capture(crawl, "03-collection-capture-raw.png");
 
   await options.goto(`chrome-extension://${extensionId}/src/options/index.html?section=knowledgeBase`, { waitUntil: "domcontentloaded" });
-  await options.locator('[data-section="knowledgeBase"]').waitFor({ state: "visible" });
+  await options.locator('section[data-section="knowledgeBase"]').waitFor({ state: "visible" });
   await capture(options, "04-knowledge-base-raw.png");
 
   const editor = await context.newPage();

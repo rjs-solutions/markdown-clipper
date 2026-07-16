@@ -5,6 +5,8 @@ All notable changes to Markdown Clipper are documented here. This project follow
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-07-16
+
 - Generalize saved SharePoint sites into **Collections** for SharePoint, Confluence, websites,
   and custom URL lists, with automatic classification and sitemap, `llms.txt`, crawl, or manual
   discovery modes.
@@ -65,8 +67,6 @@ All notable changes to Markdown Clipper are documented here. This project follow
 ### Fixed
 - Golden Markdown tests now compare normalized newlines, so the full suite is stable on Windows
   and Unix checkouts. In-page panel control messages are accepted only from its extension iframe.
-
-## [1.1.0] — 2026-07-13
 
 ### Changed
 - Renamed the product from **Markdown Web Clipper** to **Markdown Clipper** ("web" was

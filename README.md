@@ -3,11 +3,11 @@
 ![Markdown Clipper — capture the web as clean Markdown](docs/brand/social-preview-1280x640.png)
 
 A Chrome extension that turns web pages into clean Markdown — with first-class support for
-SharePoint. Copy, download, save into a local knowledge vault, or export whole sites while
-preserving their structure.
+SharePoint. Copy, download, save into a local knowledge vault, or capture reusable collections
+while preserving their structure.
 
-> **Release candidate:** 1.1.0 on `feature/clipper-expansion`. The source passes 362 automated
-> tests, lint, and release validation. Complete the
+> **Release candidate:** 1.1.0. The automated suite, lint, release validation, and store-asset
+> validation pass. Complete the
 > [browser verification checklist](docs/browser-verification-checklist.md) before publishing.
 > See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 
@@ -38,8 +38,8 @@ preserving their structure.
   inspired by the Obsidian Web Clipper.
 - **Capture a collection** — bring in URLs from TXT, CSV, or XLSX; discover them from a sitemap,
   `llms.txt`, saved collection, or same-site crawl; then save the collection, export a
-  structure-preserving ZIP or aggregate Markdown file, or sync it locally. Host access is
-  requested per-site, only when you start.
+  combined Markdown document (the default), a structure-preserving ZIP, or sync it locally.
+  Host access is requested per-site, only when you start.
 - **Flexible surfaces** — use the toolbar popup, Chrome side panel, or a draggable/resizable
   in-page panel; selection clipping is also available from the context menu.
 - **Knowledge vault workflow** — save clips to a chosen local folder, maintain a wiki-style
@@ -48,6 +48,12 @@ preserving their structure.
   quote, article-preview, and author-thread capture.
 - **Local and private** — all conversion happens in your browser. No backend, no analytics, no
   remote code. See [PRIVACY.md](PRIVACY.md).
+
+## Product tour
+
+![Capture a page as clean Markdown](docs/images/capture.png)
+
+![Organize and refresh reusable collections](docs/images/collections.png)
 
 ## Install locally (unpacked)
 

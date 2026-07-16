@@ -55,8 +55,8 @@ Capture and revisit collections:
 - Move a synced collection to a different library subfolder after copy verification, or change
   only the destination used by future syncs while leaving existing files in place.
 - Optionally enable a weekly or monthly reminder when a manual Sync all is due.
-- Export structure-preserving Markdown files with `index.md` in a ZIP, one aggregate Markdown
-  document, or both.
+- Download one combined Markdown document by default, choose a structure-preserving ZIP with
+  `index.md`, or create both outputs.
 - Pause and resume longer exports; progress survives service-worker suspension.
 
 Private by design:
@@ -73,9 +73,9 @@ It does not monitor ordinary browsing.
 ## Suggested release notes
 
 Markdown Clipper 1.1 adds a movable in-page clip panel, configurable toolbar behavior, direct
-vault saving, generalized Collections with refresh/change detection, URL-list imports, and direct
-local library sync and review, selection clipping, richer site
-adapters, and split Copy and Download controls.
+vault saving, reusable Collections with refresh/change detection, TXT/CSV/XLSX URL-list imports,
+combined Markdown and ZIP outputs, local library sync and review, selection clipping, richer site
+adapters, and clearer Copy, Download, Capture Collection, and Edit actions.
 
 ## Recommended screenshot order
 

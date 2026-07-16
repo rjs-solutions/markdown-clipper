@@ -36,7 +36,7 @@ modified, and the temporary extension/profile are removed after capture.
 | --- | --- | --- | --- |
 | 1 | `01-capture-raw.png` | `01-capture-1280x800.png` | A real page beside the movable capture panel and primary Copy/Download actions |
 | 2 | `02-collections-raw.png` | `02-collections-1280x800.png` | Saved website and SharePoint collections, refresh, export, and local folders |
-| 3 | `03-collection-capture-raw.png` | `03-collection-capture-1280x800.png` | Multi-page capture from a URL list, sitemap, `llms.txt`, or crawl, plus output choices |
+| 3 | `03-collection-capture-raw.png` | `03-collection-capture-1280x800.png` | Multi-page capture from a URL list, sitemap, `llms.txt`, or crawl, with combined Markdown as the download default |
 | 4 | `04-knowledge-base-raw.png` | `04-knowledge-base-1280x800.png` | Local vault, metadata, templates, and prompt-oriented knowledge workflows |
 | 5 | `05-editor-raw.png` | `05-editor-1280x800.png` | Full-page editing before copying or saving Markdown |
 
