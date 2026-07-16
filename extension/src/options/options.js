@@ -483,6 +483,13 @@ export function createOptionsForm(schema, { navElement, panelsElement, onThemeCh
       heading.textContent = section.label;
       panel.append(heading);
 
+      if (section.description) {
+        const description = document.createElement("p");
+        description.className = "panel-description";
+        description.textContent = section.description;
+        panel.append(description);
+      }
+
       if (section.groups) {
         for (const group of section.groups) {
           const groupHeading = document.createElement("h3");

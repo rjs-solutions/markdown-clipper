@@ -76,6 +76,12 @@ body {
   scroll-margin-top: 24px;
 }
 
+.panel-description {
+  margin: -4px 0 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
 /* Subhead for a section's sub-groups (e.g. Clipping's Capture / Format &
    save groups). A filled, full-width bar rather than just a hairline rule,
    so it reads as a real section divider instead of blending into the field

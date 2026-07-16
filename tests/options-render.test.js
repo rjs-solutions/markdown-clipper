@@ -39,6 +39,20 @@ test("renderSchema builds one nav item and one panel per section", async () => {
   assert.equal(panelsElement.querySelectorAll(".panel").length, SETTINGS_SCHEMA.length);
 });
 
+test("every settings panel introduces its contents before the first subsection", async () => {
+  const { createOptionsForm } = await loadModule();
+  const { navElement, panelsElement } = makeContainers();
+
+  createOptionsForm(SETTINGS_SCHEMA, { navElement, panelsElement });
+
+  for (const section of SETTINGS_SCHEMA) {
+    const panel = panelsElement.querySelector(`[data-section="${section.id}"]`);
+    const description = panel.querySelector(".panel-description");
+    assert.equal(description.textContent, section.description);
+    assert.equal(description.previousElementSibling.tagName, "H2");
+  }
+});
+
 test("the theme field renders inside the General panel and is the first nav item", async () => {
   const { createOptionsForm } = await loadModule();
   const { navElement, panelsElement } = makeContainers();

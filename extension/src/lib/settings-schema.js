@@ -4,7 +4,7 @@
 // derived from it, so a new setting only needs to be added HERE to show up
 // everywhere and round-trip through chrome.storage.sync.
 //
-// A section holds fields directly (a flat list) OR groups (an ordered list
+// A section has a short description, then holds fields directly (a flat list) OR groups (an ordered list
 // of { label, fields }, rendered as labeled sub-groups inside the section's
 // panel).
 //
@@ -33,6 +33,7 @@ export const SETTINGS_SCHEMA = [
   {
     id: "general",
     label: "General",
+    description: "Choose how Markdown Clipper looks and opens.",
     groups: [
       {
         label: "Appearance",
@@ -88,6 +89,7 @@ export const SETTINGS_SCHEMA = [
   {
     id: "clipping",
     label: "Clipping",
+    description: "Control how pages are captured and formatted as Markdown.",
     groups: [
       {
         label: "Capture",
@@ -225,6 +227,7 @@ export const SETTINGS_SCHEMA = [
   {
     id: "knowledgeBase",
     label: "Knowledge base",
+    description: "Save clips locally and prepare them for search or LLM use.",
     groups: [
       {
         label: "Local vault",
@@ -253,11 +256,13 @@ export const SETTINGS_SCHEMA = [
   {
     id: "collections",
     label: "Collections",
+    description: "Save, refresh, export, and sync groups of related pages.",
     fields: []
   },
   {
     id: "advanced",
     label: "Advanced",
+    description: "Build prompts, review activity, back up settings, or restore defaults.",
     fields: []
   }
 ];
