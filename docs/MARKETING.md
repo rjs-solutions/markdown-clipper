@@ -25,8 +25,8 @@ or LLM-ready knowledge collections.
 
 - **Primary headline:** Capture the web as clean, portable Markdown
 - **Short tile headline:** Web pages to clean Markdown
-- **Support line:** Clip one page or export a collection—private, local, and ready for your
-  knowledge workflow.
+- **Support line:** Clip one page or import a collection, then export clean Markdown—private,
+  local, and ready for your knowledge workflow.
 - **GitHub line:** SharePoint-aware clipping, reusable collections, and local knowledge-base
   workflows.
 
@@ -39,7 +39,7 @@ the privacy copy must retain those qualifications.
 
 1. **Turn the page in front of you into clean Markdown**
 2. **Keep important sites organized as reusable collections**
-3. **Export a URL list, sitemap, llms.txt, or whole site**
+3. **Import a URL list, sitemap, llms.txt, or whole site**
 4. **Build a local knowledge base that stays portable**
 5. **Polish the Markdown before it becomes a file**
 

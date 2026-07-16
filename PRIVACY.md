@@ -15,7 +15,7 @@ or export results. Page conversion and export happen in the browser.
 ## Data the extension processes
 
 The extension acts only after a user invokes a capture, selection clip, saved-collection
-refresh, or collection export. It may process:
+refresh, or collection import/export. It may process:
 
 - the URL, rendered website content, headings, links, images, tables, selected text, and page
   metadata such as title, author, and dates for the page or pages the user chose;
@@ -50,7 +50,7 @@ files are ordinary user files and are not deleted automatically.
 ## Network access and sharing
 
 - Single-page capture uses temporary `activeTab` access after the user invokes the extension.
-- Collection export and saved-collection discovery request access at runtime to the exact site
+- Collection import and saved-collection discovery request access at runtime to the exact site
   origin selected by the user. The extension may open background tabs for those pages and uses
   the user's existing browser session. It does not monitor unrelated browsing or run persistently
   on websites.
@@ -75,7 +75,7 @@ libraries are packaged with the extension; it does not execute remote code.
 - **`https://cdn.syndication.twimg.com/*`** — retrieve a public X/Twitter status when the user
   clips it.
 - **Optional `http://*/*` and `https://*/*` host access** — establish the maximum runtime scope;
-  the extension requests the specific origin needed for a user-selected collection export or
+  the extension requests the specific origin needed for a user-selected collection import or
   saved-collection refresh.
 
 ## Limited Use

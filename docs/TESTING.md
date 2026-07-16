@@ -37,12 +37,12 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 - [ ] Refresh the site without changes → the same page count, no duplicate rows, and “no changes.”
 - [ ] After a SharePoint page is created or edited, Refresh reports it as new or updated. Removing
       a page reports it as removed. **Refresh all collections** processes every refreshable collection once.
-- [ ] From a page in that saved site, **Export a collection** automatically selects the site and
+- [ ] From a page in that saved site, **Import a collection** automatically selects the site and
       loads its refreshed inventory as the URL list. The Collections shortcut opens Options directly
       on the Collections section from the popup, in-page panel, and native side panel.
 - [ ] Add a general website and confirm automatic sitemap or `llms.txt` discovery, or a clear
       handoff to same-site crawl when neither exists.
-- [ ] Import TXT, CSV, and XLSX URL lists in Export Collection; save one as a custom collection.
+- [ ] Import TXT, CSV, and XLSX URL lists in Import Collection; save one as a custom collection.
 - [ ] Export one collection and all collections as CSV; verify labels, types, sources, and URLs.
 - [ ] Choose a **Local Collections Library** folder. Each collection shows a unique relative path;
       changing a path persists, while a duplicate path is rejected.
@@ -78,7 +78,7 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 - [ ] After downloading a clip, reopen the page: the header indicator shows the saved date/path
       and **Appears current**. Change visible content to verify **Page changed**. Older records may
       say freshness is unknown until saved again.
-- [ ] Header icon hover tiles are centered and ordered Export Collection, Manage Collections,
+- [ ] Header icon hover tiles are centered and ordered Import Collection, Manage Collections,
       divider, Options. At narrow side-panel widths, nothing causes horizontal overflow.
 - [ ] A SharePoint Page details description is populated in the Description field.
 - [ ] Switching to another tab hides the clipper panel instead of showing an empty capture;

@@ -48,7 +48,7 @@ button:disabled { opacity: .48; cursor: default; }
 .log .is-error { color: var(--danger); }
 @media (max-width: 500px) { .modes, .compact-grid { grid-template-columns: 1fr; } .field-wide { grid-column: auto; } .import-row { flex-wrap: wrap; } }
 
-/* Branded Export Collection layout -------------------------------------- */
+/* Branded Import Collection layout -------------------------------------- */
 
 body {
   overflow-x: hidden;

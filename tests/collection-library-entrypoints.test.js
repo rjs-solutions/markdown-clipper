@@ -10,7 +10,7 @@ test("Collections settings expose one library root, per-collection paths, and sy
   assert.match(source, /destination=library/);
 });
 
-test("Export Collection separates snapshot downloads from local library sync", async () => {
+test("Import Collection separates snapshot downloads from local library sync", async () => {
   const html = await readFile(new URL("../extension/src/crawl/index.html", import.meta.url), "utf8");
   const source = await readFile(new URL("../extension/src/crawl/crawl.js", import.meta.url), "utf8");
   assert.match(html, /id="destination"/);

@@ -3,24 +3,24 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Export Collection — Markdown Clipper</title>
+    <title>Import Collection — Markdown Clipper</title>
     <link rel="stylesheet" href="../theme.css">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
     <main class="crawl">
       <header class="app-header">
-        <h1><img src="../../assets/icons/icon-48.png" alt=""> <span>Markdown Clipper</span><span class="header-subtitle">Export Collection</span></h1>
+        <h1><img src="../../assets/icons/icon-48.png" alt=""> <span>Markdown Clipper</span><span class="header-subtitle">Import Collection</span></h1>
       </header>
 
-      <p class="lead">Collect related pages, then export a Markdown snapshot or sync them into your local library.</p>
+      <p class="lead">Import related pages from a saved collection, URL list, sitemap, llms.txt, or site crawl. Then save, export, or sync them.</p>
 
       <form id="crawl-form">
         <div class="form-panel">
         <section class="group" aria-labelledby="source-heading">
           <h2 id="source-heading" class="group-heading">Source</h2>
           <div class="group-body">
-            <p class="section-description">Start from a saved collection or choose how pages should be discovered.</p>
+            <p class="section-description">Choose an existing collection or a source for the pages you want to import.</p>
             <div class="saved-collection-field">
               <label for="saved-collection">Saved collection</label>
               <div class="inline-controls">
@@ -87,7 +87,7 @@
         </div>
 
         <div class="buttons">
-          <button id="start-btn" class="button-with-icon" type="submit"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4"></path><path d="M4 17v3h16v-3"></path></svg><span>Export collection</span></button>
+          <button id="start-btn" class="button-with-icon" type="submit"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4"></path><path d="M4 17v3h16v-3"></path></svg><span>Export Markdown</span></button>
           <button id="pause-btn" type="button" disabled>Pause</button>
           <button id="resume-btn" type="button" disabled>Resume</button>
           <button id="stop-btn" type="button" disabled>Cancel</button>

@@ -233,7 +233,7 @@ function reflectDestination() {
 
 function updatePrimaryActionLabel() {
   if (syncQueue.length) return;
-  setPrimaryActionLabel(destinationSelect.value === "library" ? "Sync collection" : "Export collection");
+  setPrimaryActionLabel(destinationSelect.value === "library" ? "Sync collection" : "Export Markdown");
 }
 
 function setPrimaryActionLabel(text) {

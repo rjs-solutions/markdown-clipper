@@ -35,9 +35,10 @@ preserving their structure.
   define your own note + filename templates with `{{variable|filter}}` substitution
   (`{{title}}`, `{{author}}`, `{{date}}`, `{{meta:…}}`, `{{schema:…}}`, `{{selector:…}}`),
   inspired by the Obsidian Web Clipper.
-- **Export a collection** — import URLs from TXT, CSV, or XLSX; discover them from a sitemap,
-  `llms.txt`, saved collection, or same-site crawl; then export a structure-preserving ZIP and/or
-  aggregate Markdown file. Host access is requested per-site, only when you start.
+- **Import a collection** — bring in URLs from TXT, CSV, or XLSX; discover them from a sitemap,
+  `llms.txt`, saved collection, or same-site crawl; then save the collection, export a
+  structure-preserving ZIP or aggregate Markdown file, or sync it locally. Host access is
+  requested per-site, only when you start.
 - **Flexible surfaces** — use the toolbar popup, Chrome side panel, or a draggable/resizable
   in-page panel; selection clipping is also available from the context menu.
 - **Knowledge vault workflow** — save clips to a chosen local folder, maintain a wiki-style

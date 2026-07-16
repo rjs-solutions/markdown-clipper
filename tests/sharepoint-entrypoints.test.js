@@ -9,7 +9,7 @@ test("popup exposes a direct Collections settings shortcut", async () => {
   assert.match(source, /src\/options\/index\.html\?section=collections/);
 });
 
-test("collection export exposes saved collections, imports, and llms.txt", async () => {
+test("collection import exposes saved collections, file intake, and llms.txt", async () => {
   const html = await readFile(new URL("../extension/src/crawl/index.html", import.meta.url), "utf8");
   const source = await readFile(new URL("../extension/src/crawl/crawl.js", import.meta.url), "utf8");
   assert.match(html, /id="saved-collection"/);

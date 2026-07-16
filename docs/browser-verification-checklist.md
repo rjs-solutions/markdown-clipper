@@ -27,7 +27,7 @@ independent once the extension is loaded.
 - [ ] Collapse/expand the site row; the chevron and saved state agree after reopening Options.
 - [ ] Refresh with no SharePoint edits → “no changes,” the same page count, and no duplicates.
 - [ ] Edit or add a test page, refresh again → the page is labeled Updated or New. Refresh all handles every saved site sequentially.
-- [ ] On a page within the saved site, open **Export a collection** → the selector chooses that collection and loads its refreshed page inventory. Its Manage button and the popup header Collections icon both open Options directly on Collections.
+- [ ] On a page within the saved site, open **Import a collection** → the selector chooses that collection and loads its refreshed page inventory. Its Manage button and the popup header Collections icon both open Options directly on Collections.
 - [ ] Add a website and confirm `llms.txt` or sitemap auto-discovery, with crawl offered as fallback.
 - [ ] Import a URL list from TXT, CSV, and XLSX. Save one custom collection, then export its CSV and the all-collections CSV.
 - [ ] Choose a Local Collections Library root, adjust one collection's relative folder, and click
@@ -83,13 +83,13 @@ independent once the extension is loaded.
 - [ ] Save a page, reopen its clipper, and confirm the header indicator says **Appears current**.
       Change visible page content and reopen to confirm **Page changed**. Click the indicator to
       see its saved date/path and, for a saved collection, open that collection expanded in Options.
-- [ ] Header icon hover tiles are centered. Collection export appears before Manage Collections,
+- [ ] Header icon hover tiles are centered. Import Collection appears before Manage Collections,
       and a divider separates Manage Collections from Options.
 - [ ] Collections intake gives the URL a full row; platform, discovery, and Add & discover remain
       readable below it. Saved names/URLs have room to wrap or truncate cleanly, clicking the
       identity expands the row, and every compact action has a clear tooltip.
 - [ ] Per-collection inventory export offers both CSV and TXT. Select controls across Options and
-      Export Collection have rounded corners, readable text, and a chevron inset from the edge.
+      Import Collection have rounded corners, readable text, and a chevron inset from the edge.
 - [ ] Popup: only a **Source** row up top (no Author/Published/Modified/Site); Download/Copy/Open visible with little/no scroll. The full editor (expand icon) still shows all fields.
 - [ ] Popup, in-page panel, native side panel, and editor: Copy and Download have equal visual
       weight. Main Copy copies only the displayed body and briefly changes to **Copied**; its

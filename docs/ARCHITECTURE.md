@@ -34,7 +34,7 @@ extension/
     ├── popup/               copy / download / open / "export a whole site"
     ├── options/             capture + output settings, template editor
     ├── report/              Markdown preview + download
-    ├── crawl/               collection-export UI (file/list/sitemap/llms/crawl)
+    ├── crawl/               collection import/export UI (file/list/sitemap/llms/crawl)
     ├── content/             DOM-bound, injected:
     │   ├── collect.js         orchestrator -> { markdown, metadata, variables }
     │   ├── scroll.js          scroll-to-load lazy content

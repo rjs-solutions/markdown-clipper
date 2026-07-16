@@ -14,14 +14,14 @@ test("store release kit defines five sanitized capture scenarios and branded out
   const expectedRaw = [
     "01-capture-raw.png",
     "02-collections-raw.png",
-    "03-collection-export-raw.png",
+    "03-collection-import-raw.png",
     "04-knowledge-base-raw.png",
     "05-editor-raw.png"
   ];
   const expectedFinal = [
     "01-capture-1280x800.png",
     "02-collections-1280x800.png",
-    "03-collection-export-1280x800.png",
+    "03-collection-import-1280x800.png",
     "04-knowledge-base-1280x800.png",
     "05-editor-1280x800.png"
   ];

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-test("popup header centers icons and orders Export before Manage before Options", async () => {
+test("popup header centers icons and orders Import before Manage before Options", async () => {
   const html = await readFile(new URL("../extension/src/popup/index.html", import.meta.url), "utf8");
   const css = await readFile(new URL("../extension/src/popup/styles.css", import.meta.url), "utf8");
   assert.ok(html.indexOf('id="do-export"') < html.indexOf('id="open-collections"'));
@@ -89,7 +89,7 @@ test("settings actions use clear labels, meaningful icons, and explanatory hover
   assert.match(css, /\.button-with-icon\s*\{[^}]*display:\s*inline-flex;[^}]*gap:\s*7px;/s);
 });
 
-test("options and collection export use padded custom select chevrons", async () => {
+test("options and collection import use padded custom select chevrons", async () => {
   const options = await readFile(new URL("../extension/src/options/styles.css", import.meta.url), "utf8");
   const crawl = await readFile(new URL("../extension/src/crawl/styles.css", import.meta.url), "utf8");
   for (const css of [options, crawl]) {
@@ -98,10 +98,14 @@ test("options and collection export use padded custom select chevrons", async ()
   }
 });
 
-test("Export Collection uses branded flat sections and icon-led source choices", async () => {
+test("Import Collection uses branded flat sections and icon-led source choices", async () => {
   const html = await readFile(new URL("../extension/src/crawl/index.html", import.meta.url), "utf8");
+  const popupHtml = await readFile(new URL("../extension/src/popup/index.html", import.meta.url), "utf8");
   const source = await readFile(new URL("../extension/src/crawl/crawl.js", import.meta.url), "utf8");
   const css = await readFile(new URL("../extension/src/crawl/styles.css", import.meta.url), "utf8");
+  assert.match(html, /<title>Import Collection — Markdown Clipper<\/title>/);
+  assert.match(html, /class="header-subtitle">Import Collection<\/span>/);
+  assert.match(popupHtml, /title="Import a collection" aria-label="Import a collection"/);
   assert.doesNotMatch(html, /id="close-window"/);
   assert.doesNotMatch(source, /close-window/);
   assert.doesNotMatch(html, /radio-mark/);
@@ -112,7 +116,7 @@ test("Export Collection uses branded flat sections and icon-led source choices",
   assert.equal((html.match(/class="mode-icon"/g) || []).length, 4);
   assert.match(html, />Import URL file</);
   assert.match(html, />Save as collection</);
-  assert.match(html, />Export collection</);
+  assert.match(html, />Export Markdown</);
   assert.match(css, /\.modes label:has\(input:checked\)\s*\{[^}]*background:\s*var\(--surface-muted\);/s);
   assert.match(css, /textarea,[\s\S]*?background-color:\s*var\(--bg\);/s);
 });

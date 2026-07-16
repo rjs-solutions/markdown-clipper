@@ -8,9 +8,9 @@ All notable changes to Markdown Clipper are documented here. This project follow
 - Generalize saved SharePoint sites into **Collections** for SharePoint, Confluence, websites,
   and custom URL lists, with automatic classification and sitemap, `llms.txt`, crawl, or manual
   discovery modes.
-- Add TXT, CSV, and XLSX URL-list import to Export Collection, plus per-collection and all-
+- Add TXT, CSV, and XLSX URL-list import to Import Collection, plus per-collection and all-
   collections CSV inventory export.
-- Redesign Export Collection with branded, collapsible sections and open it beside the in-page
+- Redesign Import Collection with branded, collapsible sections and open it beside the in-page
   clipper when space allows.
 - Add an opt-in Local Collections Library: one chosen root, safe per-collection folder overrides,
   direct Markdown synchronization, overwrite-in-place updates, and non-destructive removed-page
@@ -30,7 +30,7 @@ All notable changes to Markdown Clipper are documented here. This project follow
   visually separate collection management from general Options.
 - Reflow Collections intake and saved rows for long names and URLs, replace wide per-collection
   text buttons with accessible icon actions, and offer URL inventory as CSV or TXT.
-- Standardize rounded, padded custom select controls across Options and Export Collection.
+- Standardize rounded, padded custom select controls across Options and Import Collection.
 - Clarify settings terminology and help text, add consistent icons to meaningful actions, and
   provide descriptive hover labels for compact and icon-only controls.
 - Simplify Saved Collections by removing the low-value definition backup controls, combining
@@ -46,7 +46,7 @@ All notable changes to Markdown Clipper are documented here. This project follow
 - Use secondary text sizing for Activity statistics so the optional summary stays visually quiet.
 - Add a reusable Chrome Web Store release kit with sanitized five-shot capture automation,
   branded screenshot framing, promo tiles, a GitHub social preview, and dashboard-ready copy.
-- Bring Export Collection into the main visual system with a compact branded header, flat
+- Rename the workflow to Import Collection and bring it into the main visual system with a compact branded header, flat
   Settings-style sections, clearer input surfaces, icon-led source choices, and one close control.
 
 - Add an accessible split Download action: the main segment keeps one-click download/vault behavior, while a folder segment opens Chrome's native location chooser in the popup, side panel, in-page overlay, and full editor.
