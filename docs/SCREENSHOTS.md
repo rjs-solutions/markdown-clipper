@@ -1,43 +1,104 @@
-# Chrome Web Store Asset Playbook
+# Screenshot and Store Asset Playbook
 
-Store assets are generated or captured into the gitignored `dist/store-listing/` folder. Keep
-raw captures so a future release can reproduce the same framing.
+Markdown Clipper uses a repeatable two-stage process: capture clean product screenshots, then
+apply short marketing labels and generate promotional artwork. The release outputs live under
+the gitignored `dist/store-listing/` directory; the reusable scripts and GitHub social preview
+are committed.
 
-## Required asset set
+Chrome's current image guidance calls for at least one—and preferably five—screenshots at
+1280×800 or 640×400, plus a 440×280 small promotional tile. A 1400×560 marquee tile is optional
+but recommended for featuring eligibility. See Chrome's official
+[image requirements](https://developer.chrome.com/docs/webstore/images) and
+[listing guidance](https://developer.chrome.com/docs/webstore/best-listing).
 
-| File | Content | Size |
-| --- | --- | --- |
-| `screenshots/01-capture-1280x800.png` | Popup or in-page panel with metadata and primary actions | 1280×800 |
-| `screenshots/02-collections-1280x800.png` | Saved Collections, collapsed inventory, refresh and CSV controls | 1280×800 |
-| `screenshots/03-collection-1280x800.png` | Collection export setup or completed progress | 1280×800 |
-| `screenshots/04-vault-template-1280x800.png` | Knowledge-base/vault or template settings | 1280×800 |
-| `screenshots/05-editor-1280x800.png` | Full-page editor with Copy, Download, Save as, and Close | 1280×800 |
-| `promo-tiles/small-promo-tile-440x280.png` | Brand-led small promotional tile | 440×280 |
-| `promo-tiles/marquee-promo-tile-1400x560.png` | Optional brand-led marquee tile | 1400×560 |
-
-Chrome requires the 128×128 packaged icon, a 440×280 small tile, and at least one screenshot.
-Use all five screenshots to explain the workflow, ordered from immediate value to advanced setup.
-
-## Capture rules
-
-- Use a clean Chrome profile or sanitized test content. Never expose internal names, tenant URLs,
-  credentials, personal data, or confidential SharePoint content in public images.
-- Capture at exactly 1280×800 and 100% zoom. Use one OS, browser chrome style, and theme across
-  the set unless a dark-mode shot is intentionally included.
-- Show realistic output and visible labels; avoid empty states except when the empty state is the
-  feature being explained.
-- Prefer the in-page panel for the lead shot because it communicates page-to-Markdown conversion
-  in one frame. Use Chrome's docked side panel only if its window-level behavior is explained.
-- Promotional tiles should be brand-led rather than raw screenshots and should remain legible at
-  half size.
-
-## Validation
-
-Place final files at the paths above and run:
+## One-command refresh
 
 ```powershell
+npm run store:prepare
+```
+
+That command:
+
+1. opens an isolated temporary Chromium profile with a temporary copy of the extension;
+2. serves sanitized local demo content with no company, tenant, credential, or personal data;
+3. captures five actual extension surfaces at 1280×800;
+4. creates labeled store screenshots, plain screenshot copies, small/marquee promo tiles, and
+   the GitHub social preview; and
+5. validates filenames, PNG format, and exact dimensions.
+
+The automation copy temporarily grants broad site access only inside its disposable profile so
+permission prompts do not make the capture nondeterministic. The packaged manifest is never
+modified, and the temporary extension/profile are removed after capture.
+
+## Five-shot story
+
+| Order | Raw capture | Final store file | What it communicates |
+| --- | --- | --- | --- |
+| 1 | `01-capture-raw.png` | `01-capture-1280x800.png` | A real page beside the movable capture panel and primary Copy/Download actions |
+| 2 | `02-collections-raw.png` | `02-collections-1280x800.png` | Saved website and SharePoint collections, refresh, export, and local folders |
+| 3 | `03-collection-export-raw.png` | `03-collection-export-1280x800.png` | URL-list intake plus sitemap, `llms.txt`, crawl, and structured output choices |
+| 4 | `04-knowledge-base-raw.png` | `04-knowledge-base-1280x800.png` | Local vault, metadata, templates, and prompt-oriented knowledge workflows |
+| 5 | `05-editor-raw.png` | `05-editor-1280x800.png` | Full-page editing before copying or saving Markdown |
+
+Lead with the immediate page-to-Markdown value, then show organization, breadth, knowledge-base
+workflows, and final polish. This order also matches [STORE_LISTING.md](STORE_LISTING.md).
+
+## Output layout
+
+```text
+dist/store-listing/
+├── raw-captures-<version>/
+│   ├── 01-capture-raw.png
+│   ├── 02-collections-raw.png
+│   ├── 03-collection-export-raw.png
+│   ├── 04-knowledge-base-raw.png
+│   ├── 05-editor-raw.png
+│   └── capture-report.json
+├── screenshots/                 # labeled, upload these to the store
+├── screenshots-plain/           # unframed 1280×800 product captures
+└── promo-tiles/
+    ├── small-promo-tile-440x280.png
+    └── marquee-promo-tile-1400x560.png
+```
+
+The generator also writes `docs/brand/social-preview-1280x640.png` for GitHub's repository
+social preview and refreshes `docs/images/capture.png` plus `docs/images/collections.png` from
+the labeled set. Review those product images before committing them.
+
+## Capture and framing separately
+
+```powershell
+npm run store:capture
+npm run store:assets
 npm run store:check
 ```
 
-The validator checks required filenames and exact image dimensions. It intentionally fails until
-the real release images exist; placeholder assets must not pass the store gate.
+To regenerate only promo tiles and the GitHub social image after a copy or icon adjustment:
+
+```powershell
+npm run store:promos
+```
+
+Pass an explicit version to the PowerShell capture wrapper or an alternate raw directory to
+the artwork generator when rebuilding an older release:
+
+```powershell
+.\scripts\capture-store-screenshots.ps1 -Version 1.1.0
+node scripts/create-store-assets.mjs --version 1.1.0
+node scripts/create-store-assets.mjs --raw-dir C:\path\to\approved-raws
+```
+
+## Manual fallback
+
+If automated capture is unavailable:
+
+1. Use a clean Chrome profile with the unpacked `extension/` folder loaded.
+2. Use only public or purpose-built demo content—never an internal SharePoint tenant.
+3. Set Chrome zoom to 100% and the viewport to exactly 1280×800.
+4. Reproduce the five scenarios above and save the exact raw filenames under
+   `dist/store-listing/raw-captures-<version>/`.
+5. Run `npm run store:assets` and `npm run store:check`.
+
+Before upload, inspect every image at full size and at roughly half size. Reject captures with
+private information, clipped controls, illegible text, transient permission prompts, cursor
+artifacts, or feature claims that are not present in the submitted package.

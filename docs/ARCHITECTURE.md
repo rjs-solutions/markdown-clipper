@@ -121,7 +121,7 @@ flat map.
 
 ## Testing
 
-`npm test` runs `node --test` (348 cases), including Markdown conversion, settings, capture
+`npm test` runs `node --test` (359 cases), including Markdown conversion, settings, capture
 adapters, SharePoint discovery/inventory reconciliation, crawling, templating, the vault, and
 DOM integration coverage in jsdom. Browser-only behavior on real authenticated pages is covered
 by the manual checklist in [TESTING.md](TESTING.md).

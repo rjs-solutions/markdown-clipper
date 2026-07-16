@@ -1,6 +1,6 @@
 # Markdown Clipper Privacy Policy
 
-_Last updated: July 15, 2026_
+_Last updated: July 16, 2026_
 
 Markdown Clipper converts user-selected web pages, including SharePoint pages, into Markdown.
 This policy describes the website data it processes, what it stores, and the one limited network
@@ -93,4 +93,6 @@ Use Markdown Clipper only on pages and sites you are authorized to access and ca
 ## Changes and contact
 
 Material changes will be posted at this location with an updated date. Questions can be directed
-to the developer through the Chrome Web Store listing's support contact.
+to the developer through the
+[Markdown Clipper issue tracker](https://github.com/rjs-solutions/markdown-clipper/issues) or
+the Chrome Web Store listing's support contact.

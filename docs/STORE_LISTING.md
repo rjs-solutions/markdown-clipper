@@ -16,6 +16,8 @@ Capture web pages—including SharePoint—as clean Markdown. Copy, save to a va
 
 - Category: Productivity
 - Language: English
+- Pricing: Free
+- Visibility: Public
 
 ## Detailed description
 
@@ -72,6 +74,19 @@ Markdown Clipper 1.1 adds a movable in-page clip panel, configurable toolbar beh
 vault saving, generalized Collections with refresh/change detection, URL-list imports, and direct
 local library sync and review, selection clipping, richer site
 adapters, and split Copy and Download controls.
+
+## Recommended screenshot order
+
+Upload the labeled 1280×800 files generated under `dist/store-listing/screenshots/` in this
+order:
+
+1. Capture a page in the movable in-page panel.
+2. Manage reusable website and SharePoint collections.
+3. Export from a URL list, sitemap, `llms.txt`, or crawl.
+4. Configure the local knowledge-base workflow.
+5. Edit Markdown and metadata before saving.
+
+The exact filenames and safe demo scenarios are in [SCREENSHOTS.md](SCREENSHOTS.md).
 
 ## Single purpose
 
@@ -130,8 +145,44 @@ Use these selections so the dashboard, UI, and [privacy policy](../PRIVACY.md) r
 ## Store and support URLs
 
 - Homepage: `https://github.com/rjs-solutions/markdown-clipper`
-- Support: use the repository Issues page or the publisher's established support URL.
+- Support: `https://github.com/rjs-solutions/markdown-clipper/issues`
 - Privacy: `https://github.com/rjs-solutions/markdown-clipper/blob/main/PRIVACY.md`
+
+## Distribution selections
+
+- Visibility: **Public**
+- Regions: **All regions** unless legal or organizational policy requires a narrower launch
+- Pricing: **Free**
+- In-app purchases: **No**
+- Mature content: **No**
+- Deferred publishing: recommended for the first release so approval and public launch can be
+  separated; make the final selection intentionally in the dashboard
+
+## Reviewer test instructions
+
+Paste this into the dashboard's test-instructions field and update wording if the UI changes:
+
+> Open any public article page, click Markdown Clipper, and confirm a Markdown preview appears.
+> Edit the title or description, then use Copy or Download. Open Options to review the General,
+> Clipping, Knowledge base, Collections, and Advanced sections. Choose Export a collection to
+> paste several public URLs and review the available URL list, sitemap, llms.txt, and crawl input
+> modes. Collection discovery requests access only to the selected origin. SharePoint-specific
+> extraction can be tested on a SharePoint page when the reviewer has an existing signed-in
+> session; no private test account is required for the public-page capture path.
+
+## GitHub repository metadata
+
+**About description:**
+
+> SharePoint-aware Chrome extension for capturing web pages as clean Markdown, organizing saved
+> collections, and syncing local knowledge folders—no backend or analytics.
+
+**Suggested topics:**
+
+`chrome-extension`, `markdown`, `web-clipper`, `sharepoint`, `confluence`, `knowledge-base`,
+`local-first`, `llms-txt`, `sitemap`, `web-crawler`, `manifest-v3`, `productivity`
+
+**GitHub social preview:** `docs/brand/social-preview-1280x640.png`
 
 ## Store assets
 
@@ -141,5 +192,5 @@ Follow [SCREENSHOTS.md](SCREENSHOTS.md). Required before submission:
 - at least one, preferably five, 1280×800 screenshots; and
 - one 440×280 small promotional tile.
 
-The 1400×560 marquee tile is optional but recommended. Run `npm run store:check` after placing
-the final assets under `dist/store-listing/`.
+The 1400×560 marquee tile is optional but recommended. `npm run store:prepare` captures,
+labels, generates, and validates the complete set under `dist/store-listing/`.

@@ -1,14 +1,15 @@
 # Markdown Clipper
 
+![Markdown Clipper — capture the web as clean Markdown](docs/brand/social-preview-1280x640.png)
+
 A Chrome extension that turns web pages into clean Markdown — with first-class support for
 SharePoint. Copy, download, save into a local knowledge vault, or export whole sites while
 preserving their structure.
 
-> **Status:** 1.1.0 plus the `feature/clipper-expansion` preview. The preview is covered by
-> 348 automated tests but still requires the
-> [browser verification checklist](docs/browser-verification-checklist.md). Load the unpacked
-> `extension/` before testing. See
-> [CHANGELOG.md](CHANGELOG.md) for details.
+> **Release candidate:** 1.1.0 on `feature/clipper-expansion`. The source passes 359 automated
+> tests, lint, and release validation. Complete the
+> [browser verification checklist](docs/browser-verification-checklist.md) before publishing.
+> See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 
 ## What it does
 
@@ -17,7 +18,8 @@ preserving their structure.
 - **Know what is already clipped** — a compact header indicator shows whether the current URL
   was saved before and whether its normalized visible Markdown appears current or changed.
 - **SharePoint-aware** — scrolls to trigger lazy-loaded sections and uses a scored content-root
-  finder to skip chrome/navigation and keep the real page content.
+  finder to skip chrome/navigation and keep the real page content. Full-action loading runs only
+  when needed, so opening the preview does not visibly scroll the page.
 - **Saved collections** — save SharePoint, Confluence, general websites, or custom URL lists;
   refresh inventories to detect changes without duplicates; and export one inventory or all
   collection metadata as CSV.
@@ -60,12 +62,25 @@ preserving their structure.
 | `npm test` | Run the `node --test` suite. |
 | `npm run lint` | Lint `extension/src` with ESLint. |
 | `npm run release:check` | Run tests, lint, and manifest/release validation. |
+| `npm run store:prepare` | Capture, label, generate, and validate the Chrome Web Store artwork. |
+| `npm run store:promos` | Regenerate promo tiles and the GitHub social image only. |
 | `npm run store:check` | Validate final Chrome Web Store asset names and dimensions. |
 | `npm run vendor` | Regenerate `extension/src/vendor/` from `node_modules`. |
 
 The extension ships from [`extension/`](extension/); everything else (tests, lint, scripts) is
 dev tooling. See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for architecture and
 [docs/TESTING.md](docs/TESTING.md) for the manual smoke-test checklist.
+
+## Privacy and publishing
+
+Markdown Clipper processes user-selected pages locally and has no developer backend, account,
+analytics, advertising, or remote code. Collection workflows request access to the selected site
+origin only when needed. Read the complete [privacy policy](PRIVACY.md),
+[Chrome Web Store listing copy](docs/STORE_LISTING.md), and
+[publishing checklist](docs/PUBLISHING.md).
+
+Issues and feature requests are welcome in the
+[GitHub issue tracker](https://github.com/rjs-solutions/markdown-clipper/issues).
 
 ## License
 

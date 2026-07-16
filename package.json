@@ -9,7 +9,11 @@
     "lint": "eslint extension/src",
     "check": "npm test && npm run lint",
     "release:check": "npm run check && node scripts/validate-release.mjs",
+    "store:capture": "powershell -ExecutionPolicy Bypass -File scripts/capture-store-screenshots.ps1",
+    "store:assets": "node scripts/create-store-assets.mjs",
+    "store:promos": "node scripts/create-store-assets.mjs --promos-only",
     "store:check": "node scripts/validate-store-assets.mjs",
+    "store:prepare": "npm run store:capture && npm run store:assets && npm run store:check",
     "vendor": "node scripts/vendor-libs.mjs",
     "icons": "node scripts/generate-icons.mjs"
   },
