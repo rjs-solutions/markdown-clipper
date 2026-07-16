@@ -20,8 +20,11 @@ test("popup header stays focused while collection capture and editing use a shor
 test("ready popup uses Chrome's full height while only the Markdown preview grows", async () => {
   const css = await readFile(new URL("../extension/src/popup/styles.css", import.meta.url), "utf8");
   assert.match(css, /body:not\(\.in-panel\):not\(\.in-iframe\):has\(\.card:not\(\[hidden\]\)\)\s*\{[^}]*height:\s*600px;[^}]*overflow:\s*hidden;/s);
-  assert.match(css, /:has\(\.card:not\(\[hidden\]\)\) \.card\s*\{[^}]*flex:\s*1 1 auto;[^}]*min-height:\s*0;[^}]*grid-template-rows:[^}]*minmax\(0, 1fr\);/s);
+  assert.match(css, /:has\(\.card:not\(\[hidden\]\)\) \.card\s*\{[^}]*flex:\s*1 1 auto;[^}]*display:\s*flex;[^}]*flex-direction:\s*column;[^}]*min-height:\s*0;/s);
+  assert.match(css, /:has\(\.card:not\(\[hidden\]\)\) \.card > \*:not\(\.preview\)\s*\{[^}]*flex:\s*0 0 auto;/s);
+  assert.match(css, /:has\(\.card:not\(\[hidden\]\)\) \.preview\s*\{[^}]*flex:\s*1 1 auto;[^}]*min-height:\s*0;[^}]*display:\s*flex;/s);
   assert.match(css, /:has\(\.card:not\(\[hidden\]\)\) \.preview-body\s*\{[^}]*flex:\s*1 1 auto;[^}]*min-height:\s*0;[^}]*height:\s*auto;/s);
+  assert.match(css, /:has\(\.card:not\(\[hidden\]\)\) \.actions\s*\{[^}]*margin-top:\s*6px;[^}]*padding-top:\s*7px;[^}]*border-top:\s*1px solid var\(--border\);/s);
 });
 
 test("popup exposes a clipped-state detail popover and collection link", async () => {
