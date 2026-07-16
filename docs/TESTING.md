@@ -69,6 +69,8 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 
 - [ ] Options uses the General / Clipping / Knowledge base / Collections / Advanced left navigation; switching panes,
       Save, and Reset all work.
+- [ ] Scan every Options section: labels and help text are clear; labeled action icons align with
+      their text; every icon-only collection action shows an explanatory hover label.
 - [ ] From the popup, **Open in side panel** opens a docked, full-width clip card; Copy,
       Download, and Open work there.
 - [ ] Main Copy copies only the visible Body and briefly animates to **Copied**; the secondary

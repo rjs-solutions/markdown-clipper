@@ -56,7 +56,7 @@ export const SETTINGS_SCHEMA = [
         fields: [
           {
             key: "defaultAction",
-            label: "Toolbar icon click",
+            label: "When the toolbar icon is clicked",
             type: "segmented",
             variant: "diagram",
             default: "popup",
@@ -65,7 +65,7 @@ export const SETTINGS_SCHEMA = [
                 value: "popup",
                 label: "Popup",
                 icon: "popup",
-                description: "Opens in a small popup from the toolbar icon."
+                description: "Opens a compact popup below the toolbar icon."
               },
               {
                 value: "sidepanel",
@@ -107,14 +107,14 @@ export const SETTINGS_SCHEMA = [
           },
           {
             key: "scrollBeforeCapture",
-            label: "Complete SharePoint capture",
+            label: "Load all SharePoint sections before an action",
             type: "toggle",
             default: true,
             help: "Loads virtualized SharePoint sections only when you copy, save, edit, or export; opening the preview stays immediate."
           },
           {
             key: "maxScrollMs",
-            label: "Maximum scroll time",
+            label: "Maximum SharePoint load time",
             type: "number",
             default: 12000,
             min: 3000,
@@ -125,7 +125,7 @@ export const SETTINGS_SCHEMA = [
           },
           {
             key: "scrollPauseMs",
-            label: "Pause after each scroll",
+            label: "Wait between SharePoint load steps",
             type: "number",
             default: 450,
             min: 150,
@@ -142,14 +142,15 @@ export const SETTINGS_SCHEMA = [
           },
           {
             key: "includeTweetThread",
-            label: "Include the author's follow-up replies when clipping a tweet",
+            label: "Include an author's follow-up replies in tweet clips",
             type: "toggle",
-            default: true
+            default: true,
+            help: "Adds replies written by the same author directly beneath the clipped post when they can be detected."
           }
         ]
       },
       {
-        label: "Format & save",
+        label: "Markdown output",
         fields: [
           {
             key: "metadataStyle",
@@ -172,7 +173,7 @@ export const SETTINGS_SCHEMA = [
           },
           {
             key: "useTemplate",
-            label: "Use a custom template instead of the settings above",
+            label: "Use a custom template instead of these output settings",
             type: "toggle",
             default: false
           },
@@ -212,10 +213,10 @@ export const SETTINGS_SCHEMA = [
           },
           {
             key: "dedupeOnReclip",
-            label: "Update instead of duplicate when re-clipping",
+            label: "Update an existing vault clip for the same URL",
             type: "toggle",
             default: true,
-            help: "Update an existing clip instead of duplicating when you re-clip the same URL (vault only)."
+            help: "When saving to your vault, overwrite the existing clip for that URL and preserve its original clipped date."
           }
         ]
       }
@@ -226,7 +227,7 @@ export const SETTINGS_SCHEMA = [
     label: "Knowledge base",
     groups: [
       {
-        label: "Vault",
+        label: "Local vault",
         fields: [
           {
             key: "vaultEnabled",
@@ -238,7 +239,7 @@ export const SETTINGS_SCHEMA = [
           },
           {
             key: "knowledgeBasePreset",
-            label: "Use LLM-friendly frontmatter and keep an index",
+            label: "Add LLM-friendly metadata and maintain index.md",
             type: "toggle",
             default: false,
             help:

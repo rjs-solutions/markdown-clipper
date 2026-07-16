@@ -237,7 +237,7 @@ test("the Choose folder button opens the picker and a successful pick updates th
   await flushMicrotasks();
 
   const chooseButton = Array.from(panel.querySelectorAll(".vault-buttons button")).find(
-    (button) => button.textContent === "Choose folder"
+    (button) => button.textContent === "Choose vault folder"
   );
   assert.ok(chooseButton);
   chooseButton.click();
@@ -269,7 +269,7 @@ test("forgetting the folder while vaultEnabled is on leaves the toggle on and re
   vaultControl.setVisible(true);
 
   const forgetButton = Array.from(panel.querySelectorAll(".vault-buttons button")).find(
-    (button) => button.textContent === "Forget folder"
+    (button) => button.textContent === "Forget vault folder"
   );
   assert.ok(forgetButton);
   forgetButton.click();

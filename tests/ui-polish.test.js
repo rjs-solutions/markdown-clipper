@@ -32,12 +32,26 @@ test("Collections uses a second-line intake row and compact CSV or TXT export", 
 
 test("Saved Collections keeps URL import labeled and groups secondary utilities as icons", async () => {
   const source = await readFile(new URL("../extension/src/options/options.js", import.meta.url), "utf8");
-  assert.match(source, /importListButton\.textContent = "Import URL list…"/);
+  assert.match(source, /configureLabeledButton\(importListButton, "Import URL list…", ACTION_ICONS\.upload/);
   assert.match(source, /"Restore collections from a JSON backup"/);
   assert.match(source, /"Back up all collection settings as JSON"/);
   assert.match(source, /"Export every collection URL inventory as CSV"/);
   assert.match(source, /"Refresh all saved collection inventories"/);
   assert.match(source, /utilityActions\.className = "collection-utility-actions"/);
+});
+
+test("settings actions use clear labels, meaningful icons, and explanatory hover text", async () => {
+  const source = await readFile(new URL("../extension/src/options/options.js", import.meta.url), "utf8");
+  const schema = await readFile(new URL("../extension/src/lib/settings-schema.js", import.meta.url), "utf8");
+  const css = await readFile(new URL("../extension/src/options/styles.css", import.meta.url), "utf8");
+  assert.match(source, /configureLabeledButton\(chooseButton, "Choose vault folder", ACTION_ICONS\.folder, "Choose where individual Markdown clips are saved"\)/);
+  assert.match(source, /configureLabeledButton\(addButton, "Add & discover pages", ACTION_ICONS\.discover/);
+  assert.match(source, /configureLabeledButton\(exportButton, "Download backup", ACTION_ICONS\.download/);
+  assert.match(source, /configureLabeledButton\(resetButton, "Reset settings", ACTION_ICONS\.reset/);
+  assert.match(source, /setLabeledButtonText\(copyButton, "Copied"\)/);
+  assert.match(schema, /label: "When the toolbar icon is clicked"/);
+  assert.match(schema, /label: "Local vault"/);
+  assert.match(css, /\.button-with-icon\s*\{[^}]*display:\s*inline-flex;[^}]*gap:\s*7px;/s);
 });
 
 test("options and collection export use padded custom select chevrons", async () => {

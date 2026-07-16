@@ -33,6 +33,8 @@ All notable changes to Markdown Clipper are documented here. This project follow
 - Reflow Collections intake and saved rows for long names and URLs, replace wide per-collection
   text buttons with accessible icon actions, and offer URL inventory as CSV or TXT.
 - Standardize rounded, padded custom select controls across Options and Export Collection.
+- Clarify settings terminology and help text, add consistent icons to meaningful actions, and
+  provide descriptive hover labels for compact and icon-only controls.
 
 - Add an accessible split Download action: the main segment keeps one-click download/vault behavior, while a folder segment opens Chrome's native location chooser in the popup, side panel, in-page overlay, and full editor.
 

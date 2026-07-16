@@ -64,6 +64,40 @@ const ICONS = {
     '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><rect x="12" y="12" width="7" height="5" rx="1"></rect></svg>'
 };
 
+const ACTION_ICONS = {
+  folder: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"></path></svg>',
+  access: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="4"></circle><path d="m11 12 8-8m-3 3 2 2m-5 1 2 2"></path></svg>',
+  forget: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"></path><path d="m9 11 6 6m0-6-6 6"></path></svg>',
+  add: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>',
+  discover: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"></circle><path d="m14.5 14.5 5 5M10 7v6M7 10h6"></path></svg>',
+  sync: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"></path><path d="M20 4v6h-6"></path></svg>',
+  reset: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.34-5.66"></path><path d="M4 4v6h6"></path></svg>',
+  generate: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.4 4.1L17.5 8.5l-4.1 1.4L12 14l-1.4-4.1-4.1-1.4 4.1-1.4L12 3Z"></path><path d="m18 14 .8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14Z"></path></svg>',
+  copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h1"></path></svg>',
+  download: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"></path><path d="M4 17v3h16v-3"></path></svg>',
+  upload: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3m-4 4 4-4 4 4"></path><path d="M4 17v3h16v-3"></path></svg>',
+  open: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h6M5 5v14h14v-6"></path><path d="M13 5h6v6M19 5l-9 9"></path></svg>',
+  archive: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v12H4Z"></path><path d="M3 4h18v4H3ZM9 13h6"></path></svg>',
+  trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"></path></svg>'
+};
+
+function configureLabeledButton(button, label, icon, title = label) {
+  button.classList.add("button-with-icon");
+  button.title = title;
+  button.replaceChildren();
+  button.insertAdjacentHTML("afterbegin", icon);
+  const labelElement = document.createElement("span");
+  labelElement.className = "button-label";
+  labelElement.textContent = label;
+  button.append(labelElement);
+}
+
+function setLabeledButtonText(button, text) {
+  const label = button.querySelector(".button-label");
+  if (label) label.textContent = text;
+  else button.textContent = text;
+}
+
 // Builds nav items + panels for `schema` inside the given containers and
 // returns { controls, fillForm, readForm, updateDependents } bound to the
 // rendered DOM. Kept as a factory (rather than module-level state) so tests
@@ -545,16 +579,16 @@ export function renderVaultControl(panel) {
 
   const chooseButton = document.createElement("button");
   chooseButton.type = "button";
-  chooseButton.textContent = "Choose folder";
+  configureLabeledButton(chooseButton, "Choose vault folder", ACTION_ICONS.folder, "Choose where individual Markdown clips are saved");
 
   const regrantButton = document.createElement("button");
   regrantButton.type = "button";
-  regrantButton.textContent = "Re-grant access";
+  configureLabeledButton(regrantButton, "Restore folder access", ACTION_ICONS.access, "Allow Markdown Clipper to write to the selected vault folder again");
   regrantButton.hidden = true;
 
   const forgetButton = document.createElement("button");
   forgetButton.type = "button";
-  forgetButton.textContent = "Forget folder";
+  configureLabeledButton(forgetButton, "Forget vault folder", ACTION_ICONS.forget, "Stop using this folder; existing files are not deleted");
   forgetButton.hidden = true;
 
   buttons.append(chooseButton, regrantButton, forgetButton);
@@ -684,7 +718,7 @@ function renderTagRulesControl(panel) {
 
   const addButton = document.createElement("button");
   addButton.type = "button";
-  addButton.textContent = "Add rule";
+  configureLabeledButton(addButton, "Add tag rule", ACTION_ICONS.add, "Add a rule that suggests tags when a page matches");
   wrapper.append(addButton);
 
   panel.append(wrapper);
@@ -734,8 +768,7 @@ function renderTagRulesControl(panel) {
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
-    removeButton.textContent = "Remove";
-    removeButton.setAttribute("aria-label", "Remove this rule");
+    configureLabeledButton(removeButton, "Remove", ACTION_ICONS.trash, "Remove this tag rule");
 
     row.append(scopeSelect, patternInput, regexLabel, tagsInput, removeButton);
     list.append(row);
@@ -844,15 +877,14 @@ function renderCollectionsControl(panel) {
 
   const help = document.createElement("p");
   help.className = "help-text";
-  help.textContent = "Add a site once, refresh its page inventory, and reuse it for future exports.";
+  help.textContent = "Save a site once, keep its page list current, and reuse it for future Markdown exports or local syncs.";
   wrapper.append(help);
 
   const toolbar = document.createElement("div");
   toolbar.className = "sites-toolbar";
   const importListButton = document.createElement("button");
   importListButton.type = "button";
-  importListButton.textContent = "Import URL list…";
-  importListButton.title = "Create a collection from URLs in a TXT, CSV, or XLSX file";
+  configureLabeledButton(importListButton, "Import URL list…", ACTION_ICONS.upload, "Create a collection from URLs in a TXT, CSV, or XLSX file");
   const importDefinitionsButton = document.createElement("button");
   importDefinitionsButton.type = "button";
   configureCollectionIcon(
@@ -904,19 +936,19 @@ function renderCollectionsControl(panel) {
 
   const typeSelect = document.createElement("select");
   typeSelect.setAttribute("aria-label", "Collection platform");
-  for (const [value, label] of [["auto", "Detect platform"], ["website", "Website"], ["confluence", "Confluence"], ["sharepoint", "SharePoint"]]) {
+  for (const [value, label] of [["auto", "Detect automatically"], ["website", "Website"], ["confluence", "Confluence"], ["sharepoint", "SharePoint"]]) {
     typeSelect.append(new Option(label, value));
   }
 
   const sourceSelect = document.createElement("select");
   sourceSelect.setAttribute("aria-label", "Discovery method");
-  for (const [value, label] of [["auto", "Auto discovery"], ["sitemap", "Sitemap"], ["llms", "llms.txt"], ["crawl", "Same-site crawl"]]) {
+  for (const [value, label] of [["auto", "Discover automatically"], ["sitemap", "Sitemap"], ["llms", "llms.txt"], ["crawl", "Same-site crawl"]]) {
     sourceSelect.append(new Option(label, value));
   }
 
   const addButton = document.createElement("button");
   addButton.type = "button";
-  addButton.textContent = "Add & discover";
+  configureLabeledButton(addButton, "Add & discover pages", ACTION_ICONS.discover, "Save this collection and find its pages now");
 
   const addControls = document.createElement("div");
   addControls.className = "sites-add-controls";
@@ -937,29 +969,29 @@ function renderCollectionsControl(panel) {
   libraryField.className = "collection-library-field";
   const libraryDescription = document.createElement("p");
   libraryDescription.className = "help-text";
-  libraryDescription.textContent = "Choose one local root folder. Each collection syncs into its own normal-file folder for LLMs, search, backup, or sharing.";
+  libraryDescription.textContent = "Choose one local root folder. Each saved collection syncs to its own subfolder as ordinary Markdown files for LLMs, search, backup, or sharing.";
   const libraryStatus = document.createElement("p");
   libraryStatus.className = "sites-status";
   const libraryButtons = document.createElement("div");
   libraryButtons.className = "collection-library-buttons";
   const chooseLibraryButton = document.createElement("button");
   chooseLibraryButton.type = "button";
-  chooseLibraryButton.textContent = "Choose library folder";
+  configureLabeledButton(chooseLibraryButton, "Choose library folder", ACTION_ICONS.folder, "Choose the root folder that will contain all locally synced collections");
   const regrantLibraryButton = document.createElement("button");
   regrantLibraryButton.type = "button";
-  regrantLibraryButton.textContent = "Re-grant access";
+  configureLabeledButton(regrantLibraryButton, "Restore folder access", ACTION_ICONS.access, "Allow Markdown Clipper to write to the selected Collections Library again");
   const forgetLibraryButton = document.createElement("button");
   forgetLibraryButton.type = "button";
-  forgetLibraryButton.textContent = "Forget folder";
+  configureLabeledButton(forgetLibraryButton, "Forget library folder", ACTION_ICONS.forget, "Stop using this library folder; existing files are not deleted");
   const syncAllLibraryButton = document.createElement("button");
   syncAllLibraryButton.type = "button";
-  syncAllLibraryButton.textContent = "Sync all collections";
+  configureLabeledButton(syncAllLibraryButton, "Sync all collections", ACTION_ICONS.sync, "Update every saved collection in the Local Collections Library");
   libraryButtons.append(chooseLibraryButton, regrantLibraryButton, forgetLibraryButton, syncAllLibraryButton);
   libraryField.append(libraryDescription, libraryStatus, libraryButtons);
   const scheduleRow = document.createElement("label");
   scheduleRow.className = "collection-schedule-row";
   const scheduleLabel = document.createElement("span");
-  scheduleLabel.textContent = "Sync reminder";
+  scheduleLabel.textContent = "Sync due reminder";
   const scheduleSelect = document.createElement("select");
   scheduleSelect.append(new Option("Off", "off"), new Option("Weekly", "weekly"), new Option("Monthly", "monthly"));
   const scheduleStatus = document.createElement("span");
@@ -1063,11 +1095,11 @@ function renderCollectionsControl(panel) {
   refreshLibraryStatus();
   loadCollectionSchedule().then((schedule) => {
     scheduleSelect.value = schedule.frequency;
-    scheduleStatus.textContent = schedule.lastCompletedAt ? `Last Sync all: ${formatDateTime(schedule.lastCompletedAt)}` : "Chrome shows a SYNC badge when due.";
+    scheduleStatus.textContent = schedule.lastCompletedAt ? `Last full sync: ${formatDateTime(schedule.lastCompletedAt)}` : "Chrome shows a SYNC badge when a manual sync is due.";
   });
   scheduleSelect.addEventListener("change", async () => {
     await saveCollectionSchedule(scheduleSelect.value);
-    scheduleStatus.textContent = scheduleSelect.value === "off" ? "Reminder disabled." : "Chrome will show a SYNC badge when due.";
+    scheduleStatus.textContent = scheduleSelect.value === "off" ? "Reminder disabled." : "Chrome will show a SYNC badge when a manual sync is due.";
   });
 
   function persist() {
@@ -1156,8 +1188,10 @@ function renderCollectionsControl(panel) {
     toggleButton.classList.toggle("is-collapsed", details.hidden);
     toggleButton.setAttribute("aria-expanded", String(!details.hidden));
     toggleButton.setAttribute("aria-label", `${details.hidden ? "Expand" : "Collapse"} ${site.name}`);
+    toggleButton.title = `${details.hidden ? "Expand" : "Collapse"} ${site.name}`;
     info.setAttribute("aria-expanded", String(!details.hidden));
     info.setAttribute("aria-label", `${details.hidden ? "Expand" : "Collapse"} ${site.name}`);
+    info.title = `${details.hidden ? "Expand" : "Collapse"} collection details`;
 
     const discoverStatus = document.createElement("p");
     discoverStatus.className = "site-discover-status";
@@ -1166,14 +1200,14 @@ function renderCollectionsControl(panel) {
     const folderRow = document.createElement("div");
     folderRow.className = "collection-folder-row";
     const folderLabel = document.createElement("label");
-    folderLabel.textContent = "Local folder";
+    folderLabel.textContent = "Library subfolder";
     const folderInput = document.createElement("input");
     folderInput.type = "text";
     folderInput.value = collectionLibraryPath(site);
     folderInput.setAttribute("aria-label", `Local library path for ${site.name}`);
     const resetFolderButton = document.createElement("button");
     resetFolderButton.type = "button";
-    resetFolderButton.textContent = "Use default";
+    configureLabeledButton(resetFolderButton, "Reset path", ACTION_ICONS.reset, "Restore the default subfolder for this collection");
     folderRow.append(folderLabel, folderInput, resetFolderButton);
     details.append(folderRow);
 
@@ -1199,8 +1233,10 @@ function renderCollectionsControl(panel) {
       toggleButton.classList.toggle("is-collapsed", details.hidden);
       toggleButton.setAttribute("aria-expanded", String(!details.hidden));
       toggleButton.setAttribute("aria-label", `${details.hidden ? "Expand" : "Collapse"} ${site.name}`);
+      toggleButton.title = `${details.hidden ? "Expand" : "Collapse"} ${site.name}`;
       info.setAttribute("aria-expanded", String(!details.hidden));
       info.setAttribute("aria-label", `${details.hidden ? "Expand" : "Collapse"} ${site.name}`);
+      info.title = `${details.hidden ? "Expand" : "Collapse"} collection details`;
       persist();
     };
     toggleButton.addEventListener("click", toggleDetails);
@@ -1271,8 +1307,10 @@ function renderCollectionsControl(panel) {
       toggleButton.classList.remove("is-collapsed");
       toggleButton.setAttribute("aria-expanded", "true");
       toggleButton.setAttribute("aria-label", `Collapse ${site.name}`);
+      toggleButton.title = `Collapse ${site.name}`;
       info.setAttribute("aria-expanded", "true");
       info.setAttribute("aria-label", `Collapse ${site.name}`);
+      info.title = "Collapse collection details";
 
       // Request host permission as the very first async op, before any other
       // await, so the click's user activation is still valid when
@@ -1355,15 +1393,13 @@ function renderCollectionsControl(panel) {
         item.append(text);
         const openButton = document.createElement("button");
         openButton.type = "button";
-        openButton.textContent = "Open";
-        openButton.title = "Open this page to review or fix it";
+        configureLabeledButton(openButton, "Open page", ACTION_ICONS.open, "Open this failed page to review or fix it");
         openButton.addEventListener("click", () => chrome.tabs.create({ url: page.url }));
         item.append(openButton);
         if (site.type === "custom") {
           const removeUrlButton = document.createElement("button");
           removeUrlButton.type = "button";
-          removeUrlButton.textContent = "Remove URL";
-          removeUrlButton.title = "Remove this failed URL from the custom collection";
+          configureLabeledButton(removeUrlButton, "Remove URL", ACTION_ICONS.trash, "Remove this failed URL from the custom collection");
           removeUrlButton.addEventListener("click", () => {
             site.urls = (site.urls || []).filter((url) => url !== page.url);
             persist();
@@ -1380,12 +1416,10 @@ function renderCollectionsControl(panel) {
         text.textContent = `${path} — no longer present in the latest sync`;
         const archiveButton = document.createElement("button");
         archiveButton.type = "button";
-        archiveButton.textContent = "Archive";
-        archiveButton.title = "Move this local file into the collection's _archive folder";
+        configureLabeledButton(archiveButton, "Archive file", ACTION_ICONS.archive, "Move this stale local file into the collection's _archive folder");
         const deleteButton = document.createElement("button");
         deleteButton.type = "button";
-        deleteButton.textContent = "Delete";
-        deleteButton.title = "Permanently delete this local stale file";
+        configureLabeledButton(deleteButton, "Delete file", ACTION_ICONS.trash, "Permanently delete this stale local file");
         const review = async (action) => {
           try {
             await reviewRemovedCollectionFile(libraryHandle, site, path, action);
@@ -1410,7 +1444,6 @@ function renderCollectionsControl(panel) {
         renderDiscoveredPages(discoverResults, inventory.pages);
       } else if (site.urls?.length) {
         const pages = site.urls.map(pageFromUrl);
-        discoverButton.textContent = "Review URLs";
         discoverStatus.textContent = `${pages.length} saved URL${pages.length === 1 ? "" : "s"}.`;
         renderDiscoveredPages(discoverResults, pages);
       }
@@ -1434,7 +1467,7 @@ function renderCollectionsControl(panel) {
       sites = result.collections;
       await saveSites(sites);
       await renderSavedRows();
-      status.textContent = `Imported collection definitions: ${result.added} added, ${result.updated} updated.`;
+      status.textContent = `Restored collections: ${result.added} added, ${result.updated} updated.`;
     } catch (error) {
       status.textContent = error && error.message ? error.message : String(error);
     } finally {
@@ -1641,7 +1674,7 @@ export function renderPromptGeneratorControl(panel) {
 
   const intro = document.createElement("p");
   intro.className = "help-text";
-  intro.textContent = "Build a prompt to analyze your clipped vault with an LLM.";
+  intro.textContent = "Build a prompt from your saved clip history for use with an LLM.";
   panel.append(intro);
 
   const generator = document.createElement("div");
@@ -1651,7 +1684,7 @@ export function renderPromptGeneratorControl(panel) {
   taskField.className = "field";
   const taskLabel = document.createElement("label");
   taskLabel.setAttribute("for", "prompt-task");
-  taskLabel.textContent = "What should the LLM do";
+  taskLabel.textContent = "What should the LLM do?";
   const taskSelect = document.createElement("select");
   taskSelect.id = "prompt-task";
   taskSelect.setAttribute("aria-describedby", "prompt-task-description");
@@ -1711,10 +1744,10 @@ export function renderPromptGeneratorControl(panel) {
   buttons.className = "prompt-buttons";
   const generateButton = document.createElement("button");
   generateButton.type = "button";
-  generateButton.textContent = "Generate";
+  configureLabeledButton(generateButton, "Generate prompt", ACTION_ICONS.generate, "Build a prompt from the selected clips and task");
   const copyButton = document.createElement("button");
   copyButton.type = "button";
-  copyButton.textContent = "Copy";
+  configureLabeledButton(copyButton, "Copy prompt", ACTION_ICONS.copy, "Copy the generated prompt to the clipboard");
   copyButton.disabled = true;
   buttons.append(generateButton, copyButton);
 
@@ -1792,10 +1825,10 @@ export function renderPromptGeneratorControl(panel) {
   copyButton.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(output.value);
-      const original = copyButton.textContent;
-      copyButton.textContent = "Copied";
+      const original = copyButton.querySelector(".button-label")?.textContent || "Copy prompt";
+      setLabeledButtonText(copyButton, "Copied");
       setTimeout(() => {
-        copyButton.textContent = original;
+        setLabeledButtonText(copyButton, original);
       }, 1400);
     } catch (error) {
       console.error("Markdown Clipper could not copy the prompt:", error);
@@ -1864,12 +1897,12 @@ function renderBackupControl(panel, { fillForm }) {
 
   const label = document.createElement("p");
   label.className = "backup-label";
-  label.textContent = "Backup";
+  label.textContent = "Settings backup";
   wrapper.append(label);
 
   const help = document.createElement("p");
   help.className = "help-text";
-  help.textContent = "Export every setting and tag rule to a file, or restore them from one.";
+  help.textContent = "Download every setting and tag rule as a JSON backup, or restore them from a previous backup.";
   wrapper.append(help);
 
   const buttons = document.createElement("div");
@@ -1877,11 +1910,11 @@ function renderBackupControl(panel, { fillForm }) {
 
   const exportButton = document.createElement("button");
   exportButton.type = "button";
-  exportButton.textContent = "Export";
+  configureLabeledButton(exportButton, "Download backup", ACTION_ICONS.download, "Download all settings and tag rules as JSON");
 
   const importButton = document.createElement("button");
   importButton.type = "button";
-  importButton.textContent = "Import";
+  configureLabeledButton(importButton, "Restore backup", ACTION_ICONS.upload, "Restore settings and tag rules from a Markdown Clipper JSON backup");
 
   const fileInput = document.createElement("input");
   fileInput.type = "file";
@@ -1903,7 +1936,7 @@ function renderBackupControl(panel, { fillForm }) {
     downloadText(JSON.stringify(backup, null, 2), `markdown-clipper-settings-${stamp}.json`, {
       type: "application/json"
     });
-    statusLine.textContent = "Exported";
+    statusLine.textContent = "Backup downloaded.";
   });
 
   importButton.addEventListener("click", () => {
@@ -1926,7 +1959,7 @@ function renderBackupControl(panel, { fillForm }) {
       }
       await importSettings(parsed);
       fillForm(await loadSettings());
-      statusLine.textContent = "Imported";
+      statusLine.textContent = "Backup restored.";
     } catch (error) {
       statusLine.textContent = `Import failed: ${error.message}`;
     }
@@ -1950,7 +1983,7 @@ function renderActivityControl(panel) {
 
   const label = document.createElement("p");
   label.className = "activity-label";
-  label.textContent = "Activity";
+  label.textContent = "Clip history";
   wrapper.append(label);
 
   const statusLine = document.createElement("p");
@@ -1982,17 +2015,17 @@ function renderResetControl(panel, { fillForm, statusElement }) {
 
   const label = document.createElement("p");
   label.className = "reset-label";
-  label.textContent = "Reset";
+  label.textContent = "Reset settings";
   wrapper.append(label);
 
   const help = document.createElement("p");
   help.className = "help-text";
-  help.textContent = "Restore every setting on this page to its default value.";
+  help.textContent = "Restore configurable settings to their defaults. Saved clips, collections, tag rules, and chosen folders are not deleted.";
   wrapper.append(help);
 
   const resetButton = document.createElement("button");
   resetButton.type = "button";
-  resetButton.textContent = "Reset to defaults";
+  configureLabeledButton(resetButton, "Reset settings", ACTION_ICONS.reset, "Restore configurable settings to defaults without deleting saved data");
   wrapper.append(resetButton);
 
   panel.append(wrapper);

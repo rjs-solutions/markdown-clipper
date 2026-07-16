@@ -1198,6 +1198,24 @@ button:hover {
   border-color: var(--accent);
 }
 
+.button-with-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.button-with-icon svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 button[type="submit"] {
   color: var(--accent-contrast);
   background: var(--accent);
