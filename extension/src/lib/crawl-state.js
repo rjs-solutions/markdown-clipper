@@ -33,7 +33,7 @@ function generateId() {
 
 // seeds: string[]; options: { captureOptions, maxPages, maxDepth, followLinks,
 // sameHostOnly, includePatterns, excludePatterns, retries, retryDelayMs,
-// settleMs, delayMs, outputMode }.
+// settleMs, delayMs, concurrency, outputMode }.
 export function createJob({ seeds, options = {} }) {
   const now = Date.now();
   return {

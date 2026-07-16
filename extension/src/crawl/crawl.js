@@ -111,12 +111,12 @@ async function initialize() {
     if (job && !["done", "cancelled", "failed"].includes(job.status)) {
       handledExisting = true;
       setCurrentJobId(existingId);
-      showProgress(true);
+      showProgress();
       setRunning(job.status);
       startPolling(existingId);
     } else if (job && !job.exported) {
       handledExisting = true;
-      showProgress(true);
+      showProgress();
       renderJobSnapshot(job);
       if (job.status === "done" && !job.exported) await exportJob(job);
     }
@@ -314,7 +314,7 @@ async function start() {
   renderedLogLines = 0;
   summary.textContent = "";
   progressWasAutoRevealed = false;
-  showProgress(true);
+  showProgress();
   showPreparingAction();
   try {
     const mode = currentMode();
@@ -384,6 +384,7 @@ async function start() {
         excludePatterns: parsePatterns(excludePatternsInput.value),
         retries: 2,
         retryDelayMs: 500,
+        concurrency: followLinks ? 1 : 3,
         outputMode: outputSelect.value,
         destination,
         collectionId: collection && collection.id
@@ -406,7 +407,10 @@ function showProgress(reveal = false) {
   if (reveal && !progressWasAutoRevealed) {
     progressWasAutoRevealed = true;
     requestAnimationFrame(() => {
-      progressSection.scrollIntoView({ behavior: "smooth", block: "end" });
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+        logList.scrollTop = logList.scrollHeight;
+      });
     });
   }
 }
@@ -432,6 +436,7 @@ function renderJobSnapshot(job) {
   const message = `${job.status} — ${job.results.length} captured, ${job.errors.length} error(s), ${job.queue.length} queued.`;
   summary.textContent = message;
   progressSummary.textContent = message;
+  showProgress(true);
   if (["queued", "running", "paused"].includes(job.status)) {
     showJobProgress(job);
   } else if (job.status === "done" && !job.exported) {
@@ -588,10 +593,10 @@ function clearProgressAction() {
 }
 
 function log(message, isError = false) {
-  showProgress();
   const item = document.createElement("li");
   item.textContent = message;
   if (isError) item.classList.add("is-error");
   logList.append(item);
+  showProgress(true);
   logList.scrollTop = logList.scrollHeight;
 }

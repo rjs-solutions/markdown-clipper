@@ -112,6 +112,7 @@ async function runResumedJob(id, resumable) {
       retryDelayMs: job.options.retryDelayMs,
       settleMs: job.options.settleMs,
       delayMs: job.options.delayMs,
+      concurrency: job.options.concurrency,
       queue: job.queue,
       visited: job.visited,
       results: job.results,

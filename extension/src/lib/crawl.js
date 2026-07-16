@@ -1,7 +1,8 @@
 // Site spider engine. Opens each page in a background tab, lets it render,
 // injects the collector (reusing capture.js), and optionally follows same-host
 // links breadth-first. Requires host permissions for the target origins, which
-// the UI requests before starting. Sequential by design: gentle and reliable.
+// the UI requests before starting. Known URL lists may use a small concurrent
+// batch; discovery crawls remain sequential so newly found links stay ordered.
 //
 // Resumability: the caller (extension/src/background/service-worker.js) may
 // pass in an already-in-progress queue/visited/results/errors (loaded from a
@@ -125,6 +126,7 @@ export async function crawlSite({
   retryDelayMs = 500,
   settleMs = 600,
   delayMs = 300,
+  concurrency = 1,
   queue: initialQueue = null,
   visited: initialVisited = null,
   results: initialResults = null,
@@ -178,6 +180,8 @@ export async function crawlSite({
     }
   };
 
+  const batchSize = followLinks ? 1 : Math.max(1, Math.min(4, Math.floor(Number(concurrency)) || 1));
+
   while (queue.length && pages.length < maxPages) {
     if (shouldStop()) {
       break;
@@ -186,33 +190,40 @@ export async function crawlSite({
       await persist();
       break;
     }
-    const { url, depth } = queue.shift();
-    onProgress({ type: "start", url, count: pages.length });
-    try {
-      const { result, links } = await captureWithRetry(
-        url,
-        captureOptions,
-        { followLinks, settleMs },
-        retries,
-        retryDelayMs
-      );
+    const remainingCapacity = maxPages - pages.length;
+    const batch = queue.splice(0, Math.min(batchSize, remainingCapacity));
+    for (const { url } of batch) onProgress({ type: "start", url, count: pages.length });
+    const captures = await Promise.all(batch.map(async ({ url, depth }) => {
+      try {
+        const capture = await captureWithRetry(
+          url,
+          captureOptions,
+          { followLinks, settleMs },
+          retries,
+          retryDelayMs
+        );
+        return { url, depth, capture };
+      } catch (error) {
+        return { url, depth, error };
+      }
+    }));
+    for (const { url, depth, capture, error } of captures) {
+      if (error) {
+        const message = error && error.message ? error.message : String(error);
+        errors.push({ url, error: message });
+        onProgress({ type: "error", url, error: message });
+        continue;
+      }
+      const { result, links } = capture;
       pages.push({ url, title: result.title, markdown: result.markdown, metadata: result.metadata });
       onProgress({ type: "done", url, title: result.title, count: pages.length });
       if (followLinks) {
         for (const link of links) {
-          if (pages.length + queue.length >= maxPages) {
-            break;
-          }
-          if (sameHostOnly && !sameHost(link, origin)) {
-            continue;
-          }
+          if (pages.length + queue.length >= maxPages) break;
+          if (sameHostOnly && !sameHost(link, origin)) continue;
           enqueue(link, depth + 1);
         }
       }
-    } catch (error) {
-      const message = error && error.message ? error.message : String(error);
-      errors.push({ url, error: message });
-      onProgress({ type: "error", url, error: message });
     }
     await persist();
     if (delayMs) {

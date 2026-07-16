@@ -43,6 +43,9 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 - [ ] Add a general website and confirm automatic sitemap or `llms.txt` discovery, or a clear
       handoff to same-site crawl when neither exists.
 - [ ] Import TXT, CSV, and XLSX URL lists in Capture Collection; save one as a custom collection.
+- [ ] Start a multi-page saved collection. The window scrolls far enough to show the expanded
+      progress summary and live log—not just the Progress heading—and the log follows new entries.
+      Known URL lists may briefly show up to three background tabs; same-site link crawls remain serial.
 - [ ] Export one collection and all collections as CSV; verify labels, types, sources, and URLs.
 - [ ] Choose a **Local Collections Library** folder. Before syncing, the collection explicitly says
       it is not stored there and that snapshot exports remain in Chrome Downloads. After syncing,

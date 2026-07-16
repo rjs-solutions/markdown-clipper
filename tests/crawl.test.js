@@ -110,6 +110,61 @@ test("crawlSite without followLinks captures only the seeds", async () => {
   assert.equal(pages.length, 2);
 });
 
+test("known URL lists capture up to three pages concurrently", async () => {
+  installFakeChrome();
+  const executeScript = chrome.scripting.executeScript;
+  let activeCaptures = 0;
+  let peakCaptures = 0;
+  chrome.scripting.executeScript = async (options) => {
+    if (!options.args) return executeScript(options);
+    activeCaptures += 1;
+    peakCaptures = Math.max(peakCaptures, activeCaptures);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    try {
+      return await executeScript(options);
+    } finally {
+      activeCaptures -= 1;
+    }
+  };
+  const pages = await crawlSite({
+    seeds: ["https://a.com/1", "https://a.com/2", "https://a.com/3", "https://a.com/4"],
+    followLinks: false,
+    concurrency: 3,
+    maxPages: 25,
+    settleMs: 0,
+    delayMs: 0
+  });
+  assert.equal(pages.length, 4);
+  assert.equal(peakCaptures, 3);
+});
+
+test("link-discovery crawls remain sequential even when concurrency is requested", async () => {
+  installFakeChrome();
+  const executeScript = chrome.scripting.executeScript;
+  let activeCaptures = 0;
+  let peakCaptures = 0;
+  chrome.scripting.executeScript = async (options) => {
+    if (!options.args) return executeScript(options);
+    activeCaptures += 1;
+    peakCaptures = Math.max(peakCaptures, activeCaptures);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    try {
+      return await executeScript(options);
+    } finally {
+      activeCaptures -= 1;
+    }
+  };
+  await crawlSite({
+    seeds: ["https://a.com/1"],
+    followLinks: true,
+    concurrency: 3,
+    maxPages: 3,
+    settleMs: 0,
+    delayMs: 0
+  });
+  assert.equal(peakCaptures, 1);
+});
+
 test("crawlSite stops when shouldStop returns true", async () => {
   installFakeChrome();
   let calls = 0;

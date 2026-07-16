@@ -5,6 +5,9 @@ All notable changes to Markdown Clipper are documented here. This project follow
 
 ## [Unreleased]
 
+- Reveal Capture Collection progress only after details exist, then scroll the panel to its true
+  bottom so the live log is visible. Known URL lists now capture in conservative three-page
+  batches, while link-discovery crawls remain sequential for deterministic, polite traversal.
 - Clarify the difference between Chrome Downloads snapshots and verified Local Collections
   Library copies. Saved collection rows now show the verified root/subfolder, page count, and
   sync time; moving a collection uses an explicit **Move files…** action and updates the stored
