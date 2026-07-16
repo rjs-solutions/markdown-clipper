@@ -43,11 +43,19 @@ test("saved collection rows use quiet actions and one combined export menu", asy
   const source = await readFile(new URL("../extension/src/options/options.js", import.meta.url), "utf8");
   const css = await readFile(new URL("../extension/src/options/styles.css", import.meta.url), "utf8");
   assert.match(source, /markdownButton\.textContent = "Markdown snapshot"/);
-  assert.match(source, /inventoryMenu\.append\(markdownButton, csvButton, txtButton\)/);
-  assert.match(source, /actions\.append\(discoverButton, syncButton, inventoryExport, removeButton\)/);
+  assert.match(source, /inventoryMenu\.append\(markdownButton, syncMenuButton, csvButton, txtButton\)/);
+  assert.match(source, /actions\.append\(discoverButton, inventoryExport, removeButton\)/);
+  assert.match(source, /syncMenuButton\.textContent = "Sync to local library"/);
   assert.match(css, /\.site-actions \.collection-icon-action\s*\{[^}]*border-color:\s*transparent;[^}]*background:\s*transparent;/s);
   assert.match(css, /\.sites-list\s*\{[^}]*border-top:\s*1px solid var\(--border\);/s);
   assert.match(css, /\.collection-library-field\s*\{[^}]*border:\s*0;[^}]*background:\s*transparent;/s);
+});
+
+test("collection reminder choices match Theme cards and utility actions share a height", async () => {
+  const css = await readFile(new URL("../extension/src/options/styles.css", import.meta.url), "utf8");
+  assert.match(css, /\.collection-schedule-options\s*\{[^}]*padding:\s*0;[^}]*border:\s*0;[^}]*background:\s*transparent;/s);
+  assert.match(css, /\.collection-schedule-options \.segmented-option\s*\{[^}]*border-color:\s*var\(--border\);[^}]*background:\s*transparent;/s);
+  assert.match(css, /\.collection-utility-actions \.collection-icon-action\s*\{[^}]*height:\s*37px;[^}]*min-height:\s*37px;/s);
 });
 
 test("Collections emphasizes ready intake, segments sync reminders, and groups utilities", async () => {

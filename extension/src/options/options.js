@@ -38,6 +38,7 @@ import { loadCollectionHealth, removeCollectionHealth } from "../lib/collection-
 import { slugify } from "../lib/slug.js";
 import { listClips } from "../lib/clip-log.js";
 import { TASK_PRESETS, buildPrompt, recordsFromCollectionManifest } from "../lib/prompt-templates.js";
+import { summarizeActivity } from "../lib/activity-summary.js";
 
 const loadSites = loadCollections;
 const saveSites = saveCollections;
@@ -1168,36 +1169,35 @@ function renderCollectionsControl(panel) {
       '<path d="M20 12a8 8 0 1 1-2.34-5.66"></path><path d="M20 4v6h-6"></path>'
     );
 
-    const syncButton = document.createElement("button");
-    syncButton.type = "button";
-    configureCollectionIcon(syncButton, `Sync ${site.name} to its local library folder`, '<path d="M4 7h12a4 4 0 0 1 4 4v1"></path><path d="m17 9 3 3 3-3"></path><path d="M20 17H8a4 4 0 0 1-4-4v-1"></path><path d="m7 15-3-3-3 3"></path>');
-
     const inventoryExport = document.createElement("details");
     inventoryExport.className = "collection-action-menu";
     const inventorySummary = document.createElement("summary");
     inventorySummary.className = "collection-icon-action";
-    inventorySummary.title = `Export ${site.name}`;
-    inventorySummary.setAttribute("aria-label", `Export ${site.name}`);
-    inventorySummary.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4Z"></path><path d="M4 10h16M9 5v14"></path><path d="m14 14 2 2 4-4"></path></svg>';
+    inventorySummary.title = `Export or sync ${site.name}`;
+    inventorySummary.setAttribute("aria-label", `Export or sync ${site.name}`);
+    inventorySummary.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4"></path><path d="M4 17v3h16v-3"></path></svg>';
     const inventoryMenu = document.createElement("div");
     inventoryMenu.className = "collection-action-menu-popover";
     const markdownButton = document.createElement("button");
     markdownButton.type = "button";
     markdownButton.textContent = "Markdown snapshot";
+    const syncMenuButton = document.createElement("button");
+    syncMenuButton.type = "button";
+    syncMenuButton.textContent = "Sync to local library";
     const csvButton = document.createElement("button");
     csvButton.type = "button";
     csvButton.textContent = "CSV spreadsheet";
     const txtButton = document.createElement("button");
     txtButton.type = "button";
     txtButton.textContent = "TXT URL list";
-    inventoryMenu.append(markdownButton, csvButton, txtButton);
+    inventoryMenu.append(markdownButton, syncMenuButton, csvButton, txtButton);
     inventoryExport.append(inventorySummary, inventoryMenu);
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
     configureCollectionIcon(removeButton, `Remove ${site.name}`, '<path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"></path>', "is-danger");
 
-    actions.append(discoverButton, syncButton, inventoryExport, removeButton);
+    actions.append(discoverButton, inventoryExport, removeButton);
     top.append(toggleButton, info, actions);
     row.append(top);
 
@@ -1279,7 +1279,8 @@ function renderCollectionsControl(panel) {
       inventoryExport.open = false;
       openCollectionWindow(`collection=${encodeURIComponent(site.id)}`);
     });
-    syncButton.addEventListener("click", () => {
+    syncMenuButton.addEventListener("click", () => {
+      inventoryExport.open = false;
       if (!libraryHandle) {
         discoverStatus.textContent = "Choose a Local Collections Library folder above before syncing.";
         details.hidden = false;
@@ -2047,8 +2048,8 @@ function renderBackupControl(panel, { fillForm }) {
   });
 }
 
-// Read-only clip count from the clip-history log (clip-log.js), so the
-// Advanced tab shows how much has accumulated without opening the vault.
+// Compact aggregate activity summary. It deliberately does not render the
+// underlying clip log, which could grow indefinitely.
 function renderActivityControl(panel) {
   if (!panel) {
     return;
@@ -2064,23 +2065,43 @@ function renderActivityControl(panel) {
 
   const label = document.createElement("p");
   label.className = "activity-label";
-  label.textContent = "Clip history";
+  label.textContent = "Saved content summary";
   wrapper.append(label);
 
-  const statusLine = document.createElement("p");
-  statusLine.className = "help-text activity-status";
-  statusLine.textContent = "Loading clip history…";
-  wrapper.append(statusLine);
+  const description = document.createElement("p");
+  description.className = "help-text";
+  description.textContent = "Aggregate counts only; this does not display an expanding activity log.";
+  const stats = document.createElement("dl");
+  stats.className = "activity-stats";
+  stats.setAttribute("aria-label", "Saved content activity summary");
+  wrapper.append(description, stats);
 
   panel.append(wrapper);
 
-  listClips()
-    .then((clips) => {
-      const count = clips.length;
-      statusLine.textContent = count === 1 ? "1 clip saved" : `${count} clips saved`;
+  Promise.all([
+    listClips().catch(() => []),
+    loadSites().catch(() => [])
+  ])
+    .then(([clips, collections]) => {
+      const summary = summarizeActivity(clips, collections);
+      const items = [
+        ["Clips", String(summary.clips)],
+        ["Clip source sites", String(summary.sourceSites)],
+        ["Saved collections", String(summary.collections)],
+        ["Last clipped", summary.lastClipped ? formatDateTime(summary.lastClipped) : "None yet"]
+      ];
+      for (const [term, value] of items) {
+        const item = document.createElement("div");
+        const name = document.createElement("dt");
+        name.textContent = term;
+        const result = document.createElement("dd");
+        result.textContent = value;
+        item.append(name, result);
+        stats.append(item);
+      }
     })
     .catch(() => {
-      statusLine.textContent = "Clip history isn't available.";
+      stats.textContent = "Activity summary isn't available.";
     });
 }
 

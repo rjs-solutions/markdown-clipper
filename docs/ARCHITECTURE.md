@@ -61,6 +61,7 @@ extension/
     │   ├── collection-library.js incremental local sync + catalog/manifest/review
     │   ├── collection-health.js last crawl results for explicit page review
     │   ├── collection-schedule.js optional sync-due reminder state
+    │   ├── activity-summary.js compact clip/source/collection statistics
     │   ├── sharepoint-inventory.js local page snapshots + refresh reconciliation
     │   ├── collection-export.js saved-collection matching + export presets
     │   ├── sitepath.js        URL -> structure-preserving .md path

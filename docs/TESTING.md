@@ -69,6 +69,8 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
       Save, and Reset all work.
 - [ ] Scan every Options section: labels and help text are clear; labeled action icons align with
       their text; every icon-only collection action shows an explanatory hover label.
+- [ ] Advanced → Activity shows compact counts for clips, clip-source sites, saved collections,
+      and the last clipped time; it does not render an expanding history list.
 - [ ] From the popup, **Open in side panel** opens a docked, full-width clip card; Copy,
       Download, and Open work there.
 - [ ] Main Copy copies only the visible Body and briefly animates to **Copied**; the secondary
