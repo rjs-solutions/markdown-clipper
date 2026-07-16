@@ -14,7 +14,7 @@ test("popup header stays focused while collection capture and editing use a shor
   assert.match(html, /id="do-expand"[^>]*>[\s\S]*?<svg[^>]*>[\s\S]*?<span>Edit Markdown<\/span>/);
   assert.match(css, /\.icon-button\s*\{[^}]*padding:\s*0;/s);
   assert.match(css, /\.icon-button svg\s*\{[^}]*display:\s*block;/s);
-  assert.match(css, /\.act-workflow\s*\{[^}]*min-height:\s*30px;[^}]*background:\s*var\(--surface-muted\);/s);
+  assert.match(css, /\.act-workflow\s*\{[^}]*min-height:\s*26px;[^}]*background:\s*var\(--surface-muted\);/s);
 });
 
 test("popup exposes a clipped-state detail popover and collection link", async () => {
