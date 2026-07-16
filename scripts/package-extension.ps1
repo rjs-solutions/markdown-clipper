@@ -18,7 +18,7 @@ if (-not (Test-Path -LiteralPath $manifestPath)) {
 $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 
 if ([string]::IsNullOrWhiteSpace($PackageName)) {
-  $PackageName = "markdown-web-clipper-$($manifest.version).zip"
+  $PackageName = "markdown-clipper-$($manifest.version).zip"
 }
 
 if (-not (Test-Path -LiteralPath $DistDir)) {

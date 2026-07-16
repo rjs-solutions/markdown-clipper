@@ -168,6 +168,12 @@ async function mount(tabId) {
   // #drag-handle strip uses.
   let dragGeometry = null;
   host.mcMessageHandler = (event) => {
+    // Only the extension iframe may control the panel. The host page shares
+    // this window's message event stream and must not be able to close, move,
+    // resize, or recolor extension UI by posting similarly-shaped messages.
+    if (event.source !== frame.contentWindow) {
+      return;
+    }
     if (event.data && event.data.type === "mc-panel-close") {
       removeHost(host);
     } else if (event.data && event.data.type === "mc-panel-color-scheme") {
@@ -177,6 +183,9 @@ async function mount(tabId) {
     } else if (event.data && event.data.type === "mc-panel-drag-start") {
       dragGeometry = currentGeometry(container);
     } else if (event.data && event.data.type === "mc-panel-drag") {
+      if (!Number.isFinite(event.data.dx) || !Number.isFinite(event.data.dy)) {
+        return;
+      }
       if (!dragGeometry) {
         dragGeometry = currentGeometry(container);
       }

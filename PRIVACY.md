@@ -1,6 +1,6 @@
 # Markdown Clipper Privacy Policy
 
-_Last updated: July 13, 2026_
+_Last updated: July 15, 2026_
 
 Markdown Clipper ("the extension") converts web pages — including SharePoint pages — into
 Markdown. This policy explains what the extension does and does not do with data.
@@ -25,8 +25,8 @@ dates — and converts that content to Markdown on your device.
 
 ## Permissions
 
-The extension requests no host permissions at install. It requests these only at runtime,
-after you act:
+The extension has one narrow install-time host permission for X/Twitter's public syndication
+endpoint. Broader website access is optional and requested only after you act:
 
 - **`activeTab`** — read the current page when you invoke the extension to capture it.
 - **`scripting`** — inject the collector that reads the page DOM and builds the Markdown.
@@ -35,6 +35,9 @@ after you act:
 - **`sidePanel`** — display the clip card beside the page when you explicitly open the side
   panel.
 - **Optional `tabs`** — open and close the background tabs required for a site export.
+- **`https://cdn.syndication.twimg.com/*`** — retrieve the public JSON representation of an
+  X/Twitter status when you clip that status. The request contains the public status ID; protected
+  or unavailable posts fall back to normal page capture.
 - **Optional host access (`http://*/*`, `https://*/*`)** — requested only when you start a
   site export, so the extension can open and read the pages within the site you chose. It does
   not monitor your browsing and does not run automatically on websites.
@@ -49,6 +52,8 @@ never transmitted anywhere.
   tab. It is never sent anywhere by the extension.
 - **Preferences and templates** are saved in your browser's storage on your device.
 - The extension does **not** read, display, export, or store cookies.
+- When clipping an X/Twitter status, the extension requests that status from X's public
+  syndication endpoint. It does not send captured page content to that endpoint.
 - The extension does **not** use remote code; all libraries are bundled locally.
 - The extension does **not** sell or transfer user data to third parties.
 

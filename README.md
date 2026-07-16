@@ -1,12 +1,13 @@
 # Markdown Clipper
 
 A Chrome extension that turns web pages into clean Markdown — with first-class support for
-SharePoint. Copy, download, or open the active page as Markdown, and (coming as part of the
-1.0 work) export an entire SharePoint site preserving its structure.
+SharePoint. Copy, download, save into a local knowledge vault, or export whole sites while
+preserving their structure.
 
-> **Status:** 1.0.0, graduated from its alpha (`SharePoint Markdown Exporter` 0.1.0). All
-> features below are implemented and covered by automated tests. Load the unpacked `extension/`
-> and run the [manual smoke test](docs/TESTING.md) before publishing. See
+> **Status:** 1.1.0 plus the `feature/clipper-expansion` preview. The preview is covered by
+> 294 automated tests but still requires the
+> [browser verification checklist](docs/browser-verification-checklist.md). Load the unpacked
+> `extension/` before testing. See
 > [CHANGELOG.md](CHANGELOG.md) for details.
 
 ## What it does
@@ -25,6 +26,12 @@ SharePoint. Copy, download, or open the active page as Markdown, and (coming as 
 - **Export a whole site** — discover pages from a URL list, a `sitemap.xml`, or by crawling
   same-host links, then export per-page Markdown preserving the site structure (ZIP + `index.md`)
   and/or a single aggregate Markdown file. Host access is requested per-site, only when you start.
+- **Flexible surfaces** — use the toolbar popup, Chrome side panel, or a draggable/resizable
+  in-page panel; selection clipping is also available from the context menu.
+- **Knowledge vault workflow** — save clips to a chosen local folder, maintain a wiki-style
+  index, apply deterministic tag rules, and generate prompts from the local clip log.
+- **Site-aware capture** — adapters for SharePoint and Confluence plus cleaner X/Twitter post,
+  quote, article-preview, and author-thread capture.
 - **Local and private** — all conversion happens in your browser. No backend, no analytics, no
   remote code. See [PRIVACY.md](PRIVACY.md).
 

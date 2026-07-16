@@ -78,10 +78,15 @@ test("an mc-panel-close message removes the host entirely, leaving no residue", 
   );
 
   await togglePanel(1);
-  assert.ok(document.getElementById("mwc-panel-host"), "host should be mounted before closing");
+  const host = document.getElementById("mwc-panel-host");
+  assert.ok(host, "host should be mounted before closing");
+  const frame = host.shadowRoot.getElementById("frame");
 
   window.dispatchEvent(
-    new window.MessageEvent("message", { data: { type: "mc-panel-close" } })
+    new window.MessageEvent("message", {
+      data: { type: "mc-panel-close" },
+      source: frame.contentWindow
+    })
   );
 
   assert.equal(document.getElementById("mwc-panel-host"), null);
@@ -101,6 +106,24 @@ test("an unrelated message is ignored and leaves the panel mounted", async () =>
   );
 
   assert.ok(document.getElementById("mwc-panel-host"), "unrelated messages must not close the panel");
+});
+
+test("a host-page message cannot control or close the extension panel", async () => {
+  installDom();
+  installFakeChrome(undefined);
+  const { togglePanel } = await import(
+    `../extension/src/content/panel-host.js?case=reject-host-message`
+  );
+
+  await togglePanel(1);
+  window.dispatchEvent(
+    new window.MessageEvent("message", {
+      data: { type: "mc-panel-close" },
+      source: window
+    })
+  );
+
+  assert.ok(document.getElementById("mwc-panel-host"));
 });
 
 test("clampGeometry pulls an off-screen-restored panel back into the viewport", async () => {

@@ -92,7 +92,8 @@ the custom scored root-finder instead of Readability; both feed the same Turndow
 
 ## Permission model
 
-No host permissions at install. Single-page capture uses `activeTab` + `scripting`. The spider
+Single-page capture uses `activeTab` + `scripting`. The only install-time host permission is
+X/Twitter's public syndication endpoint for clean status capture. The spider
 can't use `activeTab` (it visits pages you aren't on, and SharePoint is JS-rendered so a raw
 `fetch` returns an empty shell), so it requests **optional host permissions for the specific
 site, only when you press Start**. `downloads` and `storage` are the only other permissions;

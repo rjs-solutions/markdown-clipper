@@ -25,6 +25,7 @@ const RETWEET_FIXTURE_PATH = path.join(__dirname, "fixtures", "tweets", "retweet
 const THREAD_HTML_PATH = path.join(__dirname, "fixtures", "tweets", "similarweb-thread.html");
 const THREAD_GOLDEN_PATH = path.join(__dirname, "fixtures", "tweets", "thread.golden.md");
 const UPDATE_GOLDENS = process.env.UPDATE_GOLDENS === "1";
+const normalizeNewlines = (value) => String(value).replace(/\r\n?/g, "\n");
 
 const fixtureJson = JSON.parse(fs.readFileSync(FIXTURE_PATH, "utf8"));
 const quoteFixtureJson = JSON.parse(fs.readFileSync(QUOTE_FIXTURE_PATH, "utf8"));
@@ -39,7 +40,7 @@ function assertMatchesGolden(markdown, goldenPath) {
   }
   assert.ok(fs.existsSync(goldenPath), `missing golden file: ${goldenPath} (run with UPDATE_GOLDENS=1)`);
   const golden = fs.readFileSync(goldenPath, "utf8");
-  assert.equal(markdown, golden);
+  assert.equal(normalizeNewlines(markdown), normalizeNewlines(golden));
 }
 
 test("isTweetUrl matches x.com, twitter.com, and mobile.twitter.com status URLs", () => {
@@ -76,7 +77,7 @@ test("tweetToken is deterministic and matches the documented algorithm", () => {
   assert.equal(tweetToken(id), tweetToken(id));
 });
 
-test("normalizeTweet + buildTweetMarkdown matches the golden file byte-for-byte", () => {
+test("normalizeTweet + buildTweetMarkdown matches the golden file", () => {
   const tweet = normalizeTweet(fixtureJson);
   const markdown = buildTweetMarkdown(tweet);
 
@@ -87,7 +88,7 @@ test("normalizeTweet + buildTweetMarkdown matches the golden file byte-for-byte"
 
   assert.ok(fs.existsSync(GOLDEN_PATH), `missing golden file: ${GOLDEN_PATH} (run with UPDATE_GOLDENS=1)`);
   const golden = fs.readFileSync(GOLDEN_PATH, "utf8");
-  assert.equal(markdown, golden);
+  assert.equal(normalizeNewlines(markdown), normalizeNewlines(golden));
 });
 
 test("normalizeTweet trims the trailing t.co media link via display_text_range", () => {
@@ -246,7 +247,7 @@ test("buildTweetMarkdown renders a follow-up thread under a divider and keeps th
   } else {
     assert.ok(fs.existsSync(THREAD_GOLDEN_PATH), `missing golden file: ${THREAD_GOLDEN_PATH} (run with UPDATE_GOLDENS=1)`);
     const golden = fs.readFileSync(THREAD_GOLDEN_PATH, "utf8");
-    assert.equal(markdown, golden);
+    assert.equal(normalizeNewlines(markdown), normalizeNewlines(golden));
   }
 
   assert.match(markdown, /Gen AI website traffic share update/);

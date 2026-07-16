@@ -36,8 +36,9 @@ Export an entire site:
 
 Private by design:
 - Everything runs locally in your browser. No backend, no analytics, no remote code.
-- No host permissions at install. Single-page capture uses activeTab; whole-site export asks
-  for access to the specific site, only when you start it.
+- Single-page capture uses activeTab. The only install-time host permission is X/Twitter's
+  public syndication endpoint for clean status capture; whole-site export asks for access to
+  the specific site only when you start it.
 
 ## Permission justifications
 
@@ -46,6 +47,8 @@ Private by design:
 - **downloads** — save the .md file or the site-export archive you requested.
 - **storage** — remember your settings and templates on your device.
 - **sidePanel** — show the clip card beside the page when you choose Open in side panel.
+- **X/Twitter syndication host** — retrieve the public JSON representation of a status only
+  when you clip that status; protected or unavailable posts fall back to page capture.
 - **Optional host access (http/https)** — requested only when you start a site export, so the
   extension can open and read the pages of the site you chose.
 - **Optional tabs** — used during a site export to manage the background tabs it opens.

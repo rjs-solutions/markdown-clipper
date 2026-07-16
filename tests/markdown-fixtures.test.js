@@ -18,6 +18,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PAGES_DIR = path.join(__dirname, "fixtures", "pages");
 const GOLDEN_DIR = path.join(__dirname, "fixtures", "golden");
 const UPDATE_GOLDENS = process.env.UPDATE_GOLDENS === "1";
+const normalizeNewlines = (value) => String(value).replace(/\r\n?/g, "\n");
 
 // The URL each fixture was actually saved from. A clipped page lives in a
 // vault detached from its origin, so relative URLs must be absolutized against
@@ -52,7 +53,7 @@ for (const name of fixtureNames) {
 
     assert.ok(fs.existsSync(goldenPath), `missing golden file: ${goldenPath} (run with UPDATE_GOLDENS=1)`);
     const golden = fs.readFileSync(goldenPath, "utf8");
-    assert.equal(markdown, golden);
+    assert.equal(normalizeNewlines(markdown), normalizeNewlines(golden));
   });
 }
 

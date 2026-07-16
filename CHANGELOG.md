@@ -3,6 +3,18 @@
 All notable changes to Markdown Clipper are documented here. This project follows
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Preview expansion with popup/side-panel/in-page action modes, draggable and resizable in-page
+  panel, context-menu page/selection clipping, durable crawler jobs, SharePoint and Confluence
+  adapters, X/Twitter status capture, local knowledge vault output, wiki indexing, tag rules,
+  prompt generation, settings schema/backup, and saved SharePoint-site discovery foundations.
+
+### Fixed
+- Golden Markdown tests now compare normalized newlines, so the full suite is stable on Windows
+  and Unix checkouts. In-page panel control messages are accepted only from its extension iframe.
+
 ## [1.1.0] — 2026-07-13
 
 ### Changed

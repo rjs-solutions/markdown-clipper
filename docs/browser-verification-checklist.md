@@ -1,6 +1,6 @@
 # Browser verification checklist — feature/clipper-expansion
 
-Everything on this branch passes 253 automated tests and a static load-safety audit
+Everything on this branch passes 294 automated tests and a static load-safety audit
 (service worker has no load-fatal DOM globals, no `createObjectURL` in the worker tree,
 all manifest-referenced files exist). What remains can only be checked in a real Chrome
 because it needs the extension loaded, the File System Access API, real IndexedDB, or a
@@ -15,7 +15,7 @@ independent once the extension is loaded.
 - [ ] Open the popup on any https page → click "Open in page". Popup closes, a floating panel appears top-right of the page.
 - [ ] **The panel's card shows the HOST page's title and URL — not a blank/extension page.** This is the one that would prove the tabId plumbing. If it shows blank, stop and tell me.
 - [ ] Drag by the title bar; drop near a viewport edge. Reload the page, reopen the panel → it restores on-screen (clamped), not off-screen.
-- [ ] Resize from the bottom-left handle → min size respected, top-right corner stays anchored.
+- [ ] Resize from the bottom-right handle → min size respected, top-left corner stays anchored.
 - [ ] Close (×) → the whole panel is gone (no leftover DOM node, right-click → Inspect to confirm).
 
 ## 2. Confluence detection  *(needs real Confluence + Jira)*
@@ -63,7 +63,8 @@ independent once the extension is loaded.
 - [ ] Right-click a page > **Clip with Markdown Clipper** → the in-page overlay opens.
 
 ## 9. Tweet / X clipping
-- [ ] First, Settings > Knowledge Base > "X / Twitter clipping" > **Enable** (grants cdn.syndication.twimg.com). Without this, a tweet still clips via normal DOM, just less cleanly.
+- [ ] Confirm extension Details shows the narrow `cdn.syndication.twimg.com` access used for
+      clean X/Twitter status capture. No settings toggle or runtime prompt is expected.
 - [ ] Open a normal tweet with an image, click the icon > clip. Body is a clean blockquote (author, date, text, image, "View on X"), no t.co noise.
 - [ ] A **quote tweet** shows the quoted tweet nested under "Quoting @author"; an **X article** shows title + preview + "Read the full article" link (preview only, by design).
 - [ ] A tweet whose author left a **follow-up reply** below it: the clip includes an "--- Author's follow-up ---" section with that reply. (Toggle Settings > Capture > "Include the author's follow-up replies" off to skip it.)

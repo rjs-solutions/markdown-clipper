@@ -12,7 +12,7 @@
 .\scripts\package-extension.ps1
 ```
 This zips the **contents** of `extension/` (manifest at the ZIP root) to
-`dist\markdown-web-clipper-<version>.zip` and validates the layout.
+`dist\markdown-clipper-<version>.zip` and validates the layout.
 
 ## 3. Chrome Web Store
 1. Go to the [Developer Dashboard](https://chrome.google.com/webstore/devconsole).
@@ -31,8 +31,8 @@ This zips the **contents** of `extension/` (manifest at the ZIP root) to
 - [ ] Keep the packaged ZIP in `dist/` (gitignored) for your records.
 
 ## Notes
-- The extension requests **no host permissions at install**; the site-export feature requests
-  access to a specific site at runtime. Reviewers may ask about this — it's covered in
-  STORE_LISTING.md and PRIVACY.md.
+- The only install-time host permission is X/Twitter's public syndication endpoint. Site export
+  requests access to specific sites at runtime. Both are covered in STORE_LISTING.md and
+  PRIVACY.md.
 - All third-party libraries are bundled locally (no remote code); licenses are in
   [NOTICE.md](../NOTICE.md).

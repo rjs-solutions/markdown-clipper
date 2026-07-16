@@ -56,7 +56,8 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 
 ## 6. Permissions sanity
 
-- [ ] On the extensions card, confirm **no host permissions requested at install**.
+- [ ] On the extensions card, confirm the only install-time site access is the narrow
+      `cdn.syndication.twimg.com` permission used for X/Twitter status capture.
 - [ ] Optional host access is requested only when starting a site export.
 
 ## Expected console noise from captured sites (not bugs)
