@@ -24,7 +24,7 @@ const iconPath = path.join(rootDir, "extension", "assets", "icons", "icon-128.pn
 const shots = [
   { raw: "01-capture-raw.png", output: "01-capture-1280x800.png", headline: "Turn the page in front of you into clean Markdown", body: "Review the capture, adjust metadata, then copy or download without leaving the page.", chips: ["SharePoint-aware", "Copy or download", "Movable panel"] },
   { raw: "02-collections-raw.png", output: "02-collections-1280x800.png", headline: "Keep important sites organized as reusable collections", body: "Save inventories, refresh for changes, and give every collection its own local folder.", chips: ["Saved collections", "Change detection", "Local library"] },
-  { raw: "03-collection-import-raw.png", output: "03-collection-import-1280x800.png", headline: "Import a URL list, sitemap, llms.txt, or whole site", body: "Bring related pages together, then save, sync, or export clean Markdown.", chips: ["TXT, CSV, XLSX", "Sitemaps", "ZIP + index.md"] },
+  { raw: "03-collection-capture-raw.png", output: "03-collection-capture-1280x800.png", headline: "Capture pages from a list, sitemap, llms.txt, or whole site", body: "Bring related pages together, then save, sync, or export clean Markdown.", chips: ["TXT, CSV, XLSX", "Sitemaps", "ZIP + index.md"] },
   { raw: "04-knowledge-base-raw.png", output: "04-knowledge-base-1280x800.png", headline: "Build a local knowledge base that stays portable", body: "Choose a vault, apply repeatable metadata, and prepare focused prompts for your clips.", chips: ["Local vault", "Templates", "LLM-ready"] },
   { raw: "05-editor-raw.png", output: "05-editor-1280x800.png", headline: "Polish the Markdown before it becomes a file", body: "Edit content and metadata in a focused full-page workspace, then copy or save it.", chips: ["Full-page editor", "Live output", "Save anywhere"] }
 ];
@@ -82,7 +82,7 @@ await mkdir(promoDir, { recursive: true });
 await mkdir(brandDir, { recursive: true });
 const icon = await readFile(iconPath);
 await saveSvg(promoSvg(icon, 440, 280, "Web pages to clean Markdown", "Capture, organize, and export—locally."), 440, path.join(promoDir, "small-promo-tile-440x280.png"));
-await saveSvg(promoSvg(icon, 1400, 560, "Capture the web as clean, portable Markdown", "Clip one page or import a collection, then export clean Markdown—private and local."), 1400, path.join(promoDir, "marquee-promo-tile-1400x560.png"));
+await saveSvg(promoSvg(icon, 1400, 560, "Capture the web as clean, portable Markdown", "Clip one page or capture a collection, then export clean Markdown—private and local."), 1400, path.join(promoDir, "marquee-promo-tile-1400x560.png"));
 await saveSvg(promoSvg(icon, 1280, 640, "Capture the web as clean Markdown", "SharePoint-aware clipping, reusable collections, and local knowledge-base workflows.", true), 1280, path.join(brandDir, "social-preview-1280x640.png"));
 
 if (promosOnly) process.exit(0);

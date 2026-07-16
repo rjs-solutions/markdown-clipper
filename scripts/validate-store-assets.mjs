@@ -7,7 +7,7 @@ const storeRoot = join(root, "dist", "store-listing");
 const required = [
   ["screenshots/01-capture-1280x800.png", 1280, 800],
   ["screenshots/02-collections-1280x800.png", 1280, 800],
-  ["screenshots/03-collection-import-1280x800.png", 1280, 800],
+  ["screenshots/03-collection-capture-1280x800.png", 1280, 800],
   ["screenshots/04-knowledge-base-1280x800.png", 1280, 800],
   ["screenshots/05-editor-1280x800.png", 1280, 800],
   ["promo-tiles/small-promo-tile-440x280.png", 440, 280]

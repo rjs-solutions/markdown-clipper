@@ -35,7 +35,7 @@ preserving their structure.
   define your own note + filename templates with `{{variable|filter}}` substitution
   (`{{title}}`, `{{author}}`, `{{date}}`, `{{meta:…}}`, `{{schema:…}}`, `{{selector:…}}`),
   inspired by the Obsidian Web Clipper.
-- **Import a collection** — bring in URLs from TXT, CSV, or XLSX; discover them from a sitemap,
+- **Capture a collection** — bring in URLs from TXT, CSV, or XLSX; discover them from a sitemap,
   `llms.txt`, saved collection, or same-site crawl; then save the collection, export a
   structure-preserving ZIP or aggregate Markdown file, or sync it locally. Host access is
   requested per-site, only when you start.

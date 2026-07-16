@@ -21,7 +21,7 @@ Review the five files in `dist/store-listing/screenshots/`, the two files under
 - [ ] No internal company, tenant, user, credential, or confidential page data is visible.
 - [ ] Copy and controls remain legible when the screenshot is viewed at 640×400.
 - [ ] The lead screenshot clearly shows page-to-Markdown capture and primary actions.
-- [ ] Collections and Import Collection screenshots explain organization without overwhelming the viewer.
+- [ ] Collections and Capture Collection screenshots explain organization without overwhelming the viewer.
 - [ ] Promo tiles use the current packaged icon and match the README/social preview.
 - [ ] `capture-report.json` names the intended version and sanitized demo source.
 - [ ] `npm run store:check` passes.

@@ -92,7 +92,7 @@ function normalizeInventory(inventory) {
 
 // Read the shared local-storage object once when a UI needs several saved
 // sites. This avoids re-reading the full (potentially large) inventories map
-// once per row on Options and the Import Collection page.
+// once per row on Options and the Capture Collection page.
 export async function loadSiteInventories(siteIds = []) {
   const inventories = await loadInventories();
   return Object.fromEntries(siteIds.map((siteId) => [siteId, normalizeInventory(inventories[siteId])]));

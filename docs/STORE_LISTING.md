@@ -42,7 +42,7 @@ Get cleaner, site-aware output:
 - X/Twitter posts can include quotes, article previews, and the author's follow-up thread.
 - Add YAML front matter, a plain metadata list, or custom note and filename templates.
 
-Import and revisit collections:
+Capture and revisit collections:
 
 - Import URL lists from TXT, CSV, or XLSX, or discover pages from a sitemap, `llms.txt`,
   same-site crawl, or saved collection.
@@ -61,11 +61,11 @@ Private by design:
 
 - Conversion runs locally in Chrome. There is no developer backend, account, analytics, or
   advertising, and no remote code.
-- Normal page clipping uses temporary `activeTab` access. Collection import and saved-collection
+- Normal page clipping uses temporary `activeTab` access. Collection capture and saved-collection
   refresh ask for access to the selected site's origin only when needed.
 - The developer cannot see captured pages, settings, vault files, or export results.
 
-Markdown Clipper only processes pages after you explicitly invoke a capture, import, refresh, or export.
+Markdown Clipper only processes pages after you explicitly invoke a capture, refresh, or export.
 It does not monitor ordinary browsing.
 
 ## Suggested release notes
@@ -82,7 +82,7 @@ order:
 
 1. Capture a page in the movable in-page panel.
 2. Manage reusable website and SharePoint collections.
-3. Import from a URL list, sitemap, `llms.txt`, or crawl, then export Markdown.
+3. Capture pages from a URL list, sitemap, `llms.txt`, or crawl, then export Markdown.
 4. Configure the local knowledge-base workflow.
 5. Edit Markdown and metadata before saving.
 
@@ -92,14 +92,14 @@ The exact filenames and safe demo scenarios are in [SCREENSHOTS.md](SCREENSHOTS.
 
 Markdown Clipper has one purpose: convert web content explicitly selected by the user into
 portable Markdown and save or organize that Markdown, including single-page, selection,
-knowledge-vault, and user-started collection import/export workflows.
+knowledge-vault, and user-started collection capture/export workflows.
 
 ## Permission justification drafts
 
 - **activeTab** — temporarily access the current page after the user invokes Markdown Clipper so
   it can produce the requested preview or clip.
 - **scripting** — run the packaged on-demand collector in the current page or in tabs opened for
-  a user-started collection import. No persistent content script is installed.
+  a user-started collection capture. No persistent content script is installed.
 - **downloads** — save a Markdown file or ZIP archive after the user clicks Download or completes
   an export.
 - **storage** — store settings, templates, tag rules, saved collection definitions and
@@ -114,7 +114,7 @@ knowledge-vault, and user-started collection import/export workflows.
   an X/Twitter status only when the user clips that status. Only the public status ID is sent.
 - **Optional HTTP/HTTPS host access** — declare the maximum runtime scope required for arbitrary
   user-selected sites. At runtime the extension requests the exact origin needed for a collection
-  import or saved-collection refresh; it does not monitor other sites.
+  capture or saved-collection refresh; it does not monitor other sites.
 
 ## Remote code
 
@@ -128,7 +128,7 @@ Use these selections so the dashboard, UI, and [privacy policy](../PRIVACY.md) r
 - **Website content:** Yes. The extension reads selected rendered pages and metadata to generate
   Markdown and may store requested output locally.
 - **Web history / browsing activity:** Yes, if presented as a data category. It processes the
-  user-selected URLs and URLs discovered in that user-started collection import; it does not observe
+  user-selected URLs and URLs discovered in that user-started collection capture; it does not observe
   unrelated browsing.
 - **Authentication information:** No. Existing browser sessions can make a selected page
   available, but the extension does not request cookies, passwords, or authentication tokens.
@@ -164,7 +164,7 @@ Paste this into the dashboard's test-instructions field and update wording if th
 
 > Open any public article page, click Markdown Clipper, and confirm a Markdown preview appears.
 > Edit the title or description, then use Copy or Download. Open Options to review the General,
-> Clipping, Knowledge base, Collections, and Advanced sections. Choose Import a collection to
+> Clipping, Knowledge base, Collections, and Advanced sections. Choose Capture a collection to
 > paste several public URLs and review the available URL list, sitemap, llms.txt, and crawl input
 > modes. Collection discovery requests access only to the selected origin. SharePoint-specific
 > extraction can be tested on a SharePoint page when the reviewer has an existing signed-in

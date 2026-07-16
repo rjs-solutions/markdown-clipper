@@ -112,7 +112,7 @@ try {
   await crawl.locator("#urls").fill([`${origin}/`, `${origin}/guide/getting-started`, `${origin}/guide/collections`].join("\n"));
   await crawl.locator("#collection-name").fill("Documentation starter set");
   await crawl.locator("#output").selectOption("both");
-  await capture(crawl, "03-collection-import-raw.png");
+  await capture(crawl, "03-collection-capture-raw.png");
 
   await options.goto(`chrome-extension://${extensionId}/src/options/index.html?section=knowledgeBase`, { waitUntil: "domcontentloaded" });
   await options.locator('[data-section="knowledgeBase"]').waitFor({ state: "visible" });
@@ -123,7 +123,7 @@ try {
   await editor.locator("#app").waitFor({ state: "visible" });
   await capture(editor, "05-editor-raw.png");
 
-  await fs.writeFile(reportPath, `${JSON.stringify({ version, startedAt, completedAt: new Date().toISOString(), viewport: { width: 1280, height: 800 }, source: "sanitized local demo", files: ["01-capture-raw.png", "02-collections-raw.png", "03-collection-import-raw.png", "04-knowledge-base-raw.png", "05-editor-raw.png"] }, null, 2)}\n`);
+  await fs.writeFile(reportPath, `${JSON.stringify({ version, startedAt, completedAt: new Date().toISOString(), viewport: { width: 1280, height: 800 }, source: "sanitized local demo", files: ["01-capture-raw.png", "02-collections-raw.png", "03-collection-capture-raw.png", "04-knowledge-base-raw.png", "05-editor-raw.png"] }, null, 2)}\n`);
   process.stdout.write(`Wrote ${path.relative(rootDir, reportPath)}\n`);
 } finally {
   server.close();
