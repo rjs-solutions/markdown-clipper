@@ -57,6 +57,18 @@ input {
   border-bottom: 1px solid var(--border);
 }
 
+/* Draggable in the in-page overlay only: the header forwards pointer moves
+   to panel-host.js's shadow host via postMessage (see popup.js's
+   wireHeaderDrag). Icon buttons keep their own pointer cursor so hovering
+   one doesn't suggest the whole header is a drag target there. */
+body.in-iframe .header {
+  cursor: move;
+}
+
+body.in-iframe .header .icon-button {
+  cursor: pointer;
+}
+
 .wordmark {
   display: flex;
   align-items: center;

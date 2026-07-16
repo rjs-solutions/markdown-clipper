@@ -69,6 +69,7 @@ async function initialize() {
     el.closePanel.addEventListener("click", () => {
       window.parent.postMessage({ type: "mc-panel-close" }, "*");
     });
+    wireHeaderDrag();
   }
   try {
     settings = await loadSettings();
@@ -147,6 +148,53 @@ function wireEvents() {
   el.tags.addEventListener("input", () => {
     el.tags.dataset.edited = "1";
   });
+}
+
+// The in-page overlay's own header carries no drag handle of its own -- the
+// thin strip lives on panel-host.js's shadow host, above the iframe. Letting
+// the user grab the header bar here forwards the drag as a postMessage
+// bridge (movementX/Y deltas), since this iframe has no direct handle to the
+// host element that actually owns the panel's position. Icon buttons inside
+// the header stay clickable: a pointerdown on a button is left alone so the
+// button's own click still fires.
+function wireHeaderDrag() {
+  const header = document.querySelector(".header");
+  if (!header) {
+    return;
+  }
+  let dragging = false;
+  header.addEventListener("pointerdown", (event) => {
+    if (event.target.closest("button")) {
+      return;
+    }
+    event.preventDefault();
+    dragging = true;
+    header.setPointerCapture(event.pointerId);
+    window.parent.postMessage({ type: "mc-panel-drag-start" }, "*");
+  });
+  header.addEventListener("pointermove", (event) => {
+    if (!dragging) {
+      return;
+    }
+    window.parent.postMessage(
+      { type: "mc-panel-drag", dx: event.movementX, dy: event.movementY },
+      "*"
+    );
+  });
+  const endDrag = (event) => {
+    if (!dragging) {
+      return;
+    }
+    dragging = false;
+    try {
+      header.releasePointerCapture(event.pointerId);
+    } catch {
+      // Pointer capture may already be released (e.g. lost focus); harmless.
+    }
+    window.parent.postMessage({ type: "mc-panel-drag-end" }, "*");
+  };
+  header.addEventListener("pointerup", endDrag);
+  header.addEventListener("pointercancel", endDrag);
 }
 
 // Union any number of tag arrays, deduped, first-seen order preserved.

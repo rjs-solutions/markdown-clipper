@@ -161,6 +161,12 @@ async function mount(tabId) {
   // The iframe's own sleek header carries the close control now (see
   // popup.js's #do-close-panel in the in-iframe context); this is the other
   // side of that bridge, since the iframe has no direct handle to this host.
+  // The same bridge also carries the header-drag affordance (popup.js's
+  // wireHeaderDrag): the iframe has no direct handle to the container it is
+  // sitting inside either, so drag start/move/end arrive as postMessage
+  // deltas and get applied here with the exact same clamp/apply helpers the
+  // #drag-handle strip uses.
+  let dragGeometry = null;
   host.mcMessageHandler = (event) => {
     if (event.data && event.data.type === "mc-panel-close") {
       removeHost(host);
@@ -168,6 +174,19 @@ async function mount(tabId) {
       if (event.data.scheme === "light" || event.data.scheme === "dark") {
         host.style.colorScheme = event.data.scheme;
       }
+    } else if (event.data && event.data.type === "mc-panel-drag-start") {
+      dragGeometry = currentGeometry(container);
+    } else if (event.data && event.data.type === "mc-panel-drag") {
+      if (!dragGeometry) {
+        dragGeometry = currentGeometry(container);
+      }
+      dragGeometry.left += event.data.dx;
+      dragGeometry.top += event.data.dy;
+      dragGeometry = clampGeometry(dragGeometry, viewportSize());
+      applyGeometry(container, dragGeometry);
+    } else if (event.data && event.data.type === "mc-panel-drag-end") {
+      saveGeometry(currentGeometry(container));
+      dragGeometry = null;
     }
   };
   window.addEventListener("message", host.mcMessageHandler);
@@ -293,7 +312,6 @@ function template() {
         user-select: none;
       }
       #frame-wrap {
-        position: relative;
         flex: 1 1 auto;
         min-height: 0;
       }
@@ -303,24 +321,29 @@ function template() {
         height: 100%;
         border: 0;
       }
+      #resize-bar {
+        flex: 0 0 auto;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        height: 17px;
+        background: light-dark(#ffffff, #1b1e25);
+        border-top: 1px solid light-dark(#e4e8ed, #2a2f38);
+      }
       #resize-handle {
-        position: absolute;
-        right: 0;
-        bottom: 0;
+        display: grid;
+        place-items: center;
         width: 20px;
-        height: 20px;
+        height: 100%;
         cursor: nwse-resize;
         touch-action: none;
-        display: grid;
-        place-items: end end;
-        padding: 3px;
       }
       #resize-handle svg {
-        width: 14px;
-        height: 14px;
+        width: 12px;
+        height: 12px;
         fill: none;
         stroke: light-dark(#8b96a3, #5a6270);
-        stroke-width: 2;
+        stroke-width: 1.5;
         stroke-linecap: round;
         pointer-events: none;
       }
@@ -332,11 +355,13 @@ function template() {
       <div id="drag-handle" title="Drag to move"></div>
       <div id="frame-wrap">
         <iframe id="frame"></iframe>
+      </div>
+      <div id="resize-bar">
         <div id="resize-handle" title="Drag to resize">
-          <svg viewBox="0 0 14 14" aria-hidden="true">
-            <path d="M9 9L11 11"></path>
-            <path d="M8 10L10 12"></path>
-            <path d="M7 11L9 13"></path>
+          <svg viewBox="0 0 12 12" aria-hidden="true">
+            <path d="M10 1L1 10"></path>
+            <path d="M10 5L5 10"></path>
+            <path d="M10 9L9 10"></path>
           </svg>
         </div>
       </div>
