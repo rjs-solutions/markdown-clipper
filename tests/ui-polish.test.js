@@ -58,6 +58,11 @@ test("collection reminder choices match Theme cards and utility actions share a 
   assert.match(css, /\.collection-utility-actions \.collection-icon-action\s*\{[^}]*height:\s*37px;[^}]*min-height:\s*37px;/s);
 });
 
+test("Activity statistics use secondary text sizing", async () => {
+  const css = await readFile(new URL("../extension/src/options/styles.css", import.meta.url), "utf8");
+  assert.match(css, /\.activity-stats\s*\{[^}]*font-size:\s*12\.5px;/s);
+});
+
 test("Collections emphasizes ready intake, segments sync reminders, and groups utilities", async () => {
   const source = await readFile(new URL("../extension/src/options/options.js", import.meta.url), "utf8");
   const css = await readFile(new URL("../extension/src/options/styles.css", import.meta.url), "utf8");
