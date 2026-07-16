@@ -575,7 +575,7 @@ legend {
 .sites-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 8px;
   flex-wrap: wrap;
 }
@@ -584,7 +584,7 @@ legend {
   display: flex;
   align-items: center;
   gap: 5px;
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .collection-utility-actions .collection-icon-action:disabled {
@@ -634,7 +634,7 @@ legend {
 
 .collection-schedule-row {
   display: grid;
-  grid-template-columns: auto 130px minmax(160px, 1fr);
+  grid-template-columns: 130px minmax(240px, 1fr);
   gap: 8px;
   align-items: center;
 }
@@ -642,6 +642,19 @@ legend {
 .collection-schedule-row > span:first-child {
   color: var(--text);
   font-weight: 600;
+}
+
+.collection-schedule-options {
+  width: 100%;
+}
+
+.collection-schedule-options .segmented-option {
+  flex: 1;
+  min-width: 0;
+}
+
+.collection-schedule-status {
+  grid-column: 1 / -1;
 }
 
 .site-row {
@@ -1246,6 +1259,18 @@ button[type="submit"] {
 }
 
 button[type="submit"]:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+button.is-primary-action {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+button.is-primary-action:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
 }

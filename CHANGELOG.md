@@ -37,6 +37,8 @@ All notable changes to Markdown Clipper are documented here. This project follow
   per-collection exports into one menu, and reducing row actions to quiet bare icons.
 - Add a concise introduction beneath every major Options tab heading so users can understand
   each section before scanning its controls.
+- Emphasize Add & discover only when collection input is ready, replace the sync reminder select
+  with an accessible three-choice control, and group Saved Collections utilities without dead space.
 
 - Add an accessible split Download action: the main segment keeps one-click download/vault behavior, while a folder segment opens Chrome's native location chooser in the popup, side panel, in-page overlay, and full editor.
 

@@ -50,6 +50,18 @@ test("saved collection rows use quiet actions and one combined export menu", asy
   assert.match(css, /\.collection-library-field\s*\{[^}]*border:\s*0;[^}]*background:\s*transparent;/s);
 });
 
+test("Collections emphasizes ready intake, segments sync reminders, and groups utilities", async () => {
+  const source = await readFile(new URL("../extension/src/options/options.js", import.meta.url), "utf8");
+  const css = await readFile(new URL("../extension/src/options/styles.css", import.meta.url), "utf8");
+  assert.match(source, /addButton\.classList\.toggle\("is-primary-action", isReady\)/);
+  assert.match(source, /scheduleOptions\.className = "segmented collection-schedule-options"/);
+  assert.match(source, /\[\["off", "Off"\], \["weekly", "Weekly"\], \["monthly", "Monthly"\]\]/);
+  assert.match(css, /button\.is-primary-action\s*\{[^}]*background:\s*var\(--accent\);/s);
+  assert.match(css, /\.sites-toolbar\s*\{[^}]*justify-content:\s*flex-start;/s);
+  assert.match(css, /\.collection-utility-actions\s*\{[^}]*margin-left:\s*0;/s);
+  assert.match(css, /\.collection-schedule-status\s*\{[^}]*grid-column:\s*1 \/ -1;/s);
+});
+
 test("settings actions use clear labels, meaningful icons, and explanatory hover text", async () => {
   const source = await readFile(new URL("../extension/src/options/options.js", import.meta.url), "utf8");
   const schema = await readFile(new URL("../extension/src/lib/settings-schema.js", import.meta.url), "utf8");

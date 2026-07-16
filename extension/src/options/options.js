@@ -933,6 +933,14 @@ function renderCollectionsControl(panel) {
   const addButton = document.createElement("button");
   addButton.type = "button";
   configureLabeledButton(addButton, "Add & discover pages", ACTION_ICONS.discover, "Save this collection and find its pages now");
+  addButton.disabled = true;
+
+  const updateAddButtonState = () => {
+    const isReady = Boolean(urlInput.value.trim());
+    addButton.disabled = !isReady;
+    addButton.classList.toggle("is-primary-action", isReady);
+  };
+  urlInput.addEventListener("input", updateAddButtonState);
 
   const addControls = document.createElement("div");
   addControls.className = "sites-add-controls";
@@ -972,15 +980,30 @@ function renderCollectionsControl(panel) {
   configureLabeledButton(syncAllLibraryButton, "Sync all collections", ACTION_ICONS.sync, "Update every saved collection in the Local Collections Library");
   libraryButtons.append(chooseLibraryButton, regrantLibraryButton, forgetLibraryButton, syncAllLibraryButton);
   libraryField.append(libraryStatus, libraryButtons);
-  const scheduleRow = document.createElement("label");
+  const scheduleRow = document.createElement("div");
   scheduleRow.className = "collection-schedule-row";
   const scheduleLabel = document.createElement("span");
+  scheduleLabel.id = "collection-sync-reminder-label";
   scheduleLabel.textContent = "Sync due reminder";
-  const scheduleSelect = document.createElement("select");
-  scheduleSelect.append(new Option("Off", "off"), new Option("Weekly", "weekly"), new Option("Monthly", "monthly"));
+  const scheduleOptions = document.createElement("div");
+  scheduleOptions.className = "segmented collection-schedule-options";
+  scheduleOptions.setAttribute("role", "radiogroup");
+  scheduleOptions.setAttribute("aria-labelledby", scheduleLabel.id);
+  const scheduleButtons = new Map();
+  for (const [value, label] of [["off", "Off"], ["weekly", "Weekly"], ["monthly", "Monthly"]]) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "segmented-option";
+    button.dataset.value = value;
+    button.setAttribute("role", "radio");
+    button.setAttribute("aria-checked", "false");
+    button.textContent = label;
+    scheduleButtons.set(value, button);
+    scheduleOptions.append(button);
+  }
   const scheduleStatus = document.createElement("span");
-  scheduleStatus.className = "help-text";
-  scheduleRow.append(scheduleLabel, scheduleSelect, scheduleStatus);
+  scheduleStatus.className = "help-text collection-schedule-status";
+  scheduleRow.append(scheduleLabel, scheduleOptions, scheduleStatus);
   libraryField.append(scheduleRow);
   wrapper.append(libraryField);
 
@@ -1080,14 +1103,24 @@ function renderCollectionsControl(panel) {
   });
 
   refreshLibraryStatus();
+  const selectSchedule = (frequency) => {
+    for (const [value, button] of scheduleButtons) {
+      const active = value === frequency;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-checked", String(active));
+    }
+  };
   loadCollectionSchedule().then((schedule) => {
-    scheduleSelect.value = schedule.frequency;
-    scheduleStatus.textContent = schedule.lastCompletedAt ? `Last full sync: ${formatDateTime(schedule.lastCompletedAt)}` : "Chrome shows a SYNC badge when a manual sync is due.";
+    selectSchedule(schedule.frequency);
+    scheduleStatus.textContent = schedule.lastCompletedAt ? `Last full sync: ${formatDateTime(schedule.lastCompletedAt)}` : "Shows a SYNC badge when a manual sync is due.";
   });
-  scheduleSelect.addEventListener("change", async () => {
-    await saveCollectionSchedule(scheduleSelect.value);
-    scheduleStatus.textContent = scheduleSelect.value === "off" ? "Reminder disabled." : "Chrome will show a SYNC badge when a manual sync is due.";
-  });
+  for (const [frequency, button] of scheduleButtons) {
+    button.addEventListener("click", async () => {
+      selectSchedule(frequency);
+      await saveCollectionSchedule(frequency);
+      scheduleStatus.textContent = frequency === "off" ? "Reminder disabled." : "Shows a SYNC badge when a manual sync is due.";
+    });
+  }
 
   function persist() {
     saveSites(sites).catch((error) => {
@@ -1476,6 +1509,7 @@ function renderCollectionsControl(panel) {
     refreshAllButton.disabled = false;
     exportAllButton.disabled = false;
     urlInput.value = "";
+    updateAddButtonState();
     status.textContent = granted ? `Added ${site.name}; discovering pages…` : `Added ${site.name}. Site permission is needed to discover pages.`;
     if (granted) await controller.refresh({ permissionGranted: true });
   });
