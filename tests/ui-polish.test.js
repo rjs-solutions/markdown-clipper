@@ -17,6 +17,13 @@ test("popup header stays focused while collection capture and editing use a shor
   assert.match(css, /\.act-workflow\s*\{[^}]*min-height:\s*26px;[^}]*background:\s*var\(--surface-muted\);/s);
 });
 
+test("ready popup uses Chrome's full height while only the Markdown preview grows", async () => {
+  const css = await readFile(new URL("../extension/src/popup/styles.css", import.meta.url), "utf8");
+  assert.match(css, /body:not\(\.in-panel\):not\(\.in-iframe\):has\(\.card:not\(\[hidden\]\)\)\s*\{[^}]*height:\s*600px;[^}]*overflow:\s*hidden;/s);
+  assert.match(css, /:has\(\.card:not\(\[hidden\]\)\) \.card\s*\{[^}]*flex:\s*1 1 auto;[^}]*min-height:\s*0;[^}]*grid-template-rows:[^}]*minmax\(0, 1fr\);/s);
+  assert.match(css, /:has\(\.card:not\(\[hidden\]\)\) \.preview-body\s*\{[^}]*flex:\s*1 1 auto;[^}]*min-height:\s*0;[^}]*height:\s*auto;/s);
+});
+
 test("popup exposes a clipped-state detail popover and collection link", async () => {
   const html = await readFile(new URL("../extension/src/popup/index.html", import.meta.url), "utf8");
   const source = await readFile(new URL("../extension/src/popup/popup.js", import.meta.url), "utf8");

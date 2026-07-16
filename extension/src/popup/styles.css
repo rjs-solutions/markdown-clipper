@@ -12,6 +12,20 @@ body {
   font: 13px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+/* Chromium caps extension-action popups at 600px. Once capture content is
+   ready, use that allowance without making the loading and error states
+   unnecessarily tall. The Markdown preview below absorbs the extra room. */
+body:not(.in-panel):not(.in-iframe):has(.card:not([hidden])) {
+  height: 600px;
+  overflow: hidden;
+}
+
+body:not(.in-panel):not(.in-iframe):has(.card:not([hidden])) .popup {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 /* When the same card is shown in the side panel or the in-page overlay panel,
    fill the available width instead of the fixed popup width. */
 body.in-panel,
@@ -358,6 +372,26 @@ body.in-iframe .header .icon-button {
 .preview-body:focus {
   outline: none;
   box-shadow: inset 0 0 0 2px var(--accent-soft);
+}
+
+/* In the toolbar popup, keep every control visible and give all remaining
+   vertical space to the article instead of creating a document scrollbar. */
+body:not(.in-panel):not(.in-iframe):has(.card:not([hidden])) .card {
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-template-rows: auto auto auto auto auto minmax(0, 1fr);
+}
+
+body:not(.in-panel):not(.in-iframe):has(.card:not([hidden])) .preview {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+body:not(.in-panel):not(.in-iframe):has(.card:not([hidden])) .preview-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
 }
 
 /* The side panel and in-page overlay have real height to spare, so let the
