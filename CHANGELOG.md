@@ -5,6 +5,9 @@ All notable changes to Markdown Clipper are documented here. This project follow
 
 ## [Unreleased]
 
+- Replace the misleading disabled **Download format** dropdown during Local Collections Library
+  sync with a read-only **Library format** summary, while keeping download formats configurable
+  whenever **Chrome Downloads** is selected.
 - Reveal Capture Collection progress only after details exist, then scroll the panel to its true
   bottom so the live log is visible. Known URL lists now capture in conservative three-page
   batches, while link-discovery crawls remain sequential for deterministic, polite traversal.

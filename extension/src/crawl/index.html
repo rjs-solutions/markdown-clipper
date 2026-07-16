@@ -75,7 +75,8 @@
           <div class="group-body output-grid">
             <p class="section-description field-wide">Download a portable snapshot or sync normal Markdown files into the Local Collections Library.</p>
             <label class="field"><span>Save to</span><select id="destination"><option value="download">Chrome Downloads</option><option value="library">Local library: page files + index.md</option></select></label>
-            <label class="field"><span>Download format</span><select id="output"><option value="aggregate" selected>Single combined Markdown (.md)</option><option value="zip">ZIP: page files + index.md</option><option value="both">Markdown file + ZIP</option></select></label>
+            <label id="download-format-field" class="field"><span>Download format</span><select id="output"><option value="aggregate" selected>Single combined Markdown (.md)</option><option value="zip">ZIP: page files + index.md</option><option value="both">Markdown file + ZIP</option></select></label>
+            <div id="library-format-field" class="field" hidden><span>Library format</span><div class="readonly-output-format">Markdown page files + index.md</div></div>
             <p id="output-hint" class="hint field-wide">Snapshots are saved through Chrome Downloads.</p>
           </div>
         </section>

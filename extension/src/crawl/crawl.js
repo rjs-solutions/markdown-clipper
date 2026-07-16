@@ -37,6 +37,8 @@ const maxDepthInput = document.getElementById("max-depth");
 const includePatternsInput = document.getElementById("include-patterns");
 const excludePatternsInput = document.getElementById("exclude-patterns");
 const outputSelect = document.getElementById("output");
+const downloadFormatField = document.getElementById("download-format-field");
+const libraryFormatField = document.getElementById("library-format-field");
 const destinationSelect = document.getElementById("destination");
 const outputHint = document.getElementById("output-hint");
 const startButton = document.getElementById("start-btn");
@@ -241,8 +243,10 @@ function updateCollectionSaveState() {
 function reflectDestination() {
   const library = destinationSelect.value === "library";
   outputSelect.disabled = library;
+  downloadFormatField.hidden = library;
+  libraryFormatField.hidden = !library;
   if (library) {
-    outputHint.textContent = "Writes unpacked page files, index.md, collection.json, and a sync report directly into this collection's library subfolder.";
+    outputHint.textContent = "Library sync always writes unpacked Markdown pages, index.md, collection.json, and a sync report. Choose Chrome Downloads to select a combined Markdown or ZIP format.";
   } else if (outputSelect.value === "aggregate") {
     outputHint.textContent = "Downloads one combined Markdown file through Chrome Downloads; no extraction needed.";
   } else if (outputSelect.value === "zip") {
