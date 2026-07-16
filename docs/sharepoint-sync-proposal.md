@@ -100,19 +100,34 @@ back to a content hash when only crawl is available.
 - "Add a site": input for the site URL (+ optional friendly name). Auto-detect
   and validate the endpoint from the URL; show the resolved site name as
   confirmation.
-- Per saved site: last-synced time, page count, a **Sync now** button, and a
-  remove option.
+- Per saved site: last-synced time, **URL/page count**, a **Sync now** button,
+  and a remove option.
+- After discovery, the found pages persist on the site record and show under a
+  **chevron to expand/collapse** the list. The user can **manually add or
+  delete a page entry** to tune what syncs (e.g. drop noise, add a page
+  discovery missed). The header shows the total count.
 - Sync writes into the existing vault (respects the vault folder + index).
 - Optional later: scheduled/background sync (alarms) vs manual-only for v1.
 
 ## Phasing
 
-- **Phase 1**: add/save sites (URL -> auto-detected endpoint), Method 1 discovery
-  with Method 2 fallback, manual "Sync now" doing add/update/skip against the
-  vault index. Manual only.
+- **Phase 1a/1b** (done): saved-sites foundation + the discovery probe (prove
+  pages enumerate on the user's session).
+- **Phase 1c** (after discovery is validated on a real tenant): persist the
+  discovered pages on the site record, show them under an expand/collapse
+  chevron with a URL count, and allow manual add/delete of page entries.
+- **Phase 1**: manual "Sync now" doing add/update/skip against the vault index,
+  keyed by page identity. Manual only.
 - **Phase 2**: removed-upstream handling, better conflict/versioning UI, richer
-  per-site filters (subsites, page libraries).
+  per-site filters (subsites, page libraries), and the crawl page's "extract a
+  full site" gaining a dropdown of saved SharePoint sites.
 - **Phase 3**: Graph (Method 3) opt-in, optional scheduled sync.
+
+## Parked ideas (not now)
+
+- **Graph view** of clips and their relationships (Obsidian-style), or of a
+  SharePoint site's page composition. Appealing but off the core sync path and
+  a large build of its own; revisit only after sync ships and earns its keep.
 
 ## Open questions / risks (settle before building)
 
