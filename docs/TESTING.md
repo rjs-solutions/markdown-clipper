@@ -45,7 +45,9 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
 - [ ] Import TXT, CSV, and XLSX URL lists in Capture Collection; save one as a custom collection.
 - [ ] Export one collection and all collections as CSV; verify labels, types, sources, and URLs.
 - [ ] Choose a **Local Collections Library** folder. Each collection shows a unique relative path;
-      changing a path persists, while a duplicate path is rejected.
+      changing it reveals **Move existing files** and **Future syncs only**. Move one synced
+      collection and confirm the old folder is removed only after the new copy is complete;
+      duplicate and nested destinations are rejected. Verify future-sync-only leaves old files.
 - [ ] Sync a collection and verify normal Markdown page files, `index.md`, `collection.json`, and
       `_sync-report.md` appear under `<type>/<collection>`. Sync again after editing a page and
       confirm its file is updated rather than duplicated.

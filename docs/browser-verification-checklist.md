@@ -1,6 +1,6 @@
 # Browser verification checklist — feature/clipper-expansion
 
-Everything on this branch passes 360 automated tests and a static load-safety audit
+Everything on this branch passes 362 automated tests and a static load-safety audit
 (service worker has no load-fatal DOM globals, no `createObjectURL` in the worker tree,
 all manifest-referenced files exist). What remains can only be checked in a real Chrome
 because it needs the extension loaded, the File System Access API, real IndexedDB, or a
@@ -33,6 +33,9 @@ independent once the extension is loaded.
 - [ ] Choose a Local Collections Library root, adjust one collection's relative folder, and click
       Sync. Confirm page `.md` files, `index.md`, `collection.json`, and `_sync-report.md` are
       directly readable without extracting a ZIP. A second sync updates files in place.
+- [ ] Change a synced collection's Library subfolder. Confirm **Move existing files** copies and
+      verifies the collection before removing the old folder; confirm **Future syncs only** keeps
+      the old folder. Duplicate and nested destinations must be rejected.
 - [ ] Reopen Chrome and verify the folder status; use Re-grant access if Chrome requires it.
 - [ ] Click **Sync all collections**, let at least two collections finish, close/reopen the export
       window, and confirm completed collections are not repeated. Weekly/monthly reminder choices

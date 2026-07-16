@@ -4,10 +4,16 @@ import { readFile } from "node:fs/promises";
 
 test("Collections settings expose one library root, per-collection paths, and sync", async () => {
   const source = await readFile(new URL("../extension/src/options/options.js", import.meta.url), "utf8");
+  const css = await readFile(new URL("../extension/src/options/styles.css", import.meta.url), "utf8");
   assert.match(source, /Local Collections Library/);
   assert.match(source, /Choose library folder/);
   assert.match(source, /collectionLibraryPath/);
   assert.match(source, /destination=library/);
+  assert.match(source, /"Move existing files"/);
+  assert.match(source, /"Future syncs only"/);
+  assert.match(source, /moveCollectionLibraryFolder/);
+  assert.match(source, /writeCollectionLibraryCatalog/);
+  assert.match(css, /\.collection-move-choice\[hidden\]/);
 });
 
 test("Capture Collection separates snapshot downloads from local library sync", async () => {

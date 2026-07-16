@@ -6,7 +6,8 @@ import {
   uniqueCollectionLibraryPath,
   syncCollectionToLibrary,
   writeCollectionLibraryCatalog,
-  reviewRemovedCollectionFile
+  reviewRemovedCollectionFile,
+  moveCollectionLibraryFolder
 } from "../extension/src/lib/collection-library.js";
 
 function missing(name) {
@@ -19,9 +20,14 @@ function makeDirectory(name = "root") {
   const directories = new Map();
   const files = new Map();
   return {
+    kind: "directory",
     name,
     directories,
     files,
+    async *entries() {
+      for (const entry of directories) yield entry;
+      for (const entry of files) yield entry;
+    },
     async getDirectoryHandle(childName, { create = false } = {}) {
       if (!directories.has(childName)) {
         if (!create) throw missing(childName);
@@ -33,6 +39,7 @@ function makeDirectory(name = "root") {
       if (!files.has(fileName)) {
         if (!create) throw missing(fileName);
         files.set(fileName, {
+          kind: "file",
           content: "",
           async createWritable() {
             const file = this;
@@ -125,6 +132,31 @@ test("library catalog links every collection that has been synced", async () => 
   assert.equal(result.count, 1);
   assert.match(root.files.get("_collections.md").content, /sharepoint\/team-docs\/index\.md/);
   assert.match(root.files.get("_collections.json").content, /"name": "Team Docs"/);
+});
+
+test("a synced collection can be moved to a different library subfolder", async () => {
+  const root = makeDirectory();
+  const pages = [{ url: "https://example.test/docs/start", title: "Start", markdown: "Hello", metadata: {} }];
+  await syncCollectionToLibrary(root, collection, pages, { metadataStyle: "none", includeTitleHeading: true });
+
+  const result = await moveCollectionLibraryFolder(root, collection, "SharePoint Markdowns/Site A");
+  assert.deepEqual(result, { from: "sharepoint/team-docs", to: "SharePoint Markdowns/Site A", fileCount: 4 });
+  assert.equal(root.directories.get("sharepoint").directories.has("team-docs"), false);
+  const target = directory(root, "SharePoint Markdowns/Site A");
+  assert.match(target.files.get("index.md").content, /Start/);
+  assert.match(target.files.get("collection.json").content, /"folder": "SharePoint Markdowns\/Site A"/);
+  assert.equal(directory(target, "docs").files.get("start.md").content, "# Start\n\nHello\n");
+});
+
+test("collection moves reject existing and nested destinations", async () => {
+  const root = makeDirectory();
+  const pages = [{ url: "https://example.test/docs/start", title: "Start", markdown: "Hello", metadata: {} }];
+  await syncCollectionToLibrary(root, collection, pages, { metadataStyle: "none", includeTitleHeading: true });
+  await root.getDirectoryHandle("occupied", { create: true });
+
+  await assert.rejects(moveCollectionLibraryFolder(root, collection, "occupied"), /already exists/);
+  await assert.rejects(moveCollectionLibraryFolder(root, collection, "sharepoint/team-docs/nested"), /outside the current folder/);
+  assert.ok(directory(root, "sharepoint/team-docs").files.has("collection.json"));
 });
 
 test("removed local files can be explicitly archived after review", async () => {

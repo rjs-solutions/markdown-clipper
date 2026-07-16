@@ -18,6 +18,8 @@ All notable changes to Markdown Clipper are documented here. This project follow
 - Add incremental local-library writes, hostname grouping for multi-host custom lists, root
   `_collections.md`/`_collections.json` catalogs, resumable **Sync all**, weekly/monthly sync-due
   reminders, and an explicit page-health review for failed, removed, archived, or deleted pages.
+- Add an explicit collection move workflow that copies and verifies existing local-library files
+  before removing the old folder, with a separate future-syncs-only path option.
 - Make Copy a first-class split action: the primary segment copies the displayed body and its
   counter now says **Body**; the secondary segment copies the complete assembled document with
   title and metadata. Success is acknowledged on the button instead of a mismatched footer count.

@@ -52,6 +52,8 @@ Capture and revisit collections:
 - Choose a Local Collections Library and sync every saved collection into a separate folder of
   directly readable Markdown files, with an index, machine-readable manifest, root catalog, and
   safe page-health/change review. Incremental sync avoids rewriting unchanged files.
+- Move a synced collection to a different library subfolder after copy verification, or change
+  only the destination used by future syncs while leaving existing files in place.
 - Optionally enable a weekly or monthly reminder when a manual Sync all is due.
 - Export structure-preserving Markdown files with `index.md` in a ZIP, one aggregate Markdown
   document, or both.

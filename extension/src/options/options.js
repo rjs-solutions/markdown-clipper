@@ -32,7 +32,15 @@ import { exportSettings, importSettings } from "../lib/settings-backup.js";
 import { downloadText } from "../lib/download.js";
 import { collectionsToCsv } from "../lib/collection-csv.js";
 import { openCollectionWindow } from "../lib/window-placement.js";
-import { collectionLibraryPath, loadCollectionLibraryManifest, normalizeLibraryPath, reviewRemovedCollectionFile, uniqueCollectionLibraryPath } from "../lib/collection-library.js";
+import {
+  collectionLibraryPath,
+  loadCollectionLibraryManifest,
+  moveCollectionLibraryFolder,
+  normalizeLibraryPath,
+  reviewRemovedCollectionFile,
+  uniqueCollectionLibraryPath,
+  writeCollectionLibraryCatalog
+} from "../lib/collection-library.js";
 import { loadCollectionSchedule, saveCollectionSchedule } from "../lib/collection-schedule.js";
 import { loadCollectionHealth, removeCollectionHealth } from "../lib/collection-health.js";
 import { slugify } from "../lib/slug.js";
@@ -1013,7 +1021,7 @@ function renderCollectionsControl(panel) {
   savedHeading.textContent = "Saved collections";
   const savedDescription = document.createElement("p");
   savedDescription.className = "help-text";
-  savedDescription.textContent = "Refresh, sync, export, or remove collections you have already saved.";
+  savedDescription.textContent = "Refresh, sync, move, export, or remove collections you have already saved.";
   wrapper.append(savedHeading, savedDescription, toolbar, list);
 
   panel.append(wrapper);
@@ -1124,7 +1132,7 @@ function renderCollectionsControl(panel) {
   }
 
   function persist() {
-    saveSites(sites).catch((error) => {
+    return saveSites(sites).catch((error) => {
       console.error("Markdown Clipper collections save failed:", error);
     });
   }
@@ -1224,11 +1232,38 @@ function renderCollectionsControl(panel) {
     folderInput.type = "text";
     folderInput.value = collectionLibraryPath(site);
     folderInput.setAttribute("aria-label", `Local library path for ${site.name}`);
+    const folderActions = document.createElement("div");
+    folderActions.className = "collection-folder-actions";
     const resetFolderButton = document.createElement("button");
     resetFolderButton.type = "button";
-    configureLabeledButton(resetFolderButton, "Reset path", ACTION_ICONS.reset, "Restore the default subfolder for this collection");
-    folderRow.append(folderLabel, folderInput, resetFolderButton);
-    details.append(folderRow);
+    configureLabeledButton(resetFolderButton, "Default", ACTION_ICONS.reset, "Use the default type and collection-name subfolder");
+    const moveFolderButton = document.createElement("button");
+    moveFolderButton.type = "button";
+    configureLabeledButton(moveFolderButton, "Move…", ACTION_ICONS.folder, "Move this collection or use a different folder for future syncs");
+    moveFolderButton.disabled = true;
+    folderActions.append(resetFolderButton, moveFolderButton);
+    folderRow.append(folderLabel, folderInput, folderActions);
+
+    const moveChoice = document.createElement("div");
+    moveChoice.className = "collection-move-choice";
+    moveChoice.hidden = true;
+    const moveSummary = document.createElement("p");
+    const moveChoiceActions = document.createElement("div");
+    moveChoiceActions.className = "collection-move-actions";
+    const moveExistingButton = document.createElement("button");
+    moveExistingButton.type = "button";
+    configureLabeledButton(moveExistingButton, "Move existing files", ACTION_ICONS.folder, "Copy and verify the collection in its new folder, then remove the old folder");
+    moveExistingButton.classList.add("is-primary-action");
+    const futureFolderButton = document.createElement("button");
+    futureFolderButton.type = "button";
+    futureFolderButton.textContent = "Future syncs only";
+    futureFolderButton.title = "Leave existing files where they are and use the new folder on the next sync";
+    const cancelMoveButton = document.createElement("button");
+    cancelMoveButton.type = "button";
+    cancelMoveButton.textContent = "Cancel";
+    moveChoiceActions.append(moveExistingButton, futureFolderButton, cancelMoveButton);
+    moveChoice.append(moveSummary, moveChoiceActions);
+    details.append(folderRow, moveChoice);
 
     const discoverResults = document.createElement("ul");
     discoverResults.className = "site-discover-results";
@@ -1288,23 +1323,103 @@ function renderCollectionsControl(panel) {
       }
       openCollectionWindow(`collection=${encodeURIComponent(site.id)}&destination=library`);
     });
+    const defaultFolderPath = () => collectionLibraryPath({ ...site, libraryPath: "" });
+    const proposedFolderPath = () => normalizeLibraryPath(folderInput.value) || defaultFolderPath();
+    const folderPathUsedByAnotherCollection = (candidate) => sites.some((item) => (
+      item.id !== site.id && collectionLibraryPath(item).toLowerCase() === candidate.toLowerCase()
+    ));
+    const updateMoveButton = () => {
+      moveChoice.hidden = true;
+      const ready = proposedFolderPath().toLowerCase() !== collectionLibraryPath(site).toLowerCase();
+      moveFolderButton.disabled = !ready;
+      moveFolderButton.classList.toggle("is-primary-action", ready);
+    };
+    const applyFolderPath = async (candidate) => {
+      site.libraryPath = candidate === defaultFolderPath() ? "" : candidate;
+      folderInput.value = collectionLibraryPath(site);
+      await saveSites(sites);
+      moveFolderButton.disabled = true;
+      moveFolderButton.classList.remove("is-primary-action");
+      moveChoice.hidden = true;
+      if (libraryHandle && libraryPermissionGranted) {
+        try { await writeCollectionLibraryCatalog(libraryHandle, sites); } catch (error) {
+          console.error("Markdown Clipper library catalog refresh failed:", error);
+        }
+      }
+    };
+
+    folderInput.addEventListener("input", updateMoveButton);
     folderInput.addEventListener("change", () => {
-      const normalized = normalizeLibraryPath(folderInput.value);
-      const defaultPath = collectionLibraryPath({ ...site, libraryPath: "" });
-      const proposed = normalized === defaultPath ? "" : normalized;
-      if (sites.some((item) => item.id !== site.id && collectionLibraryPath(item).toLowerCase() === collectionLibraryPath({ ...site, libraryPath: proposed }).toLowerCase())) {
+      folderInput.value = proposedFolderPath();
+      updateMoveButton();
+    });
+    moveFolderButton.addEventListener("click", async () => {
+      const candidate = proposedFolderPath();
+      const current = collectionLibraryPath(site);
+      if (folderPathUsedByAnotherCollection(candidate)) {
         discoverStatus.textContent = "Another collection already uses that local folder.";
-        folderInput.value = collectionLibraryPath(site);
+        folderInput.value = current;
+        updateMoveButton();
         return;
       }
-      site.libraryPath = proposed;
+      moveSummary.textContent = `Change ${current} to ${candidate}.`;
+      moveExistingButton.disabled = !libraryHandle || !libraryPermissionGranted;
+      if (!libraryHandle || !libraryPermissionGranted) {
+        moveSummary.textContent += " Library access is needed to move existing files; you can still use the new path for future syncs.";
+        moveChoice.hidden = false;
+        return;
+      }
+      try {
+        const manifest = await loadCollectionLibraryManifest(libraryHandle, site);
+        if (!manifest) {
+          await applyFolderPath(candidate);
+          discoverStatus.textContent = `Future syncs will use ${candidate}. No existing synced folder needed to be moved.`;
+          return;
+        }
+        moveChoice.hidden = false;
+      } catch (error) {
+        discoverStatus.textContent = `Could not inspect the current folder: ${error && error.message ? error.message : error}`;
+      }
+    });
+    moveExistingButton.addEventListener("click", async () => {
+      const candidate = proposedFolderPath();
+      moveExistingButton.disabled = true;
+      futureFolderButton.disabled = true;
+      cancelMoveButton.disabled = true;
+      discoverStatus.textContent = `Moving ${site.name}…`;
+      try {
+        const result = await moveCollectionLibraryFolder(libraryHandle, site, candidate);
+        await applyFolderPath(candidate);
+        discoverStatus.textContent = `Moved ${result.fileCount} files from ${result.from} to ${result.to}.`;
+      } catch (error) {
+        discoverStatus.textContent = `Could not move the collection: ${error && error.message ? error.message : error}`;
+        moveChoice.hidden = false;
+      } finally {
+        futureFolderButton.disabled = false;
+        cancelMoveButton.disabled = false;
+        moveExistingButton.disabled = !libraryHandle || !libraryPermissionGranted;
+      }
+    });
+    futureFolderButton.addEventListener("click", async () => {
+      const previous = collectionLibraryPath(site);
+      const candidate = proposedFolderPath();
+      try {
+        await applyFolderPath(candidate);
+        discoverStatus.textContent = `Future syncs will use ${candidate}. Existing files remain in ${previous}.`;
+      } catch (error) {
+        discoverStatus.textContent = `Could not update the collection folder: ${error && error.message ? error.message : error}`;
+      }
+    });
+    cancelMoveButton.addEventListener("click", () => {
       folderInput.value = collectionLibraryPath(site);
-      persist();
+      moveChoice.hidden = true;
+      moveFolderButton.disabled = true;
+      moveFolderButton.classList.remove("is-primary-action");
     });
     resetFolderButton.addEventListener("click", () => {
-      site.libraryPath = "";
-      folderInput.value = collectionLibraryPath(site);
-      persist();
+      folderInput.value = defaultFolderPath();
+      updateMoveButton();
+      folderInput.focus();
     });
     csvButton.addEventListener("click", async () => {
       const inventory = await loadSiteInventory(site.id);
@@ -1374,7 +1489,7 @@ function renderCollectionsControl(panel) {
           return true;
         } else {
           discoverStatus.textContent = result.reason === "crawl-required"
-            ? "No sitemap or llms.txt was found. Open Export to run a same-site crawl."
+            ? "No sitemap or llms.txt was found. Open Capture Collection to run a same-site crawl."
             : describeDiscoveryError(result);
         }
       } catch (error) {

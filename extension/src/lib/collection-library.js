@@ -47,6 +47,49 @@ async function directoryAt(root, relativePath) {
   return directory;
 }
 
+async function existingDirectoryAt(root, relativePath) {
+  let directory = root;
+  for (const segment of pathSegments(relativePath)) directory = await directory.getDirectoryHandle(segment);
+  return directory;
+}
+
+async function directoryExists(root, relativePath) {
+  try {
+    await existingDirectoryAt(root, relativePath);
+    return true;
+  } catch (error) {
+    if (error && error.name === "NotFoundError") return false;
+    throw error;
+  }
+}
+
+async function copyDirectoryContents(source, destination) {
+  let fileCount = 0;
+  for await (const [name, handle] of source.entries()) {
+    if (handle.kind === "directory") {
+      const child = await destination.getDirectoryHandle(name, { create: true });
+      fileCount += await copyDirectoryContents(handle, child);
+      continue;
+    }
+    const sourceFile = await handle.getFile();
+    const content = await sourceFile.text();
+    const destinationFile = await destination.getFileHandle(name, { create: true });
+    const writable = await destinationFile.createWritable();
+    await writable.write(content);
+    await writable.close();
+    if (await (await destinationFile.getFile()).text() !== content) throw new Error(`Could not verify ${name} after copying.`);
+    fileCount += 1;
+  }
+  return fileCount;
+}
+
+async function removeDirectoryAt(root, relativePath) {
+  const segments = pathSegments(relativePath);
+  const name = segments.pop();
+  const parent = segments.length ? await existingDirectoryAt(root, segments.join("/")) : root;
+  await parent.removeEntry(name, { recursive: true });
+}
+
 async function writeText(root, relativePath, content) {
   const segments = pathSegments(relativePath);
   const fileName = sanitizePathSegment(segments.pop(), { fallback: "file.md" });
@@ -117,6 +160,44 @@ function buildLibraryFiles(collection, pages, settings) {
 
 export function loadCollectionLibraryManifest(root, collection) {
   return readJson(root, `${collectionLibraryPath(collection)}/${MANIFEST_FILE}`);
+}
+
+export async function moveCollectionLibraryFolder(root, collection, destinationPath) {
+  if (!root) throw new Error("Choose a Local Collections Library folder first.");
+  const from = collectionLibraryPath(collection);
+  const to = normalizeLibraryPath(destinationPath);
+  if (!to) throw new Error("Enter a destination subfolder.");
+  if (from.toLowerCase() === to.toLowerCase()) throw new Error("Choose a different destination subfolder.");
+  const fromPrefix = `${from.toLowerCase()}/`;
+  const toPrefix = `${to.toLowerCase()}/`;
+  if (to.toLowerCase().startsWith(fromPrefix) || from.toLowerCase().startsWith(toPrefix)) {
+    throw new Error("Choose a destination outside the current folder.");
+  }
+  if (await directoryExists(root, to)) throw new Error("That destination folder already exists.");
+
+  let source;
+  try {
+    source = await existingDirectoryAt(root, from);
+  } catch (error) {
+    if (error && error.name === "NotFoundError") throw new Error("The current collection folder was not found. Use the new path for future syncs instead.");
+    throw error;
+  }
+
+  const destination = await directoryAt(root, to);
+  let fileCount;
+  try {
+    fileCount = await copyDirectoryContents(source, destination);
+    const manifest = await readJson(root, `${to}/${MANIFEST_FILE}`);
+    if (manifest) {
+      manifest.folder = to;
+      await writeText(root, `${to}/${MANIFEST_FILE}`, `${JSON.stringify(manifest, null, 2)}\n`);
+    }
+  } catch (error) {
+    try { await removeDirectoryAt(root, to); } catch { /* Preserve the original copy error. */ }
+    throw error;
+  }
+  await removeDirectoryAt(root, from);
+  return { from, to, fileCount };
 }
 
 export async function reviewRemovedCollectionFile(root, collection, relativePath, action, { reviewedAt = Date.now() } = {}) {

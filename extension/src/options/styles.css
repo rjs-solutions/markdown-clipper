@@ -746,6 +746,37 @@ legend {
   font-size: 0.85em;
 }
 
+.collection-folder-actions,
+.collection-move-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.collection-move-choice {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.collection-move-choice[hidden] {
+  display: none;
+}
+
+.collection-move-choice p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+
+.collection-move-actions button {
+  min-height: 34px;
+}
+
 .site-info {
   display: flex;
   flex-direction: column;
