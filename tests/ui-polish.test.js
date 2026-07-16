@@ -12,9 +12,12 @@ test("popup header stays focused while collection capture and editing use a shor
   assert.match(html, /class="actions-row actions-row-secondary"/);
   assert.match(html, /id="do-export"[^>]*>[\s\S]*?<svg[^>]*>[\s\S]*?<span>Capture Collection<\/span>[\s\S]*?id="do-expand"/);
   assert.match(html, /id="do-expand"[^>]*>[\s\S]*?<svg[^>]*>[\s\S]*?<span>Edit Markdown<\/span>/);
+  assert.match(html, /id="do-export"[^>]*title="Open Capture Collection in a separate window"[\s\S]*?class="launch-context"/);
+  assert.match(html, /id="do-expand"[^>]*title="Open the full Markdown editor in a new tab"[\s\S]*?class="launch-context"/);
   assert.match(css, /\.icon-button\s*\{[^}]*padding:\s*0;/s);
   assert.match(css, /\.icon-button svg\s*\{[^}]*display:\s*block;/s);
   assert.match(css, /\.act-workflow\s*\{[^}]*min-height:\s*26px;[^}]*background:\s*var\(--surface-muted\);/s);
+  assert.match(css, /\.act-workflow \.launch-context\s*\{[^}]*position:\s*absolute;[^}]*right:\s*8px;[^}]*width:\s*11px;/s);
 });
 
 test("ready popup uses Chrome's full height while only the Markdown preview grows", async () => {
@@ -121,7 +124,7 @@ test("Capture Collection uses branded flat sections and icon-led source choices"
   const css = await readFile(new URL("../extension/src/crawl/styles.css", import.meta.url), "utf8");
   assert.match(html, /<title>Capture Collection — Markdown Clipper<\/title>/);
   assert.match(html, /class="header-subtitle">Capture Collection<\/span>/);
-  assert.match(popupHtml, /id="do-export"[^>]*title="Capture multiple pages as a collection"/);
+  assert.match(popupHtml, /id="do-export"[^>]*title="Open Capture Collection in a separate window"/);
   assert.doesNotMatch(html, /id="close-window"/);
   assert.doesNotMatch(source, /close-window/);
   assert.doesNotMatch(html, /radio-mark/);
