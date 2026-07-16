@@ -84,8 +84,15 @@ async function initialize() {
   if (requestedRadio) requestedRadio.checked = true;
   for (const radio of form.querySelectorAll("input[name='mode']")) radio.addEventListener("change", reflectMode);
   reflectMode();
-  if (params.get("destination") === "library") destinationSelect.value = "library";
+  const requestedDestination = params.get("destination");
+  if (requestedDestination === "library" || requestedDestination === "download") {
+    destinationSelect.value = requestedDestination;
+  } else if (selectedCollection()) {
+    const libraryHandle = await loadCollectionLibraryHandle();
+    if (libraryHandle && await ensurePermission(libraryHandle) === "granted") destinationSelect.value = "library";
+  }
   destinationSelect.addEventListener("change", reflectDestination);
+  outputSelect.addEventListener("change", reflectDestination);
   reflectDestination();
   updateUrlCount();
 
@@ -232,9 +239,15 @@ function updateCollectionSaveState() {
 function reflectDestination() {
   const library = destinationSelect.value === "library";
   outputSelect.disabled = library;
-  outputHint.textContent = library
-    ? "Writes page files, index.md, collection.json, and a sync report into this collection's local folder."
-    : "Snapshots are saved through Chrome Downloads.";
+  if (library) {
+    outputHint.textContent = "Writes unpacked page files, index.md, collection.json, and a sync report directly into this collection's library subfolder.";
+  } else if (outputSelect.value === "aggregate") {
+    outputHint.textContent = "Downloads one combined Markdown file through Chrome Downloads; no extraction needed.";
+  } else if (outputSelect.value === "zip") {
+    outputHint.textContent = "Downloads separate page files and index.md in a ZIP archive.";
+  } else {
+    outputHint.textContent = "Downloads both the combined Markdown file and the ZIP archive.";
+  }
   updatePrimaryActionLabel();
 }
 

@@ -1032,11 +1032,21 @@ function renderCollectionsControl(panel) {
   const requestedCollectionId = new URLSearchParams(location.search).get("collection") || "";
   const rowControllers = new Map();
 
+  function showLibraryFolderStatus(handle, permission) {
+    const folderName = document.createElement("strong");
+    folderName.className = "library-folder-name";
+    folderName.textContent = handle.name || "(unnamed folder)";
+    const access = permission === "granted" ? "access granted" : "access needed";
+    libraryStatus.replaceChildren("Library folder: ", folderName, ` (${access})`);
+    libraryStatus.classList.add("has-library");
+  }
+
   async function refreshLibraryStatus() {
     try {
       libraryHandle = await loadCollectionLibraryHandle();
       if (!libraryHandle) {
         libraryPermissionGranted = false;
+        libraryStatus.classList.remove("has-library");
         libraryStatus.textContent = "No library folder chosen. Snapshot downloads still work normally.";
         regrantLibraryButton.hidden = true;
         forgetLibraryButton.hidden = true;
@@ -1044,11 +1054,12 @@ function renderCollectionsControl(panel) {
       }
       const permission = await ensurePermission(libraryHandle);
       libraryPermissionGranted = permission === "granted";
-      libraryStatus.textContent = `Library folder: ${libraryHandle.name || "(unnamed folder)"} (${permission === "granted" ? "access granted" : "access needed"})`;
+      showLibraryFolderStatus(libraryHandle, permission);
       regrantLibraryButton.hidden = permission === "granted";
       forgetLibraryButton.hidden = false;
       for (const controller of rowControllers.values()) controller.reviewHealth();
     } catch (error) {
+      libraryStatus.classList.remove("has-library");
       libraryStatus.textContent = `Could not read the library folder: ${error && error.message ? error.message : error}`;
     }
   }
@@ -1188,17 +1199,17 @@ function renderCollectionsControl(panel) {
     inventoryMenu.className = "collection-action-menu-popover";
     const markdownButton = document.createElement("button");
     markdownButton.type = "button";
-    markdownButton.textContent = "Markdown snapshot";
+    markdownButton.textContent = "Download Markdown snapshot";
     const syncMenuButton = document.createElement("button");
     syncMenuButton.type = "button";
-    syncMenuButton.textContent = "Sync to local library";
+    syncMenuButton.textContent = "Sync Markdown files to library";
     const csvButton = document.createElement("button");
     csvButton.type = "button";
     csvButton.textContent = "CSV spreadsheet";
     const txtButton = document.createElement("button");
     txtButton.type = "button";
     txtButton.textContent = "TXT URL list";
-    inventoryMenu.append(markdownButton, syncMenuButton, csvButton, txtButton);
+    inventoryMenu.append(syncMenuButton, markdownButton, csvButton, txtButton);
     inventoryExport.append(inventorySummary, inventoryMenu);
 
     const removeButton = document.createElement("button");
@@ -1239,10 +1250,13 @@ function renderCollectionsControl(panel) {
     configureLabeledButton(resetFolderButton, "Default", ACTION_ICONS.reset, "Use the default type and collection-name subfolder");
     const moveFolderButton = document.createElement("button");
     moveFolderButton.type = "button";
-    configureLabeledButton(moveFolderButton, "Move…", ACTION_ICONS.folder, "Move this collection or use a different folder for future syncs");
+    configureLabeledButton(moveFolderButton, "Apply change…", ACTION_ICONS.folder, "Edit the subfolder path first, then apply it to future syncs or move existing files");
     moveFolderButton.disabled = true;
     folderActions.append(resetFolderButton, moveFolderButton);
     folderRow.append(folderLabel, folderInput, folderActions);
+    const folderHelp = document.createElement("p");
+    folderHelp.className = "help-text collection-folder-help";
+    folderHelp.textContent = "Edit the path to change where this collection syncs. Existing files can be moved after its first local sync.";
 
     const moveChoice = document.createElement("div");
     moveChoice.className = "collection-move-choice";
@@ -1263,7 +1277,7 @@ function renderCollectionsControl(panel) {
     cancelMoveButton.textContent = "Cancel";
     moveChoiceActions.append(moveExistingButton, futureFolderButton, cancelMoveButton);
     moveChoice.append(moveSummary, moveChoiceActions);
-    details.append(folderRow, moveChoice);
+    details.append(folderRow, folderHelp, moveChoice);
 
     const discoverResults = document.createElement("ul");
     discoverResults.className = "site-discover-results";
@@ -1333,6 +1347,9 @@ function renderCollectionsControl(panel) {
       const ready = proposedFolderPath().toLowerCase() !== collectionLibraryPath(site).toLowerCase();
       moveFolderButton.disabled = !ready;
       moveFolderButton.classList.toggle("is-primary-action", ready);
+      folderHelp.textContent = ready
+        ? "Apply this path to future syncs, or move existing files if this collection was already synced."
+        : "Edit the path to change where this collection syncs. Existing files can be moved after its first local sync.";
     };
     const applyFolderPath = async (candidate) => {
       site.libraryPath = candidate === defaultFolderPath() ? "" : candidate;
@@ -1341,6 +1358,7 @@ function renderCollectionsControl(panel) {
       moveFolderButton.disabled = true;
       moveFolderButton.classList.remove("is-primary-action");
       moveChoice.hidden = true;
+      folderHelp.textContent = "Edit the path to change where this collection syncs. Existing files can be moved after its first local sync.";
       if (libraryHandle && libraryPermissionGranted) {
         try { await writeCollectionLibraryCatalog(libraryHandle, sites); } catch (error) {
           console.error("Markdown Clipper library catalog refresh failed:", error);
@@ -1412,9 +1430,7 @@ function renderCollectionsControl(panel) {
     });
     cancelMoveButton.addEventListener("click", () => {
       folderInput.value = collectionLibraryPath(site);
-      moveChoice.hidden = true;
-      moveFolderButton.disabled = true;
-      moveFolderButton.classList.remove("is-primary-action");
+      updateMoveButton();
     });
     resetFolderButton.addEventListener("click", () => {
       folderInput.value = defaultFolderPath();

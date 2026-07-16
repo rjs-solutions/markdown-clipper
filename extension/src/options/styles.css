@@ -632,6 +632,11 @@ legend {
   margin: 0;
 }
 
+.collection-library-field .sites-status.has-library .library-folder-name {
+  color: var(--text);
+  font-weight: 650;
+}
+
 .collection-library-buttons {
   display: flex;
   gap: 8px;
@@ -744,6 +749,12 @@ legend {
 .collection-folder-row input {
   min-width: 0;
   font-size: 0.85em;
+}
+
+.collection-folder-help {
+  margin: -2px 0 0;
+  padding-left: 0;
+  font-size: 0.82em;
 }
 
 .collection-folder-actions,

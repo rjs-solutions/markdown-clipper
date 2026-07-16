@@ -58,10 +58,10 @@ test("Saved Collections keeps primary utilities labeled and only Refresh all as 
 test("saved collection rows use quiet actions and one combined export menu", async () => {
   const source = await readFile(new URL("../extension/src/options/options.js", import.meta.url), "utf8");
   const css = await readFile(new URL("../extension/src/options/styles.css", import.meta.url), "utf8");
-  assert.match(source, /markdownButton\.textContent = "Markdown snapshot"/);
-  assert.match(source, /inventoryMenu\.append\(markdownButton, syncMenuButton, csvButton, txtButton\)/);
+  assert.match(source, /markdownButton\.textContent = "Download Markdown snapshot"/);
+  assert.match(source, /inventoryMenu\.append\(syncMenuButton, markdownButton, csvButton, txtButton\)/);
   assert.match(source, /actions\.append\(discoverButton, inventoryExport, removeButton\)/);
-  assert.match(source, /syncMenuButton\.textContent = "Sync to local library"/);
+  assert.match(source, /syncMenuButton\.textContent = "Sync Markdown files to library"/);
   assert.match(css, /\.site-actions \.collection-icon-action\s*\{[^}]*border-color:\s*transparent;[^}]*background:\s*transparent;/s);
   assert.match(css, /\.sites-list\s*\{[^}]*border-top:\s*1px solid var\(--border\);/s);
   assert.match(css, /\.collection-library-field\s*\{[^}]*border:\s*0;[^}]*background:\s*transparent;/s);
