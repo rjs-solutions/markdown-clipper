@@ -242,7 +242,7 @@ test("runJob claims the job id synchronously: two concurrent calls run the crawl
   installFakeIndexedDb();
   const { createCalls } = installFakeChrome();
 
-  const { createJob, saveJob, loadJob } = await import(
+  const { createJob, saveJob, loadJob, getJobBodies } = await import(
     `../extension/src/lib/crawl-state.js?case=concurrency-guard`
   );
   const { runJob } = await import(`../extension/src/background/service-worker.js?case=concurrency-guard`);
@@ -275,6 +275,10 @@ test("runJob claims the job id synchronously: two concurrent calls run the crawl
   const finished = await loadJob(job.id);
   assert.equal(finished.status, "done");
   assert.equal(finished.results.length, 1);
+  assert.equal(finished.results[0].markdown, undefined, "persisted job state keeps metadata, not full page bodies");
+  const storedBodies = await getJobBodies(job.id);
+  assert.equal(storedBodies.length, 1);
+  assert.match(storedBodies[0].markdown, /^# /, "the released body remains available in IndexedDB");
 
   // Guard against the id getting permanently wedged: activeRuns must have
   // been released (via the try/finally in runJob) so the SAME job id can be

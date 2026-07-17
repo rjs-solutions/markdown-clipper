@@ -5,6 +5,9 @@ All notable changes to Markdown Clipper are documented here. This project follow
 
 ## [Unreleased]
 
+- Prevent collection-capture memory spikes by processing rendered SharePoint pages sequentially,
+  limiting other known URL lists to two tabs, and releasing each full page body from the service
+  worker heap immediately after it is persisted to IndexedDB.
 - Generalize folder, crawl-filter, and tooltip examples so user guidance never assumes a specific
   organization, device path, SharePoint structure, or saved collection name.
 - Polish saved collection details with a full-width relative subfolder field, compact icon actions,

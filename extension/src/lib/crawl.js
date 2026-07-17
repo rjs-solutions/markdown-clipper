@@ -16,6 +16,31 @@ import { comparableUrl, sameHost } from "./discover.js";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+function isSharePointUrl(value) {
+  try {
+    return new URL(value).hostname.toLowerCase().endsWith(".sharepoint.com");
+  } catch {
+    return false;
+  }
+}
+
+// Rendered SharePoint pages are unusually memory-heavy. Keep them sequential
+// and use only a small amount of parallelism for ordinary, already-known URL
+// lists. Link-discovery crawls must remain sequential for deterministic queue
+// expansion regardless of platform.
+export function recommendedCaptureConcurrency({
+  urls = [],
+  followLinks = false,
+  collectionType = "",
+  requested = null
+} = {}) {
+  const safeMaximum = followLinks || collectionType === "sharepoint" || urls.some(isSharePointUrl) ? 1 : 2;
+  const requestedCount = requested == null
+    ? safeMaximum
+    : Math.max(1, Math.floor(Number(requested)) || 1);
+  return Math.min(safeMaximum, requestedCount);
+}
+
 function waitForTabComplete(tabId, timeoutMs = 30_000) {
   return new Promise((resolve) => {
     let settled = false;
@@ -180,7 +205,13 @@ export async function crawlSite({
     }
   };
 
-  const batchSize = followLinks ? 1 : Math.max(1, Math.min(4, Math.floor(Number(concurrency)) || 1));
+  // Apply the safety cap here as well as in the UI so jobs saved by an older
+  // extension version cannot resume with unsafe parallelism after an update.
+  const batchSize = recommendedCaptureConcurrency({
+    urls: seeds,
+    followLinks,
+    requested: concurrency
+  });
 
   while (queue.length && pages.length < maxPages) {
     if (shouldStop()) {

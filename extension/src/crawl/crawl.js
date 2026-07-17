@@ -1,6 +1,6 @@
 import { loadSettings } from "../lib/settings.js";
 import { parseUrlList, parseSitemap } from "../lib/discover.js";
-import { fetchSitemapPages } from "../lib/crawl.js";
+import { fetchSitemapPages, recommendedCaptureConcurrency } from "../lib/crawl.js";
 import { fetchLlmsPages } from "../lib/llms.js";
 import { readCollectionFile } from "../lib/collection-import.js";
 import { buildPageFiles, buildIndexMarkdown, buildAggregateMarkdown } from "../lib/aggregate.js";
@@ -388,7 +388,11 @@ async function start() {
         excludePatterns: parsePatterns(excludePatternsInput.value),
         retries: 2,
         retryDelayMs: 500,
-        concurrency: followLinks ? 1 : 3,
+        concurrency: recommendedCaptureConcurrency({
+          urls: seeds,
+          followLinks,
+          collectionType: collection?.type
+        }),
         outputMode: outputSelect.value,
         destination,
         collectionId: collection && collection.id

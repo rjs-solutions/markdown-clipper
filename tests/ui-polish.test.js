@@ -168,7 +168,7 @@ test("Capture Collection uses branded flat sections and icon-led source choices"
   assert.match(source, /Processing \$\{progress\.completed\} \/ \$\{progress\.total\} · ETA \$\{eta\}/);
   assert.match(source, /showProgress\(true\)/);
   assert.match(source, /window\.scrollTo\(\{ top: document\.documentElement\.scrollHeight, behavior: "smooth" \}\)/);
-  assert.match(source, /concurrency: followLinks \? 1 : 3/);
+  assert.match(source, /concurrency: recommendedCaptureConcurrency\(/);
   assert.match(css, /\.progress-group\s*\{[^}]*scroll-margin-bottom:\s*64px;/s);
   assert.match(source, /collectionNameInput\.addEventListener\("input", updateCollectionSaveState\)/);
   assert.match(source, /saveCollectionButton\.classList\.toggle\("is-primary-action", isReady\)/);

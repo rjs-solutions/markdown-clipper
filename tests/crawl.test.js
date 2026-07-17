@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { crawlSite } from "../extension/src/lib/crawl.js";
+import { crawlSite, recommendedCaptureConcurrency } from "../extension/src/lib/crawl.js";
 
 const LINKS = {
   "https://a.com/1": [
@@ -110,7 +110,25 @@ test("crawlSite without followLinks captures only the seeds", async () => {
   assert.equal(pages.length, 2);
 });
 
-test("known URL lists capture up to three pages concurrently", async () => {
+test("capture concurrency stays sequential for SharePoint and conservative elsewhere", () => {
+  assert.equal(recommendedCaptureConcurrency({
+    urls: ["https://tenant.sharepoint.com/sites/example/SitePages/Home.aspx"],
+    requested: 3
+  }), 1);
+  assert.equal(recommendedCaptureConcurrency({
+    urls: ["https://example.com/a", "https://example.com/b"]
+  }), 2);
+  assert.equal(recommendedCaptureConcurrency({
+    urls: ["https://example.com/"],
+    collectionType: "sharepoint"
+  }), 1);
+  assert.equal(recommendedCaptureConcurrency({
+    urls: ["https://example.com/"],
+    followLinks: true
+  }), 1);
+});
+
+test("known URL lists are capped at two pages concurrently", async () => {
   installFakeChrome();
   const executeScript = chrome.scripting.executeScript;
   let activeCaptures = 0;
@@ -135,7 +153,7 @@ test("known URL lists capture up to three pages concurrently", async () => {
     delayMs: 0
   });
   assert.equal(pages.length, 4);
-  assert.equal(peakCaptures, 3);
+  assert.equal(peakCaptures, 2);
 });
 
 test("link-discovery crawls remain sequential even when concurrency is requested", async () => {

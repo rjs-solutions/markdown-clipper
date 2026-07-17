@@ -132,7 +132,12 @@ async function runResumedJob(id, resumable) {
         for (let i = bodySavedCount; i < state.results.length; i += 1) {
           const page = state.results[i];
           await savePageBody(id, page);
-          metaResults.push(toResultMeta(page));
+          const metadata = toResultMeta(page);
+          metaResults.push(metadata);
+          // The full body now lives in IndexedDB. Replace it in crawlSite's
+          // live results array as well so a long collection does not retain
+          // every captured Markdown document in the service worker heap.
+          state.results[i] = metadata;
         }
         bodySavedCount = state.results.length;
         job = {
