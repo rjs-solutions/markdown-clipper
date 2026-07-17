@@ -1273,10 +1273,20 @@ function renderCollectionsControl(panel) {
 
     const folderRow = document.createElement("div");
     folderRow.className = "collection-folder-row";
+    const folderLabelRow = document.createElement("div");
+    folderLabelRow.className = "collection-folder-label-row";
     const folderLabel = document.createElement("label");
     folderLabel.textContent = "Library subfolder";
+    const folderInfo = document.createElement("span");
+    folderInfo.className = "collection-folder-info";
+    folderInfo.tabIndex = 0;
+    folderInfo.setAttribute("role", "img");
+    folderInfo.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7h.01"></path></svg>';
+    folderLabelRow.append(folderLabel, folderInfo);
     const folderInput = document.createElement("input");
     folderInput.type = "text";
+    folderInput.id = `collection-folder-${site.id}`;
+    folderLabel.htmlFor = folderInput.id;
     folderInput.value = collectionLibraryPath(site);
     folderInput.setAttribute("aria-label", `Local library path for ${site.name}`);
     folderInput.placeholder = `sharepoint/${slugify(site.name, { fallback: "collection" })}`;
@@ -1284,14 +1294,16 @@ function renderCollectionsControl(panel) {
     folderActions.className = "collection-folder-actions";
     const resetFolderButton = document.createElement("button");
     resetFolderButton.type = "button";
-    configureLabeledButton(resetFolderButton, "Default", ACTION_ICONS.reset, "Use the default type and collection-name subfolder");
+    configureQuietIconButton(resetFolderButton, "Reset to the default subfolder", ACTION_ICONS.reset);
     const moveFolderButton = document.createElement("button");
     moveFolderButton.type = "button";
-    configureLabeledButton(moveFolderButton, "Change…", ACTION_ICONS.folder, "Choose a different library subfolder for this collection");
+    configureQuietIconButton(moveFolderButton, "Change the collection subfolder", ACTION_ICONS.folder);
     folderActions.append(resetFolderButton, moveFolderButton);
-    folderRow.append(folderLabel, folderInput, folderActions);
+    folderRow.append(folderLabelRow, folderInput, folderActions);
     const folderHelp = document.createElement("p");
-    folderHelp.className = "help-text collection-folder-help";
+    folderHelp.className = "sr-only collection-folder-help";
+    folderHelp.setAttribute("role", "status");
+    folderHelp.setAttribute("aria-live", "polite");
     folderHelp.textContent = "Edit the path to change where this collection syncs. Existing files can be moved after its first local sync.";
 
     const moveChoice = document.createElement("div");
@@ -1389,17 +1401,21 @@ function renderCollectionsControl(panel) {
       const looksAbsolute = looksLikeAbsolutePath(folderInput.value);
       const ready = proposedFolderPath().toLowerCase() !== collectionLibraryPath(site).toLowerCase();
       moveFolderButton.disabled = looksAbsolute && ready;
-      moveFolderButton.classList.toggle("is-primary-action", ready && !looksAbsolute);
-      setLabeledButtonText(moveFolderButton, ready ? (storedManifest ? "Move files…" : "Use location") : (storedManifest ? "Move…" : "Change…"));
+      moveFolderButton.classList.toggle("is-ready", ready && !looksAbsolute);
+      const moveLabel = ready ? (storedManifest ? "Move files to this subfolder" : "Use this subfolder") : (storedManifest ? "Move this collection" : "Change the collection subfolder");
       moveFolderButton.title = ready
         ? (storedManifest ? "Move the existing local files into this subfolder" : "Use this subfolder for the next local sync")
         : "Choose a different library subfolder for this collection";
+      moveFolderButton.setAttribute("aria-label", moveLabel);
       folderHelp.textContent = looksAbsolute
         ? `Enter a subfolder inside ${libraryHandle?.name || "the library"}, not a full Windows path. Choose Default for ${defaultFolderPath()}.`
         : ready
         ? (storedManifest ? "Apply the new path and move the verified local files." : "Apply this path to the next local sync.")
         : (storedManifest ? "This is the collection's verified local folder. Choose Move… to relocate it." : "Choose Change… to set where the collection will be stored on its next local sync.");
-      folderInput.classList.toggle("is-invalid-path", looksAbsolute);
+      folderInput.toggleAttribute("aria-invalid", looksAbsolute);
+      folderInput.title = looksAbsolute
+        ? `Use a subfolder inside ${libraryHandle?.name || "the library"}; choose the reset icon for ${defaultFolderPath()}.`
+        : `Path inside ${libraryHandle?.name || "the selected library"}`;
     };
     const refreshStorageLocation = async () => {
       storedManifest = null;
@@ -1407,14 +1423,18 @@ function renderCollectionsControl(panel) {
       storageStatus.classList.remove("is-stored");
       storedBadge.removeAttribute("title");
       storedBadge.removeAttribute("aria-label");
-      folderLabel.textContent = libraryHandle?.name ? `Library subfolder inside ${libraryHandle.name}` : "Library subfolder";
+      const libraryName = libraryHandle?.name || "the selected library";
+      folderInfo.title = `Enter a path relative to ${libraryName}, such as ${defaultFolderPath()}. Use reset for the default or the folder icon to move.`;
+      folderInfo.setAttribute("aria-label", folderInfo.title);
       if (!libraryHandle) {
-        storageStatus.textContent = "Not stored in a Local Collections Library. Downloaded snapshots remain in Chrome Downloads.";
+        storageStatus.hidden = false;
+        storageStatus.textContent = "No local library copy.";
         updateMoveButton();
         return;
       }
       if (!libraryPermissionGranted) {
-        storageStatus.textContent = `Storage in ${libraryHandle.name || "the selected library"} cannot be verified until folder access is restored.`;
+        storageStatus.hidden = false;
+        storageStatus.textContent = "Local storage cannot be verified until folder access is restored.";
         updateMoveButton();
         return;
       }
@@ -1426,14 +1446,14 @@ function renderCollectionsControl(panel) {
       if (storedManifest) {
         const location = `${libraryHandle.name || "Library"} / ${collectionLibraryPath(site)}`;
         const count = storedManifest.files?.length || 0;
-        storageStatus.textContent = `Stored in ${location} · ${count} page${count === 1 ? "" : "s"} · synced ${formatDateTime(storedManifest.syncedAt)}.`;
-        storageStatus.classList.add("is-stored");
+        storageStatus.hidden = true;
+        storageStatus.textContent = "";
         storedBadge.hidden = false;
-        storedBadge.title = `Stored locally in ${location}; click the collection row to expand or collapse details`;
+        storedBadge.title = `Stored locally in ${location} · ${count} page${count === 1 ? "" : "s"} · synced ${formatDateTime(storedManifest.syncedAt)}`;
         storedBadge.setAttribute("aria-label", `Stored locally in ${location}`);
       } else {
-        storageStatus.textContent = `Not stored in ${libraryHandle.name || "the selected library"}. Downloaded snapshots remain in Chrome Downloads until you sync this collection.`;
-        storageStatus.classList.remove("is-stored");
+        storageStatus.hidden = false;
+        storageStatus.textContent = `Not synced to ${libraryHandle.name || "the selected library"}.`;
       }
       updateMoveButton();
     };

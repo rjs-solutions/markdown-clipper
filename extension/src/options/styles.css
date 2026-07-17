@@ -824,13 +824,43 @@ legend {
 
 .collection-folder-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 6px;
+  align-items: center;
 }
 
-.collection-folder-row label {
+.collection-folder-label-row {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.collection-folder-label-row label {
   color: var(--text-muted);
   font-size: 0.85em;
+}
+
+.collection-folder-info {
+  display: inline-grid;
+  place-items: center;
+  color: var(--text-muted);
+  cursor: help;
+}
+
+.collection-folder-info:hover,
+.collection-folder-info:focus-visible {
+  color: var(--accent-hover);
+}
+
+.collection-folder-info svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .collection-folder-row input {
@@ -844,16 +874,6 @@ legend {
   outline: 2px solid var(--accent-soft);
   outline-offset: 1px;
   box-shadow: 0 0 0 1px var(--accent);
-}
-
-.collection-folder-row input.is-invalid-path {
-  border-color: var(--warning);
-}
-
-.collection-folder-help {
-  margin: -2px 0 0;
-  padding-left: 0;
-  font-size: 0.82em;
 }
 
 .collection-folder-actions,
@@ -949,7 +969,15 @@ legend {
 }
 
 .collection-folder-actions {
+  grid-column: 2;
   justify-content: flex-end;
+  gap: 2px;
+  flex-wrap: nowrap;
+}
+
+.collection-folder-actions .quiet-icon-button.is-ready {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
 }
 
 .collection-storage-badge {
@@ -983,10 +1011,6 @@ legend {
   margin: 0 0 8px;
   color: var(--text-muted);
   font-size: 0.84em;
-}
-
-.collection-storage-status.is-stored {
-  color: var(--accent-hover);
 }
 
 .collection-icon-action {

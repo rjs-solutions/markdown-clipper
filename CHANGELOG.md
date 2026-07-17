@@ -5,10 +5,10 @@ All notable changes to Markdown Clipper are documented here. This project follow
 
 ## [Unreleased]
 
-- Polish saved collection details with a full-width relative subfolder field, actions below it,
-  an outlined edit prompt for unchanged moves, Windows-path rejection, a labeled **Stored** badge,
-  minute-level timestamps, expandable full page inventories, and inline red failure states with
-  explanatory hover text. The redundant all-passed Page Health panel is no longer shown.
+- Polish saved collection details with a full-width relative subfolder field, compact icon actions,
+  a blue outlined edit prompt for unchanged moves, tooltip-based path guidance, a labeled **Stored**
+  badge whose tooltip holds detailed sync metadata, minute-level timestamps, expandable full page
+  inventories, and inline red failure states. Redundant storage and all-passed health lines are gone.
 - Replace the misleading disabled **Download format** dropdown during Local Collections Library
   sync with a read-only **Library format** summary, while keeping download formats configurable
   whenever **Chrome Downloads** is selected.

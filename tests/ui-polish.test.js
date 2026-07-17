@@ -78,9 +78,14 @@ test("saved collection rows use quiet actions and one combined export menu", asy
   assert.match(source, /moreButton\.textContent = `Show \$\{displayPages\.length - 10\} more page/);
   assert.match(source, /explanation = `Needs review: \$\{failure\.error/);
   assert.doesNotMatch(source, /Page health · \$\{okCount\} passed/);
-  assert.match(css, /\.collection-folder-row\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/s);
+  assert.match(source, /configureQuietIconButton\(resetFolderButton, "Reset to the default subfolder"/);
+  assert.match(source, /configureQuietIconButton\(moveFolderButton, "Change the collection subfolder"/);
+  assert.match(source, /storageStatus\.hidden = true/);
+  assert.match(source, /folderInfo\.title = `Enter a path relative to/);
+  assert.match(css, /\.collection-folder-row\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto;/s);
   assert.match(css, /\.collection-folder-actions\s*\{[^}]*justify-content:\s*flex-end;/s);
   assert.match(css, /\.collection-folder-row input\.needs-path-change\s*\{[^}]*border-color:\s*var\(--accent\);/s);
+  assert.doesNotMatch(css, /\.collection-folder-row input\.is-invalid-path/);
   assert.match(css, /\.site-discover-results li\.is-error,[\s\S]*?color:\s*var\(--danger\);/s);
 });
 

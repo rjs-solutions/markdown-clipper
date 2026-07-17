@@ -55,8 +55,8 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
       popup's stored indicator reports the new collection path. Duplicate and nested destinations
       are rejected. Verify **Future syncs only** leaves old files in place.
 - [ ] In a saved collection, choose **Move…** without editing the path. The full-width subfolder
-      field is selected and visibly outlined. A pasted Windows path is rejected with guidance to
-      enter only a path inside the named library root; **Default** supplies the normal relative path.
+      field is selected and visibly outlined in blue. A pasted Windows path cannot be applied;
+      hover or focus the info icon for relative-path guidance. The reset icon supplies the default.
 - [ ] Expand a collection with more than ten pages and choose **Show N more pages**. All pages
       become visible. A failed page is red and its hover text explains the capture error; collections
       with no failures do not show a redundant all-passed health panel.
