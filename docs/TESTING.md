@@ -54,6 +54,12 @@ logic; this checklist covers the DOM-bound and browser-only behavior they can't.
       folder is removed only after the new copy is complete, then reopen the page and verify the
       popup's stored indicator reports the new collection path. Duplicate and nested destinations
       are rejected. Verify **Future syncs only** leaves old files in place.
+- [ ] In a saved collection, choose **Move…** without editing the path. The full-width subfolder
+      field is selected and visibly outlined. A pasted Windows path is rejected with guidance to
+      enter only a path inside the named library root; **Default** supplies the normal relative path.
+- [ ] Expand a collection with more than ten pages and choose **Show N more pages**. All pages
+      become visible. A failed page is red and its hover text explains the capture error; collections
+      with no failures do not show a redundant all-passed health panel.
 - [ ] Sync a collection and verify normal Markdown page files, `index.md`, `collection.json`, and
       `_sync-report.md` appear under `<type>/<collection>`. Sync again after editing a page and
       confirm its file is updated rather than duplicated.

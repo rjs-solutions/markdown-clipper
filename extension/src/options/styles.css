@@ -824,9 +824,8 @@ legend {
 
 .collection-folder-row {
   display: grid;
-  grid-template-columns: auto minmax(160px, 1fr) auto;
-  gap: 8px;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
 }
 
 .collection-folder-row label {
@@ -835,8 +834,20 @@ legend {
 }
 
 .collection-folder-row input {
+  width: 100%;
   min-width: 0;
   font-size: 0.85em;
+}
+
+.collection-folder-row input.needs-path-change {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent-soft);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.collection-folder-row input.is-invalid-path {
+  border-color: var(--warning);
 }
 
 .collection-folder-help {
@@ -937,10 +948,20 @@ legend {
   gap: 7px;
 }
 
+.collection-folder-actions {
+  justify-content: flex-end;
+}
+
 .collection-storage-badge {
-  display: inline-grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 5px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-radius: 999px;
   color: var(--accent-hover);
+  font-size: 10px;
+  font-weight: 600;
   line-height: 0;
 }
 
@@ -952,6 +973,10 @@ legend {
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.collection-storage-badge span {
+  line-height: 1.4;
 }
 
 .collection-storage-status {
@@ -1080,6 +1105,21 @@ legend {
   padding-left: 2px;
 }
 
+.site-discover-results a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-discover-results a:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+.site-discover-results li.is-error,
+.site-discover-results li.is-error a {
+  color: var(--danger);
+}
+
 .site-change-badge {
   display: inline-flex;
   margin-left: 7px;
@@ -1098,10 +1138,22 @@ legend {
 }
 
 .site-results-more {
-  color: var(--text-muted);
   list-style: none;
   margin-left: -16px;
   padding-top: 2px;
+}
+
+.site-results-more button {
+  min-height: 0;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-hover);
+  font: inherit;
+}
+
+.site-results-more button:hover {
+  text-decoration: underline;
 }
 
 .collection-health-review {

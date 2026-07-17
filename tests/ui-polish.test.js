@@ -72,6 +72,16 @@ test("saved collection rows use quiet actions and one combined export menu", asy
   assert.match(css, /\.site-actions \.collection-icon-action\s*\{[^}]*border-color:\s*transparent;[^}]*background:\s*transparent;/s);
   assert.match(css, /\.sites-list\s*\{[^}]*border-top:\s*1px solid var\(--border\);/s);
   assert.match(css, /\.collection-library-field\s*\{[^}]*border:\s*0;[^}]*background:\s*transparent;/s);
+  assert.match(source, /storedBadge\.innerHTML = `\$\{ACTION_ICONS\.folder\}<span>Stored<\/span>`/);
+  assert.match(source, /folderInput\.classList\.add\("needs-path-change"\)/);
+  assert.match(source, /Enter a subfolder inside \$\{libraryHandle\?\.name/);
+  assert.match(source, /moreButton\.textContent = `Show \$\{displayPages\.length - 10\} more page/);
+  assert.match(source, /explanation = `Needs review: \$\{failure\.error/);
+  assert.doesNotMatch(source, /Page health · \$\{okCount\} passed/);
+  assert.match(css, /\.collection-folder-row\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\);/s);
+  assert.match(css, /\.collection-folder-actions\s*\{[^}]*justify-content:\s*flex-end;/s);
+  assert.match(css, /\.collection-folder-row input\.needs-path-change\s*\{[^}]*border-color:\s*var\(--accent\);/s);
+  assert.match(css, /\.site-discover-results li\.is-error,[\s\S]*?color:\s*var\(--danger\);/s);
 });
 
 test("collection reminder choices match Theme cards and utility actions share a height", async () => {

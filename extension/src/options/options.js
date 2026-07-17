@@ -1206,7 +1206,7 @@ function renderCollectionsControl(panel) {
     nameLine.className = "collection-name-line";
     const storedBadge = document.createElement("span");
     storedBadge.className = "collection-storage-badge";
-    storedBadge.innerHTML = ACTION_ICONS.folder;
+    storedBadge.innerHTML = `${ACTION_ICONS.folder}<span>Stored</span>`;
     storedBadge.hidden = true;
     nameLine.append(name, badge, storedBadge);
     info.append(nameLine, url);
@@ -1279,6 +1279,7 @@ function renderCollectionsControl(panel) {
     folderInput.type = "text";
     folderInput.value = collectionLibraryPath(site);
     folderInput.setAttribute("aria-label", `Local library path for ${site.name}`);
+    folderInput.placeholder = `sharepoint/${slugify(site.name, { fallback: "collection" })}`;
     const folderActions = document.createElement("div");
     folderActions.className = "collection-folder-actions";
     const resetFolderButton = document.createElement("button");
@@ -1316,6 +1317,10 @@ function renderCollectionsControl(panel) {
 
     const discoverResults = document.createElement("ul");
     discoverResults.className = "site-discover-results";
+    let currentPages = [];
+    let currentChangeTypes = {};
+    let currentHealthPages = [];
+    const renderCurrentPages = () => renderDiscoveredPages(discoverResults, currentPages, currentChangeTypes, currentHealthPages);
     details.append(discoverResults);
     const healthReview = document.createElement("div");
     healthReview.className = "collection-health-review";
@@ -1373,6 +1378,7 @@ function renderCollectionsControl(panel) {
       openCollectionWindow(`collection=${encodeURIComponent(site.id)}&destination=library`);
     });
     const defaultFolderPath = () => collectionLibraryPath({ ...site, libraryPath: "" });
+    const looksLikeAbsolutePath = (value) => /^(?:[a-z]:[\\/]|[a-z][\\/]users[\\/]|\\\\)/i.test(String(value || "").trim());
     const proposedFolderPath = () => normalizeLibraryPath(folderInput.value) || defaultFolderPath();
     const folderPathUsedByAnotherCollection = (candidate) => sites.some((item) => (
       item.id !== site.id && collectionLibraryPath(item).toLowerCase() === candidate.toLowerCase()
@@ -1380,16 +1386,20 @@ function renderCollectionsControl(panel) {
     let storedManifest = null;
     const updateMoveButton = () => {
       moveChoice.hidden = true;
+      const looksAbsolute = looksLikeAbsolutePath(folderInput.value);
       const ready = proposedFolderPath().toLowerCase() !== collectionLibraryPath(site).toLowerCase();
-      moveFolderButton.disabled = false;
-      moveFolderButton.classList.toggle("is-primary-action", ready);
+      moveFolderButton.disabled = looksAbsolute && ready;
+      moveFolderButton.classList.toggle("is-primary-action", ready && !looksAbsolute);
       setLabeledButtonText(moveFolderButton, ready ? (storedManifest ? "Move files…" : "Use location") : (storedManifest ? "Move…" : "Change…"));
       moveFolderButton.title = ready
         ? (storedManifest ? "Move the existing local files into this subfolder" : "Use this subfolder for the next local sync")
         : "Choose a different library subfolder for this collection";
-      folderHelp.textContent = ready
+      folderHelp.textContent = looksAbsolute
+        ? `Enter a subfolder inside ${libraryHandle?.name || "the library"}, not a full Windows path. Choose Default for ${defaultFolderPath()}.`
+        : ready
         ? (storedManifest ? "Apply the new path and move the verified local files." : "Apply this path to the next local sync.")
         : (storedManifest ? "This is the collection's verified local folder. Choose Move… to relocate it." : "Choose Change… to set where the collection will be stored on its next local sync.");
+      folderInput.classList.toggle("is-invalid-path", looksAbsolute);
     };
     const refreshStorageLocation = async () => {
       storedManifest = null;
@@ -1397,6 +1407,7 @@ function renderCollectionsControl(panel) {
       storageStatus.classList.remove("is-stored");
       storedBadge.removeAttribute("title");
       storedBadge.removeAttribute("aria-label");
+      folderLabel.textContent = libraryHandle?.name ? `Library subfolder inside ${libraryHandle.name}` : "Library subfolder";
       if (!libraryHandle) {
         storageStatus.textContent = "Not stored in a Local Collections Library. Downloaded snapshots remain in Chrome Downloads.";
         updateMoveButton();
@@ -1418,8 +1429,8 @@ function renderCollectionsControl(panel) {
         storageStatus.textContent = `Stored in ${location} · ${count} page${count === 1 ? "" : "s"} · synced ${formatDateTime(storedManifest.syncedAt)}.`;
         storageStatus.classList.add("is-stored");
         storedBadge.hidden = false;
-        storedBadge.title = `Stored in ${location}`;
-        storedBadge.setAttribute("aria-label", `Stored in ${location}`);
+        storedBadge.title = `Stored locally in ${location}; click the collection row to expand or collapse details`;
+        storedBadge.setAttribute("aria-label", `Stored locally in ${location}`);
       } else {
         storageStatus.textContent = `Not stored in ${libraryHandle.name || "the selected library"}. Downloaded snapshots remain in Chrome Downloads until you sync this collection.`;
         storageStatus.classList.remove("is-stored");
@@ -1439,7 +1450,10 @@ function renderCollectionsControl(panel) {
       await refreshStorageLocation();
     };
 
-    folderInput.addEventListener("input", updateMoveButton);
+    folderInput.addEventListener("input", () => {
+      folderInput.classList.remove("needs-path-change");
+      updateMoveButton();
+    });
     folderInput.addEventListener("change", () => {
       folderInput.value = proposedFolderPath();
       updateMoveButton();
@@ -1448,6 +1462,7 @@ function renderCollectionsControl(panel) {
       const candidate = proposedFolderPath();
       const current = collectionLibraryPath(site);
       if (candidate.toLowerCase() === current.toLowerCase()) {
+        folderInput.classList.add("needs-path-change");
         folderInput.focus();
         folderInput.select();
         folderHelp.textContent = storedManifest
@@ -1577,11 +1592,9 @@ function renderCollectionsControl(panel) {
             site.sourceUrl = result.sourceUrl || site.sourceUrl;
           }
           discoverStatus.textContent = describeRefreshResult(comparison, previous.lastRefreshedAt, refreshedAt);
-          renderDiscoveredPages(
-            discoverResults,
-            comparison.pages,
-            previous.lastRefreshedAt ? comparison.changeTypes : {}
-          );
+          currentPages = comparison.pages;
+          currentChangeTypes = previous.lastRefreshedAt ? comparison.changeTypes : {};
+          renderCurrentPages();
           persist();
           return true;
         } else {
@@ -1602,48 +1615,24 @@ function renderCollectionsControl(panel) {
     async function reviewHealth() {
       healthReview.replaceChildren();
       const health = await loadCollectionHealth(site.id);
-      const failures = (health.pages || []).filter((page) => page.status === "error");
+      currentHealthPages = health.pages || [];
+      renderCurrentPages();
       let removedFiles = [];
       if (libraryHandle && libraryPermissionGranted) {
         const manifest = await loadCollectionLibraryManifest(libraryHandle, site);
         removedFiles = manifest?.removedFromPreviousSync || [];
       }
-      if (!health.checkedAt && !removedFiles.length) {
+      if (!removedFiles.length) {
         healthReview.hidden = true;
         return;
       }
       healthReview.hidden = false;
       const heading = document.createElement("div");
       heading.className = "collection-health-heading";
-      const okCount = (health.pages || []).filter((page) => page.status === "ok").length;
-      heading.textContent = `Page health · ${okCount} passed · ${failures.length + removedFiles.length} need review`;
+      heading.textContent = `Removed local files · ${removedFiles.length} need review`;
       healthReview.append(heading);
       const listElement = document.createElement("ul");
       listElement.className = "collection-health-list";
-      for (const page of failures) {
-        const item = document.createElement("li");
-        item.className = "is-error";
-        const text = document.createElement("span");
-        text.textContent = `${page.url} — ${page.error}`;
-        item.append(text);
-        const openButton = document.createElement("button");
-        openButton.type = "button";
-        configureLabeledButton(openButton, "Open page", ACTION_ICONS.open, "Open this failed page to review or fix it");
-        openButton.addEventListener("click", () => chrome.tabs.create({ url: page.url }));
-        item.append(openButton);
-        if (site.type === "custom") {
-          const removeUrlButton = document.createElement("button");
-          removeUrlButton.type = "button";
-          configureLabeledButton(removeUrlButton, "Remove URL", ACTION_ICONS.trash, "Remove this failed URL from the custom collection");
-          removeUrlButton.addEventListener("click", () => {
-            site.urls = (site.urls || []).filter((url) => url !== page.url);
-            persist();
-            item.remove();
-          });
-          item.append(removeUrlButton);
-        }
-        listElement.append(item);
-      }
       for (const path of removedFiles) {
         const item = document.createElement("li");
         item.className = "is-removed";
@@ -1675,12 +1664,16 @@ function renderCollectionsControl(panel) {
     rowControllers.set(site.id, controller);
     Promise.resolve(initialInventory || loadSiteInventory(site.id)).then((inventory) => {
       if (inventory.lastRefreshedAt) {
-        discoverStatus.textContent = `Last checked ${formatDateTime(inventory.lastRefreshedAt)} · ${inventory.pages.length} page${inventory.pages.length === 1 ? "" : "s"}.`;
-        renderDiscoveredPages(discoverResults, inventory.pages);
+        discoverStatus.textContent = `Last checked · ${formatDateTime(inventory.lastRefreshedAt)} · ${inventory.pages.length} page${inventory.pages.length === 1 ? "" : "s"}`;
+        currentPages = inventory.pages;
+        currentChangeTypes = {};
+        renderCurrentPages();
       } else if (site.urls?.length) {
         const pages = site.urls.map(pageFromUrl);
         discoverStatus.textContent = `${pages.length} saved URL${pages.length === 1 ? "" : "s"}.`;
-        renderDiscoveredPages(discoverResults, pages);
+        currentPages = pages;
+        currentChangeTypes = {};
+        renderCurrentPages();
       }
     }).catch((error) => {
       console.error("Markdown Clipper collection inventory load failed:", error);
@@ -1790,14 +1783,45 @@ function renderCollectionsControl(panel) {
 
 // Show up to 10 discovered pages: title (or FileRef basename) plus a
 // readable Modified date, if present.
-function renderDiscoveredPages(list, pages, changeTypes = {}) {
+function renderDiscoveredPages(list, pages, changeTypes = {}, healthPages = []) {
   list.replaceChildren();
-  for (const page of pages.slice(0, 10)) {
+  const comparablePageUrl = (value) => {
+    try {
+      const url = new URL(value);
+      url.hash = "";
+      return url.href.toLowerCase();
+    } catch {
+      return String(value || "").trim().toLowerCase();
+    }
+  };
+  const failures = new Map((healthPages || [])
+    .filter((page) => page.status === "error")
+    .map((page) => [comparablePageUrl(page.url), page]));
+  const inventoryKeys = new Set((pages || []).map((page) => comparablePageUrl(page.url)));
+  const displayPages = [
+    ...(pages || []),
+    ...(healthPages || []).filter((page) => page.status === "error" && !inventoryKeys.has(comparablePageUrl(page.url)))
+  ];
+  const expanded = list.dataset.expanded === "true";
+  const visiblePages = expanded ? displayPages : displayPages.slice(0, 10);
+  for (const page of visiblePages) {
     const item = document.createElement("li");
     const modified = page.modified ? new Date(page.modified) : null;
     const modifiedText = modified && !Number.isNaN(modified.getTime()) ? ` (${modified.toLocaleDateString()})` : "";
-    const text = document.createElement("span");
-    text.textContent = `${page.title}${modifiedText}`;
+    const text = document.createElement(page.url ? "a" : "span");
+    text.textContent = `${page.title || page.url || "Untitled page"}${modifiedText}`;
+    if (page.url) {
+      text.href = page.url;
+      text.target = "_blank";
+      text.rel = "noreferrer";
+    }
+    const failure = failures.get(comparablePageUrl(page.url));
+    if (failure) {
+      item.classList.add("is-error");
+      const explanation = `Needs review: ${failure.error || "Capture failed"}`;
+      item.title = explanation;
+      text.title = explanation;
+    }
     item.append(text);
     const changeType = changeTypes[pageIdentity(page)];
     if (changeType) {
@@ -1808,17 +1832,30 @@ function renderDiscoveredPages(list, pages, changeTypes = {}) {
     }
     list.append(item);
   }
-  if (pages.length > 10) {
+  if (!expanded && displayPages.length > 10) {
     const more = document.createElement("li");
     more.className = "site-results-more";
-    more.textContent = `+ ${pages.length - 10} more page${pages.length - 10 === 1 ? "" : "s"}`;
+    const moreButton = document.createElement("button");
+    moreButton.type = "button";
+    moreButton.textContent = `Show ${displayPages.length - 10} more page${displayPages.length - 10 === 1 ? "" : "s"}`;
+    moreButton.addEventListener("click", () => {
+      list.dataset.expanded = "true";
+      renderDiscoveredPages(list, pages, changeTypes, healthPages);
+    });
+    more.append(moreButton);
     list.append(more);
   }
 }
 
 function formatDateTime(value) {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "recently" : date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? "recently" : date.toLocaleString(undefined, {
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
 }
 
 function describeRefreshResult(result, previousRefresh, refreshedAt) {
