@@ -7,7 +7,7 @@ test("collection window opens left of the saved in-page panel and stays in the b
   assert.equal(bounds.left, 766);
   assert.equal(bounds.top, 96);
   assert.equal(bounds.width, 620);
-  assert.equal(bounds.height, 760);
+  assert.equal(bounds.height, 860);
 });
 
 test("collection window clamps to the browser's left edge on a narrow window", () => {

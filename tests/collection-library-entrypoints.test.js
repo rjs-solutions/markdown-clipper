@@ -36,13 +36,16 @@ test("Capture Collection separates snapshot downloads from local library sync", 
   assert.match(html, /value="download">Chrome Downloads/);
   assert.match(html, /value="library">Local library: page files \+ index\.md/);
   assert.match(html, /value="aggregate" selected>Single combined Markdown \(\.md\)/);
+  assert.match(html, /value="folder">Individual Markdown files \+ index\.md/);
   assert.match(html, /id="download-format-field"/);
   assert.match(html, /id="library-format-field"[^>]*hidden>[\s\S]*Markdown page files \+ index\.md/);
   assert.match(source, /selectedCollection\(\)[\s\S]*loadCollectionLibraryHandle\(\)[\s\S]*destinationSelect\.value = "library"/);
   assert.match(source, /downloadFormatField\.hidden = library/);
   assert.match(source, /libraryFormatField\.hidden = !library/);
-  assert.match(source, /Choose Chrome Downloads to select a combined Markdown or ZIP format/);
+  assert.match(source, /Choose Chrome Downloads for combined Markdown, individual files, or ZIP/);
   assert.match(source, /Downloads one combined Markdown file through Chrome Downloads; no extraction needed/);
+  assert.match(source, /outputMode === "folder"/);
+  assert.match(source, /`\$\{base\}\/index\.md`/);
   assert.match(source, /syncCollectionToLibrary/);
   assert.match(source, /collectionId/);
   assert.match(source, /job\.status === "done" && !job\.exported\) await exportJob\(job\)/);

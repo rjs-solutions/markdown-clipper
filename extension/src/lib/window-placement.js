@@ -1,6 +1,6 @@
 const PANEL_GEOMETRY_KEY = "mwcPanelGeometry";
 
-export function collectionWindowBounds(browserWindow, panelGeometry, { width = 620, height = 760, gap = 14 } = {}) {
+export function collectionWindowBounds(browserWindow, panelGeometry, { width = 620, height = 860, gap = 14 } = {}) {
   const outerLeft = Number(browserWindow && browserWindow.left) || 0;
   const outerTop = Number(browserWindow && browserWindow.top) || 0;
   const outerWidth = Math.max(width, Number(browserWindow && browserWindow.width) || width);

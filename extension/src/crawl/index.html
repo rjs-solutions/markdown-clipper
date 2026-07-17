@@ -11,9 +11,14 @@
     <main class="crawl">
       <header class="app-header">
         <h1><img src="../../assets/icons/icon-48.png" alt=""> <span>Markdown Clipper</span><span class="header-subtitle">Capture Collection</span></h1>
-        <button id="manage-collections" class="icon-button" type="button" title="Manage collections" aria-label="Manage collections">
-          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 3 6 3-6 3-6-3 6-3Z"></path><path d="m3 10 6 3 3-1.5M3 14l6 3 3-1.5"></path><path d="M15 9v3M15 16v3M19 9v7M19 20v1"></path><circle cx="15" cy="14" r="2"></circle><circle cx="19" cy="18" r="2"></circle></svg>
-        </button>
+        <div class="header-actions">
+          <button id="reset-capture" class="header-reset button-with-icon" type="button" title="Clear the previous results and start a new capture" hidden>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg><span>New capture</span>
+          </button>
+          <button id="manage-collections" class="icon-button" type="button" title="Manage collections" aria-label="Manage collections">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 3 6 3-6 3-6-3 6-3Z"></path><path d="m3 10 6 3 3-1.5M3 14l6 3 3-1.5"></path><path d="M15 9v3M15 16v3M19 9v7M19 20v1"></path><circle cx="15" cy="14" r="2"></circle><circle cx="19" cy="18" r="2"></circle></svg>
+          </button>
+        </div>
       </header>
 
       <p class="lead">Capture related pages from a saved collection, URL list, sitemap, llms.txt, or site crawl. Then save, export, or sync them.</p>
@@ -75,7 +80,7 @@
           <div class="group-body output-grid">
             <p class="section-description field-wide">Download a portable snapshot or sync normal Markdown files into the Local Collections Library.</p>
             <label class="field"><span>Save to</span><select id="destination"><option value="download">Chrome Downloads</option><option value="library">Local library: page files + index.md</option></select></label>
-            <label id="download-format-field" class="field"><span>Download format</span><select id="output"><option value="aggregate" selected>Single combined Markdown (.md)</option><option value="zip">ZIP: page files + index.md</option><option value="both">Markdown file + ZIP</option></select></label>
+            <label id="download-format-field" class="field"><span>Download format</span><select id="output"><option value="aggregate" selected>Single combined Markdown (.md)</option><option value="folder">Individual Markdown files + index.md</option><option value="zip">ZIP: page files + index.md</option><option value="both">Markdown file + ZIP</option></select></label>
             <div id="library-format-field" class="field" hidden><span>Library format</span><div class="readonly-output-format">Markdown page files + index.md</div></div>
             <p id="output-hint" class="hint field-wide">Snapshots are saved through Chrome Downloads.</p>
           </div>

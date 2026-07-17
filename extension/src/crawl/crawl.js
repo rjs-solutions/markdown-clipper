@@ -8,7 +8,7 @@ import { createZip } from "../lib/zip.js";
 import { downloadBlob, downloadText } from "../lib/download.js";
 import { slugify } from "../lib/slug.js";
 import { applyTheme } from "../lib/theme.js";
-import { loadJob, saveJob, getJobBodies } from "../lib/crawl-state.js";
+import { deleteJob, loadJob, saveJob, getJobBodies } from "../lib/crawl-state.js";
 import { createCustomCollection, loadCollections, saveCollections } from "../lib/collections.js";
 import { loadSiteInventories } from "../lib/sharepoint-inventory.js";
 import { collectionExportPreset, matchSavedCollection } from "../lib/collection-export.js";
@@ -52,6 +52,7 @@ const progressSummary = document.getElementById("progress-summary");
 const savedCollectionSelect = document.getElementById("saved-collection");
 const savedCollectionHint = document.getElementById("saved-collection-hint");
 const manageCollectionsButton = document.getElementById("manage-collections");
+const resetCaptureButton = document.getElementById("reset-capture");
 
 let pollTimer = null;
 let renderedLogLines = 0;
@@ -60,6 +61,7 @@ let savedCollectionEntries = [];
 let cachedJobId = null;
 let syncQueue = [];
 let progressWasAutoRevealed = false;
+let loadedCollectionBaseline = null;
 
 document.addEventListener("DOMContentLoaded", initialize);
 
@@ -75,6 +77,7 @@ async function initialize() {
   }
 
   manageCollectionsButton.addEventListener("click", openCollectionsSettings);
+  resetCaptureButton.addEventListener("click", resetCapture);
   savedCollectionSelect.addEventListener("change", () => applySavedCollection(savedCollectionSelect.value));
   importFileButton.addEventListener("click", () => fileInput.click());
   fileInput.addEventListener("change", importSelectedFile);
@@ -116,7 +119,7 @@ async function initialize() {
       showProgress();
       setRunning(job.status);
       startPolling(existingId);
-    } else if (job && !job.exported) {
+    } else if (job) {
       handledExisting = true;
       showProgress();
       renderJobSnapshot(job);
@@ -154,7 +157,9 @@ async function populateSavedCollections(seed = "", selectedId = "") {
 
 function applySavedCollection(collectionId) {
   if (!collectionId) {
+    loadedCollectionBaseline = null;
     savedCollectionHint.textContent = "";
+    updateCollectionSaveState();
     return;
   }
   const entry = savedCollectionEntries.find((candidate) => candidate.collection.id === collectionId);
@@ -167,6 +172,7 @@ function applySavedCollection(collectionId) {
   maxPagesInput.value = String(preset.maxPages);
   includePatternsInput.value = preset.includePatterns || "";
   collectionNameInput.value = entry.collection.name;
+  loadedCollectionBaseline = collectionDraftSignature();
   reflectMode();
   updateUrlCount();
   savedCollectionHint.textContent = preset.inventoryCount
@@ -210,6 +216,8 @@ async function saveUrlListCollection() {
   }
   await saveCollections(collections);
   await populateSavedCollections("", duplicate ? duplicate.id : collection.id);
+  loadedCollectionBaseline = collectionDraftSignature();
+  updateCollectionSaveState();
   importStatus.textContent = duplicate ? `Updated ${duplicate.name}.` : `Saved ${collection.name} to Collections.`;
 }
 
@@ -237,7 +245,15 @@ function updateUrlCount() {
 
 function updateCollectionSaveState() {
   const isReady = Boolean(collectionNameInput.value.trim() && parseUrlList(urlsInput.value).length);
-  saveCollectionButton.classList.toggle("is-primary-action", isReady);
+  const hasChanges = loadedCollectionBaseline == null || collectionDraftSignature() !== loadedCollectionBaseline;
+  saveCollectionButton.classList.toggle("is-primary-action", isReady && hasChanges);
+}
+
+function collectionDraftSignature() {
+  return JSON.stringify({
+    name: collectionNameInput.value.trim(),
+    urls: parseUrlList(urlsInput.value)
+  });
 }
 
 function reflectDestination() {
@@ -246,9 +262,11 @@ function reflectDestination() {
   downloadFormatField.hidden = library;
   libraryFormatField.hidden = !library;
   if (library) {
-    outputHint.textContent = "Library sync always writes unpacked Markdown pages, index.md, collection.json, and a sync report. Choose Chrome Downloads to select a combined Markdown or ZIP format.";
+    outputHint.textContent = "Library sync always writes unpacked Markdown pages, index.md, collection.json, and a sync report. Choose Chrome Downloads for combined Markdown, individual files, or ZIP.";
   } else if (outputSelect.value === "aggregate") {
     outputHint.textContent = "Downloads one combined Markdown file through Chrome Downloads; no extraction needed.";
+  } else if (outputSelect.value === "folder") {
+    outputHint.textContent = "Downloads individual Markdown files and index.md into a collection folder in Chrome Downloads.";
   } else if (outputSelect.value === "zip") {
     outputHint.textContent = "Downloads separate page files and index.md in a ZIP archive.";
   } else {
@@ -318,6 +336,7 @@ async function start() {
   renderedLogLines = 0;
   summary.textContent = "";
   progressWasAutoRevealed = false;
+  resetCaptureButton.hidden = true;
   showProgress();
   showPreparingAction();
   try {
@@ -444,6 +463,8 @@ function renderJobSnapshot(job) {
   const message = `${job.status} — ${job.results.length} captured, ${job.errors.length} error(s), ${job.queue.length} queued.`;
   summary.textContent = message;
   progressSummary.textContent = message;
+  resetCaptureButton.hidden = ["queued", "running", "paused"].includes(job.status) ||
+    (job.status === "done" && !job.exported);
   showProgress(true);
   if (["queued", "running", "paused"].includes(job.status)) {
     showJobProgress(job);
@@ -494,7 +515,10 @@ async function exportJob(job) {
   } finally {
     // Sync all can start the next queued job before this export finishes.
     // Do not erase that new job's progress state from the previous job's cleanup.
-    if (getCurrentJobId() === job.id) clearProgressAction();
+    if (getCurrentJobId() === job.id) {
+      clearProgressAction();
+      resetCaptureButton.hidden = false;
+    }
   }
 }
 
@@ -513,10 +537,20 @@ async function buildOutputs(pages, settings, outputMode, { destination = "downlo
     if (result.removed.length) log(`${result.removed.length} previously synced file(s) need review; none were deleted.`, true);
     return;
   }
+  let files = null;
+  const pageFiles = () => files || (files = buildPageFiles(pages, options));
+  const indexMarkdown = () => buildIndexMarkdown(pageFiles(), { siteTitle });
+  if (outputMode === "folder") {
+    for (const file of pageFiles()) {
+      await downloadText(file.content, `${base}/${file.path}`);
+    }
+    await downloadText(indexMarkdown(), `${base}/index.md`);
+    log(`Wrote ${pageFiles().length} individual file(s) + index.md to the ${base} Downloads folder.`);
+  }
   if (outputMode === "zip" || outputMode === "both" || !outputMode) {
-    const files = buildPageFiles(pages, options);
+    const files = pageFiles();
     const entries = files.map((file) => ({ name: file.path, data: file.content }));
-    entries.push({ name: "index.md", data: buildIndexMarkdown(files, { siteTitle }) });
+    entries.push({ name: "index.md", data: indexMarkdown() });
     await downloadBlob(createZip(entries), `${base}.zip`);
     log(`Wrote ${files.length} file(s) + index.md to ${base}.zip`);
   }
@@ -598,6 +632,38 @@ function clearProgressAction() {
   startButton.style.removeProperty("--progress-percent");
   startButton.removeAttribute("title");
   updatePrimaryActionLabel();
+}
+
+async function resetCapture() {
+  const jobId = getCurrentJobId();
+  if (jobId) {
+    const job = await loadJob(jobId);
+    if (job && ["queued", "running", "paused"].includes(job.status)) return;
+  }
+  stopPolling();
+  if (jobId) await deleteJob(jobId);
+  await chrome.storage.local.remove(CURRENT_JOB_KEY);
+  await saveSyncQueue([]);
+  cachedJobId = null;
+  syncQueue = [];
+  renderedLogLines = 0;
+  progressWasAutoRevealed = false;
+  loadedCollectionBaseline = null;
+  form.reset();
+  logList.replaceChildren();
+  summary.textContent = "";
+  progressSummary.textContent = "Preparing…";
+  progressSection.hidden = true;
+  progressSection.open = false;
+  resetCaptureButton.hidden = true;
+  savedCollectionHint.textContent = "";
+  importStatus.textContent = "";
+  reflectMode();
+  reflectDestination();
+  updateUrlCount();
+  clearProgressAction();
+  setRunning("done");
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function log(message, isError = false) {

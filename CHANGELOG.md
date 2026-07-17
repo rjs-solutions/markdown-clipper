@@ -5,6 +5,9 @@ All notable changes to Markdown Clipper are documented here. This project follow
 
 ## [Unreleased]
 
+- Improve Capture Collection with a **New capture** reset action, change-aware collection saving,
+  taller URL and progress logs, a taller default window, and an unpacked individual-Markdown-files
+  download format alongside combined Markdown and ZIP.
 - Prevent collection-capture memory spikes by processing rendered SharePoint pages sequentially,
   limiting other known URL lists to two tabs, and releasing each full page body from the service
   worker heap immediately after it is persisted to IndexedDB.

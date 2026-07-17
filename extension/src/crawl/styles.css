@@ -90,6 +90,26 @@ body {
   height: 16px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.header-reset {
+  min-height: 28px;
+  padding: 4px 8px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.header-reset:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
 .header-subtitle {
   padding-left: 8px;
   border-left: 1px solid var(--border);
@@ -288,7 +308,7 @@ select:focus {
 /* URL lists are commonly multi-line. Give them useful room while retaining a
    functional but quieter Chromium resize grip that matches the panel chrome. */
 #urls {
-  min-height: 124px;
+  min-height: 176px;
 }
 
 #urls::-webkit-scrollbar-corner,
@@ -334,6 +354,10 @@ select:focus {
   display: grid;
   gap: 8px;
   padding: 10px 12px 12px;
+}
+
+.progress-body .log {
+  max-height: 230px;
 }
 
 .buttons {
