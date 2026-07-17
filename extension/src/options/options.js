@@ -1289,7 +1289,7 @@ function renderCollectionsControl(panel) {
     folderLabel.htmlFor = folderInput.id;
     folderInput.value = collectionLibraryPath(site);
     folderInput.setAttribute("aria-label", `Local library path for ${site.name}`);
-    folderInput.placeholder = `sharepoint/${slugify(site.name, { fallback: "collection" })}`;
+    folderInput.placeholder = "platform/collection-name";
     const folderActions = document.createElement("div");
     folderActions.className = "collection-folder-actions";
     const resetFolderButton = document.createElement("button");
@@ -1408,14 +1408,14 @@ function renderCollectionsControl(panel) {
         : "Choose a different library subfolder for this collection";
       moveFolderButton.setAttribute("aria-label", moveLabel);
       folderHelp.textContent = looksAbsolute
-        ? `Enter a subfolder inside ${libraryHandle?.name || "the library"}, not a full Windows path. Choose Default for ${defaultFolderPath()}.`
+        ? "Enter a relative subfolder, not a full device path."
         : ready
         ? (storedManifest ? "Apply the new path and move the verified local files." : "Apply this path to the next local sync.")
         : (storedManifest ? "This is the collection's verified local folder. Choose Move… to relocate it." : "Choose Change… to set where the collection will be stored on its next local sync.");
       folderInput.toggleAttribute("aria-invalid", looksAbsolute);
       folderInput.title = looksAbsolute
-        ? `Use a subfolder inside ${libraryHandle?.name || "the library"}; choose the reset icon for ${defaultFolderPath()}.`
-        : `Path inside ${libraryHandle?.name || "the selected library"}`;
+        ? "Use a relative subfolder, not a full device path."
+        : "Relative path inside your selected library folder.";
     };
     const refreshStorageLocation = async () => {
       storedManifest = null;
@@ -1423,8 +1423,7 @@ function renderCollectionsControl(panel) {
       storageStatus.classList.remove("is-stored");
       storedBadge.removeAttribute("title");
       storedBadge.removeAttribute("aria-label");
-      const libraryName = libraryHandle?.name || "the selected library";
-      folderInfo.title = `Enter a path relative to ${libraryName}, such as ${defaultFolderPath()}. Use reset for the default or the folder icon to move.`;
+      folderInfo.title = "Enter a relative path inside your selected library folder, such as platform/collection-name. Use reset for the recommended default or the folder icon to move.";
       folderInfo.setAttribute("aria-label", folderInfo.title);
       if (!libraryHandle) {
         storageStatus.hidden = false;

@@ -74,14 +74,16 @@ test("saved collection rows use quiet actions and one combined export menu", asy
   assert.match(css, /\.collection-library-field\s*\{[^}]*border:\s*0;[^}]*background:\s*transparent;/s);
   assert.match(source, /storedBadge\.innerHTML = `\$\{ACTION_ICONS\.folder\}<span>Stored<\/span>`/);
   assert.match(source, /folderInput\.classList\.add\("needs-path-change"\)/);
-  assert.match(source, /Enter a subfolder inside \$\{libraryHandle\?\.name/);
+  assert.match(source, /Use a relative subfolder, not a full device path/);
   assert.match(source, /moreButton\.textContent = `Show \$\{displayPages\.length - 10\} more page/);
   assert.match(source, /explanation = `Needs review: \$\{failure\.error/);
   assert.doesNotMatch(source, /Page health · \$\{okCount\} passed/);
   assert.match(source, /configureQuietIconButton\(resetFolderButton, "Reset to the default subfolder"/);
   assert.match(source, /configureQuietIconButton\(moveFolderButton, "Change the collection subfolder"/);
   assert.match(source, /storageStatus\.hidden = true/);
-  assert.match(source, /folderInfo\.title = `Enter a path relative to/);
+  assert.match(source, /folderInfo\.title = "Enter a relative path inside your selected library folder/);
+  assert.match(source, /folderInput\.placeholder = "platform\/collection-name"/);
+  assert.doesNotMatch(source, /folderInput\.placeholder = `sharepoint\//);
   assert.match(css, /\.collection-folder-row\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) auto;/s);
   assert.match(css, /\.collection-folder-actions\s*\{[^}]*justify-content:\s*flex-end;/s);
   assert.match(css, /\.collection-folder-row input\.needs-path-change\s*\{[^}]*border-color:\s*var\(--accent\);/s);

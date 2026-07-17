@@ -5,6 +5,8 @@ All notable changes to Markdown Clipper are documented here. This project follow
 
 ## [Unreleased]
 
+- Generalize folder, crawl-filter, and tooltip examples so user guidance never assumes a specific
+  organization, device path, SharePoint structure, or saved collection name.
 - Polish saved collection details with a full-width relative subfolder field, compact icon actions,
   a blue outlined edit prompt for unchanged moves, tooltip-based path guidance, a labeled **Stored**
   badge whose tooltip holds detailed sync metadata, minute-level timestamps, expandable full page
