@@ -82,8 +82,23 @@ async function collectLinks(tabId) {
   }
 }
 
+async function normalWindowId() {
+  if (!chrome.windows?.getAll) return null;
+  const windows = await chrome.windows.getAll({ windowTypes: ["normal"] });
+  const target = windows.find((window) => window.focused) || windows[0];
+  return target?.id ?? null;
+}
+
 async function captureInNewTab(url, captureOptions, { followLinks, settleMs }) {
-  const tab = await chrome.tabs.create({ url, active: false });
+  const windowId = await normalWindowId();
+  if (chrome.windows?.getAll && windowId == null) {
+    throw new Error("No normal Chrome window is available. Open a browser window and retry.");
+  }
+  const tab = await chrome.tabs.create({
+    url,
+    active: false,
+    ...(windowId == null ? {} : { windowId })
+  });
   try {
     await waitForTabComplete(tab.id);
     if (settleMs) {

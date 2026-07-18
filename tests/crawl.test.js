@@ -110,6 +110,29 @@ test("crawlSite without followLinks captures only the seeds", async () => {
   assert.equal(pages.length, 2);
 });
 
+test("background capture tabs target a normal Chrome window", async () => {
+  installFakeChrome();
+  chrome.windows = {
+    async getAll() {
+      return [{ id: 41, type: "normal", focused: false }, { id: 42, type: "normal", focused: true }];
+    }
+  };
+  const create = chrome.tabs.create;
+  let createOptions = null;
+  chrome.tabs.create = async (options) => {
+    createOptions = options;
+    return create(options);
+  };
+  await crawlSite({
+    seeds: ["https://a.com/1"],
+    followLinks: false,
+    maxPages: 1,
+    settleMs: 0,
+    delayMs: 0
+  });
+  assert.equal(createOptions.windowId, 42);
+});
+
 test("capture concurrency stays sequential for SharePoint and conservative elsewhere", () => {
   assert.equal(recommendedCaptureConcurrency({
     urls: ["https://tenant.sharepoint.com/sites/example/SitePages/Home.aspx"],

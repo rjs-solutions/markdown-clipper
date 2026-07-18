@@ -164,9 +164,14 @@ test("Capture Collection uses branded flat sections and icon-led source choices"
   assert.match(css, /#urls\s*\{[^}]*min-height:\s*176px;/s);
   assert.match(css, /\.progress-body \.log\s*\{[^}]*max-height:\s*230px;/s);
   assert.match(html, /id="reset-capture"[^>]*>[\s\S]*?<span>New capture<\/span>/);
+  assert.match(html, /id="retry-errors"[^>]*>[\s\S]*?<span>Retry errors<\/span>/);
+  assert.match(html, /id="clear-results"[^>]*>[\s\S]*?<span>Clear results<\/span>/);
   assert.match(source, /loadedCollectionBaseline = collectionDraftSignature\(\)/);
   assert.match(source, /isReady && hasChanges/);
   assert.match(source, /async function resetCapture\(\)/);
+  assert.match(source, /type: "crawl:retry-errors"/);
+  assert.match(source, /Retry \$\{errorCount\} error/);
+  assert.match(css, /\.progress-actions\s*\{[^}]*justify-content:\s*flex-end;/s);
   assert.match(css, /#urls::\-webkit-resizer\s*\{[^}]*background-color:\s*var\(--bg\);/s);
   assert.match(css, /#save-collection\.is-primary-action\s*\{[^}]*background:\s*var\(--accent\);/s);
   assert.match(css, /#start-btn\.is-progress\s*\{[^}]*opacity:\s*1;[^}]*linear-gradient/s);

@@ -245,7 +245,26 @@ test("runJob claims the job id synchronously: two concurrent calls run the crawl
   const { createJob, saveJob, loadJob, getJobBodies } = await import(
     `../extension/src/lib/crawl-state.js?case=concurrency-guard`
   );
-  const { runJob } = await import(`../extension/src/background/service-worker.js?case=concurrency-guard`);
+  const { runJob, prepareFailedPageRetry } = await import(`../extension/src/background/service-worker.js?case=concurrency-guard`);
+
+  const retry = prepareFailedPageRetry({
+    id: "retry-test",
+    status: "done",
+    results: Array.from({ length: 12 }, (_, index) => ({ url: `https://a.com/${index}` })),
+    errors: [
+      { url: "https://a.com/12", error: "No current window" },
+      { url: "https://a.com/13", error: "No current window" },
+      { url: "https://a.com/13", error: "duplicate attempt" }
+    ],
+    options: { maxPages: 13 },
+    log: []
+  }, 1234);
+  assert.equal(retry.count, 2);
+  assert.equal(retry.job.results.length, 12, "successful pages are preserved");
+  assert.deepEqual(retry.job.queue.map((entry) => entry.url), ["https://a.com/12", "https://a.com/13"]);
+  assert.equal(retry.job.options.maxPages, 14);
+  assert.equal(retry.job.errors.length, 0);
+  assert.equal(retry.job.exported, false);
 
   const job = createJob({
     seeds: ["https://a.com/1"],

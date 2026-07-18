@@ -360,6 +360,21 @@ select:focus {
   max-height: 230px;
 }
 
+.progress-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.progress-actions button {
+  min-height: 32px;
+}
+
+#retry-errors:not([hidden]) {
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}
+
 .buttons {
   gap: 8px;
   padding: 9px 16px;

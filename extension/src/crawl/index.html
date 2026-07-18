@@ -88,7 +88,14 @@
 
         <details id="progress-section" class="group progress-group" hidden>
           <summary><span>Progress</span><small id="progress-summary">Preparing…</small></summary>
-          <div class="progress-body"><p id="summary" class="summary" role="status" aria-live="polite"></p><ol id="log" class="log" aria-label="Progress log"></ol></div>
+          <div class="progress-body">
+            <p id="summary" class="summary" role="status" aria-live="polite"></p>
+            <ol id="log" class="log" aria-label="Progress log"></ol>
+            <div class="progress-actions">
+              <button id="retry-errors" class="button-with-icon" type="button" hidden><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.34-5.66"></path><path d="M20 4v6h-6"></path></svg><span>Retry errors</span></button>
+              <button id="clear-results" class="button-with-icon" type="button" hidden><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"></path></svg><span>Clear results</span></button>
+            </div>
+          </div>
         </details>
         </div>
 

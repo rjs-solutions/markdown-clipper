@@ -53,6 +53,8 @@ const savedCollectionSelect = document.getElementById("saved-collection");
 const savedCollectionHint = document.getElementById("saved-collection-hint");
 const manageCollectionsButton = document.getElementById("manage-collections");
 const resetCaptureButton = document.getElementById("reset-capture");
+const retryErrorsButton = document.getElementById("retry-errors");
+const clearResultsButton = document.getElementById("clear-results");
 
 let pollTimer = null;
 let renderedLogLines = 0;
@@ -78,6 +80,8 @@ async function initialize() {
 
   manageCollectionsButton.addEventListener("click", openCollectionsSettings);
   resetCaptureButton.addEventListener("click", resetCapture);
+  retryErrorsButton.addEventListener("click", retryErrors);
+  clearResultsButton.addEventListener("click", resetCapture);
   savedCollectionSelect.addEventListener("change", () => applySavedCollection(savedCollectionSelect.value));
   importFileButton.addEventListener("click", () => fileInput.click());
   fileInput.addEventListener("change", importSelectedFile);
@@ -337,6 +341,8 @@ async function start() {
   summary.textContent = "";
   progressWasAutoRevealed = false;
   resetCaptureButton.hidden = true;
+  retryErrorsButton.hidden = true;
+  clearResultsButton.hidden = true;
   showProgress();
   showPreparingAction();
   try {
@@ -463,8 +469,7 @@ function renderJobSnapshot(job) {
   const message = `${job.status} — ${job.results.length} captured, ${job.errors.length} error(s), ${job.queue.length} queued.`;
   summary.textContent = message;
   progressSummary.textContent = message;
-  resetCaptureButton.hidden = ["queued", "running", "paused"].includes(job.status) ||
-    (job.status === "done" && !job.exported);
+  updateRecoveryActions(job, job.status === "done" && !job.exported);
   showProgress(true);
   if (["queued", "running", "paused"].includes(job.status)) {
     showJobProgress(job);
@@ -517,7 +522,8 @@ async function exportJob(job) {
     // Do not erase that new job's progress state from the previous job's cleanup.
     if (getCurrentJobId() === job.id) {
       clearProgressAction();
-      resetCaptureButton.hidden = false;
+      const latest = await loadJob(job.id);
+      updateRecoveryActions(latest || job);
     }
   }
 }
@@ -634,6 +640,35 @@ function clearProgressAction() {
   updatePrimaryActionLabel();
 }
 
+function updateRecoveryActions(job, finalizing = false) {
+  const active = ["queued", "running", "paused"].includes(job?.status);
+  const available = Boolean(job) && !active && !finalizing;
+  const errorCount = Array.isArray(job?.errors) ? job.errors.length : 0;
+  resetCaptureButton.hidden = !available;
+  clearResultsButton.hidden = !available;
+  retryErrorsButton.hidden = !available || errorCount === 0;
+  const label = retryErrorsButton.querySelector("span");
+  if (label) label.textContent = `Retry ${errorCount} error${errorCount === 1 ? "" : "s"}`;
+}
+
+async function retryErrors() {
+  const jobId = getCurrentJobId();
+  if (!jobId) return;
+  const job = await loadJob(jobId);
+  if (!job?.errors?.length) return;
+  updateRecoveryActions(job, true);
+  const response = await sendMessage({ type: "crawl:retry-errors", id: jobId });
+  if (!response?.id) {
+    log(`Error: ${response?.error || "The failed pages could not be retried."}`, true);
+    updateRecoveryActions(job);
+    return;
+  }
+  progressWasAutoRevealed = false;
+  showProgress(true);
+  setRunning("running");
+  startPolling(response.id);
+}
+
 async function resetCapture() {
   const jobId = getCurrentJobId();
   if (jobId) {
@@ -656,6 +691,8 @@ async function resetCapture() {
   progressSection.hidden = true;
   progressSection.open = false;
   resetCaptureButton.hidden = true;
+  retryErrorsButton.hidden = true;
+  clearResultsButton.hidden = true;
   savedCollectionHint.textContent = "";
   importStatus.textContent = "";
   reflectMode();

@@ -63,6 +63,28 @@ function appendLog(job, line) {
   return log.length > MAX_LOG_LINES ? log.slice(log.length - MAX_LOG_LINES) : log;
 }
 
+export function prepareFailedPageRetry(job, now = Date.now()) {
+  const failedUrls = [...new Set((job?.errors || []).map((entry) => entry?.url).filter(Boolean))];
+  if (!failedUrls.length) return null;
+  return {
+    count: failedUrls.length,
+    job: {
+      ...job,
+      status: "running",
+      queue: failedUrls.map((url) => ({ url, depth: 0 })),
+      errors: [],
+      exported: false,
+      startedAt: now,
+      stats: { captured: job.results.length, failed: 0 },
+      options: {
+        ...job.options,
+        maxPages: Math.max(Number(job.options?.maxPages) || 0, job.results.length + failedUrls.length)
+      },
+      log: appendLog(job, `Retrying ${failedUrls.length} failed page${failedUrls.length === 1 ? "" : "s"}.`)
+    }
+  };
+}
+
 export async function runJob(id) {
   // Claim the id SYNCHRONOUSLY -- has()/add() must not straddle an await, or
   // two near-simultaneous callers (this worker fires resumeRunningJobs from
@@ -392,6 +414,18 @@ async function handleMessage(message) {
         await saveJob({ ...job, status: "cancelled" });
       }
       return { ok: true };
+    }
+    case "crawl:retry-errors": {
+      const job = await loadJob(message.id);
+      if (!job) return { error: "The previous capture could not be found." };
+      if (["queued", "running", "paused"].includes(job.status)) {
+        return { error: "This capture is still active." };
+      }
+      const retry = prepareFailedPageRetry(job);
+      if (!retry) return { error: "There are no failed pages to retry." };
+      await saveJob(retry.job);
+      runJob(job.id);
+      return { id: job.id, count: retry.count };
     }
     case "crawl:list": {
       return { jobs: await listJobs() };
