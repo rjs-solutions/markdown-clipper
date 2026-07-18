@@ -20,8 +20,9 @@
 const JOB_PREFIX = "crawl-job:";
 const JOB_INDEX_KEY = "crawl-job-index";
 const DB_NAME = "markdown-clip-crawl";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = "page-bodies";
+const JOBID_INDEX = "jobId";
 
 function jobKey(id) {
   return `${JOB_PREFIX}${id}`;
@@ -118,8 +119,20 @@ function openBodyDb() {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: "key" });
+      const store = db.objectStoreNames.contains(STORE_NAME)
+        ? request.transaction.objectStore(STORE_NAME)
+        : db.createObjectStore(STORE_NAME, { keyPath: "key" });
+      // Records written before this v2 upgrade lack the jobId property, so
+      // they are invisible to the index below (orphaned, not corrupted).
+      // Upgrading an existing v1 database: add the jobId index to the store
+      // that already exists rather than recreating it. createIndex() throws
+      // if the index is already there (re-running an upgrade, or a fresh v2
+      // store created above already has it via the same call) -- swallow
+      // that rather than special-casing "did we just create the store".
+      try {
+        store.createIndex(JOBID_INDEX, "jobId");
+      } catch {
+        // Index already present.
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -142,13 +155,21 @@ export async function savePageBody(jobId, page) {
   }
 }
 
+// Real IndexedDB restricts a cursor to a key with IDBKeyRange; the fake used
+// by tests doesn't implement key ranges. When IDBKeyRange isn't available,
+// fall back to an unrestricted cursor -- callers still gate each record on
+// cursor.value.jobId === jobId, so correctness doesn't depend on the range.
+function jobIdRange(jobId) {
+  return typeof IDBKeyRange !== "undefined" ? IDBKeyRange.only(jobId) : undefined;
+}
+
 export async function getJobBodies(jobId) {
   const db = await openBodyDb();
   try {
     return await new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readonly");
       const results = [];
-      const request = tx.objectStore(STORE_NAME).openCursor();
+      const request = tx.objectStore(STORE_NAME).index(JOBID_INDEX).openCursor(jobIdRange(jobId));
       request.onsuccess = () => {
         const cursor = request.result;
         if (cursor) {
@@ -167,19 +188,71 @@ export async function getJobBodies(jobId) {
   }
 }
 
-export async function deleteJobBodies(jobId) {
-  const bodies = await getJobBodies(jobId);
-  if (!bodies.length) {
-    return;
+// Point lookup of a single captured page body, keyed by job id + url. Used
+// by the streaming zip export to fetch bodies in capture order without
+// loading every body into memory up front (see getJobBodies) or paying for
+// a full cursor scan per lookup (see iterateJobBodies).
+export async function getPageBody(jobId, url) {
+  const db = await openBodyDb();
+  try {
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const request = tx.objectStore(STORE_NAME).get(`${jobId}:${url}`);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  } finally {
+    db.close();
   }
+}
+
+// Cursors over the jobId index one page at a time, awaiting onPage(page) per
+// record before advancing -- unlike getJobBodies, this never accumulates the
+// whole job's bodies in memory at once.
+export async function iterateJobBodies(jobId, onPage) {
+  const db = await openBodyDb();
+  try {
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const request = tx.objectStore(STORE_NAME).index(JOBID_INDEX).openCursor(jobIdRange(jobId));
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) {
+          resolve();
+          return;
+        }
+        if (cursor.value.jobId !== jobId) {
+          cursor.continue();
+          return;
+        }
+        Promise.resolve(onPage(cursor.value))
+          .then(() => cursor.continue())
+          .catch(reject);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  } finally {
+    db.close();
+  }
+}
+
+export async function deleteJobBodies(jobId) {
   const db = await openBodyDb();
   try {
     await new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readwrite");
-      const store = tx.objectStore(STORE_NAME);
-      for (const body of bodies) {
-        store.delete(body.key);
-      }
+      const request = tx.objectStore(STORE_NAME).index(JOBID_INDEX).openCursor(jobIdRange(jobId));
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) {
+          return;
+        }
+        if (cursor.value.jobId === jobId) {
+          cursor.delete();
+        }
+        cursor.continue();
+      };
+      request.onerror = () => reject(request.error);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });

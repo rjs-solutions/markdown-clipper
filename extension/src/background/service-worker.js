@@ -487,6 +487,19 @@ try {
   console.error("Markdown Clipper failed to register the settings-change handler:", error);
 }
 
+// The context-menu selection handoff (handleSelectionClip above) stashes a
+// one-shot `selection:<tabId>` entry for the panel to consume. The panel
+// deletes it once read, but a tab closed before the panel ever opens (or
+// before it runs) would otherwise leak that entry in chrome.storage.session
+// forever. Clean it up whenever the tab it's keyed to goes away.
+try {
+  chrome.tabs.onRemoved.addListener((tabId) => {
+    chrome.storage.session.remove(`selection:${tabId}`).catch(() => {});
+  });
+} catch (error) {
+  console.error("Markdown Clipper failed to register the tab-removed cleanup handler:", error);
+}
+
 // Also try immediately: any reason this file was (re)loaded is a reason to
 // check for a job that got cut off mid-run, and to make sure the icon
 // behavior and context menu match the current settings without waiting for

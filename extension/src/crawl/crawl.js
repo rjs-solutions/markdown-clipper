@@ -3,12 +3,12 @@ import { parseUrlList, parseSitemap } from "../lib/discover.js";
 import { fetchSitemapPages, recommendedCaptureConcurrency } from "../lib/crawl.js";
 import { fetchLlmsPages } from "../lib/llms.js";
 import { readCollectionFile } from "../lib/collection-import.js";
-import { buildPageFiles, buildIndexMarkdown, buildAggregateMarkdown } from "../lib/aggregate.js";
-import { createZip } from "../lib/zip.js";
+import { buildPageFiles, buildPageFile, buildIndexMarkdown, buildAggregateParts } from "../lib/aggregate.js";
+import { createZip, createZipWriter } from "../lib/zip.js";
 import { downloadBlob, downloadText } from "../lib/download.js";
 import { slugify } from "../lib/slug.js";
 import { applyTheme } from "../lib/theme.js";
-import { deleteJob, loadJob, saveJob, getJobBodies } from "../lib/crawl-state.js";
+import { deleteJob, loadJob, saveJob, getJobBodies, getPageBody } from "../lib/crawl-state.js";
 import { createCustomCollection, loadCollections, saveCollections } from "../lib/collections.js";
 import { loadSiteInventories } from "../lib/sharepoint-inventory.js";
 import { collectionExportPreset, matchSavedCollection } from "../lib/collection-export.js";
@@ -484,20 +484,36 @@ async function exportJob(job) {
   try {
     showFinalizingAction(job);
     log(`Captured ${job.results.length} page(s). Building output…`);
-    const bodies = await getJobBodies(job.id);
-    const bodyByUrl = new Map(bodies.map((body) => [body.url, body]));
-    const pages = job.results.map((meta) => bodyByUrl.get(meta.url)).filter(Boolean)
-      .map((body) => ({ url: body.url, title: body.title, markdown: body.markdown, metadata: body.metadata }));
-    if (!pages.length) throw new Error("No pages were captured.");
+    const destination = job.options.destination || "download";
+    // A pure "zip" export (no folder/aggregate/library alongside it) is the
+    // one path that can stream: it never needs every page's body in memory
+    // at once. Every other output mode (folder listing, aggregate TOC,
+    // library sync) needs the whole ordered array up front, so those still
+    // load through getJobBodies as before.
+    const streamingZipOnly = job.options.outputMode === "zip" && destination !== "library";
+    let pages = [];
+    let pageCount = job.results.length;
+    if (!streamingZipOnly) {
+      const bodies = await getJobBodies(job.id);
+      const bodyByUrl = new Map(bodies.map((body) => [body.url, body]));
+      pages = job.results.map((meta) => bodyByUrl.get(meta.url)).filter(Boolean)
+        .map((body) => ({ url: body.url, title: body.title, markdown: body.markdown, metadata: body.metadata }));
+      if (!pages.length) throw new Error("No pages were captured.");
+      pageCount = pages.length;
+    } else if (!pageCount) {
+      throw new Error("No pages were captured.");
+    }
     const collections = await loadCollections();
     const collection = collections.find((item) => item.id === job.options.collectionId) || null;
     if (collection) await saveCollectionHealth(collection.id, { results: job.results, errors: job.errors });
     await buildOutputs(pages, currentSettings, job.options.outputMode, {
-      destination: job.options.destination || "download",
-      collection
+      destination,
+      collection,
+      jobId: streamingZipOnly ? job.id : null,
+      results: streamingZipOnly ? job.results : null
     });
-    const synced = job.options.destination === "library";
-    summary.textContent = `${synced ? "Synced" : "Exported"} ${pages.length} page(s).`;
+    const synced = destination === "library";
+    summary.textContent = `${synced ? "Synced" : "Exported"} ${pageCount} page(s).`;
     progressSummary.textContent = synced ? "Local sync complete" : "Export complete";
     log("Done.");
     await saveJob({ ...job, exported: true });
@@ -528,7 +544,7 @@ async function exportJob(job) {
   }
 }
 
-async function buildOutputs(pages, settings, outputMode, { destination = "download", collection = null } = {}) {
+async function buildOutputs(pages, settings, outputMode, { destination = "download", collection = null, jobId = null, results = null } = {}) {
   const siteTitle = collection && collection.name || deriveSiteTitle(pages);
   const base = slugify(siteTitle, { fallback: "site-export" });
   const options = { metadataStyle: settings.metadataStyle, includeTitleHeading: settings.includeTitleHeading };
@@ -553,7 +569,37 @@ async function buildOutputs(pages, settings, outputMode, { destination = "downlo
     await downloadText(indexMarkdown(), `${base}/index.md`);
     log(`Wrote ${pageFiles().length} individual file(s) + index.md to the ${base} Downloads folder.`);
   }
-  if (outputMode === "zip" || outputMode === "both" || !outputMode) {
+  if (outputMode === "zip" && jobId) {
+    // Stream: one page's body pulled from IndexedDB, turned into a zip entry,
+    // and released at a time, rather than materializing every page (and
+    // every composed file) in memory first. Iterate the job's ordered
+    // results list (capture order) rather than an unordered cursor scan, so
+    // file order in the zip/index matches the folder/aggregate path's
+    // re-sorted order.
+    const writer = createZipWriter();
+    const used = new Set();
+    const indexFiles = [];
+    let fileCount = 0;
+    let skipped = 0;
+    for (const meta of results || []) {
+      const body = await getPageBody(jobId, meta.url);
+      if (!body) {
+        skipped += 1;
+        continue;
+      }
+      const file = buildPageFile(
+        { url: body.url, title: body.title, markdown: body.markdown, metadata: body.metadata },
+        options,
+        used
+      );
+      writer.add(file.path, file.content);
+      indexFiles.push({ path: file.path, title: file.title });
+      fileCount += 1;
+    }
+    writer.add("index.md", buildIndexMarkdown(indexFiles, { siteTitle }));
+    await downloadBlob(writer.finish(), `${base}.zip`);
+    log(`Wrote ${fileCount} file(s) + index.md to ${base}.zip${skipped ? ` (${skipped} page(s) skipped: missing body)` : ""}`);
+  } else if (outputMode === "zip" || outputMode === "both" || !outputMode) {
     const files = pageFiles();
     const entries = files.map((file) => ({ name: file.path, data: file.content }));
     entries.push({ name: "index.md", data: indexMarkdown() });
@@ -561,7 +607,8 @@ async function buildOutputs(pages, settings, outputMode, { destination = "downlo
     log(`Wrote ${files.length} file(s) + index.md to ${base}.zip`);
   }
   if (outputMode === "aggregate" || outputMode === "both") {
-    await downloadText(buildAggregateMarkdown(pages, { siteTitle }), `${base}.md`);
+    const parts = buildAggregateParts(pages, { siteTitle });
+    await downloadBlob(new Blob(parts, { type: "text/markdown;charset=utf-8" }), `${base}.md`);
     log(`Wrote ${base}.md`);
   }
 }

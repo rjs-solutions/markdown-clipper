@@ -29,16 +29,24 @@ function toBytes(data) {
 const DOS_TIME = 0;
 const DOS_DATE = 0x21; // 1980-01-01
 
-// files: [{ name: "a/b.md", data: string | Uint8Array }]
-export function createZip(files) {
+// Streaming-friendly writer: add() encodes and pushes one file's local header
+// + data immediately (rather than building the whole archive from a fully
+// materialized file list), so callers can add files one at a time -- e.g.
+// while paging through an IndexedDB cursor -- without holding every file's
+// content in memory at once. finish() assembles the accumulated local parts,
+// the (small, header-only) central directory, and the end record into the
+// final Blob. Produces byte-identical output to createZip() for the same
+// sequence of add() calls.
+export function createZipWriter() {
   const encoder = new TextEncoder();
   const localParts = [];
   const centralParts = [];
   let offset = 0;
+  let count = 0;
 
-  for (const file of files) {
-    const nameBytes = encoder.encode(file.name);
-    const dataBytes = toBytes(file.data);
+  function add(name, data) {
+    const nameBytes = encoder.encode(name);
+    const dataBytes = toBytes(data);
     const crc = crc32(dataBytes);
     const size = dataBytes.length;
 
@@ -75,16 +83,30 @@ export function createZip(files) {
     centralParts.push(central);
 
     offset += local.length + dataBytes.length;
+    count += 1;
   }
 
-  const centralSize = centralParts.reduce((sum, part) => sum + part.length, 0);
-  const end = new Uint8Array(22);
-  const ev = new DataView(end.buffer);
-  ev.setUint32(0, 0x06054b50, true);
-  ev.setUint16(8, files.length, true);
-  ev.setUint16(10, files.length, true);
-  ev.setUint32(12, centralSize, true);
-  ev.setUint32(16, offset, true);
+  function finish() {
+    const centralSize = centralParts.reduce((sum, part) => sum + part.length, 0);
+    const end = new Uint8Array(22);
+    const ev = new DataView(end.buffer);
+    ev.setUint32(0, 0x06054b50, true);
+    ev.setUint16(8, count, true);
+    ev.setUint16(10, count, true);
+    ev.setUint32(12, centralSize, true);
+    ev.setUint32(16, offset, true);
 
-  return new Blob([...localParts, ...centralParts, end], { type: "application/zip" });
+    return new Blob([...localParts, ...centralParts, end], { type: "application/zip" });
+  }
+
+  return { add, finish };
+}
+
+// files: [{ name: "a/b.md", data: string | Uint8Array }]
+export function createZip(files) {
+  const writer = createZipWriter();
+  for (const file of files) {
+    writer.add(file.name, file.data);
+  }
+  return writer.finish();
 }

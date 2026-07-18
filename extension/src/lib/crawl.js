@@ -41,7 +41,10 @@ export function recommendedCaptureConcurrency({
   return Math.min(safeMaximum, requestedCount);
 }
 
-function waitForTabComplete(tabId, timeoutMs = 30_000) {
+// Exported (in addition to being used internally by captureInNewTab) so
+// tests can exercise the timeout branch directly with a short timeoutMs
+// instead of waiting out the real 30s default.
+export function waitForTabComplete(tabId, timeoutMs = 30_000) {
   return new Promise((resolve) => {
     let settled = false;
     const finish = (ok) => {
@@ -100,7 +103,10 @@ async function captureInNewTab(url, captureOptions, { followLinks, settleMs }) {
     ...(windowId == null ? {} : { windowId })
   });
   try {
-    await waitForTabComplete(tab.id);
+    const loaded = await waitForTabComplete(tab.id);
+    if (!loaded) {
+      throw new Error("Page load timed out");
+    }
     if (settleMs) {
       await sleep(settleMs);
     }

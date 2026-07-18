@@ -9,13 +9,16 @@ import assert from "node:assert/strict";
 function installFakeIndexedDb() {
   const records = new Map();
 
-  function makeCursorRequest() {
-    const entries = [...records.values()];
+  function makeCursorRequest(entries) {
     const request = { result: null, onsuccess: null, onerror: null };
     let index = 0;
     const step = () => {
       request.result = index < entries.length
-        ? { value: entries[index], continue: () => { index += 1; queueMicrotask(step); } }
+        ? {
+          value: entries[index],
+          continue: () => { index += 1; queueMicrotask(step); },
+          delete: () => records.delete(entries[index].key)
+        }
         : null;
       if (request.onsuccess) {
         request.onsuccess();
@@ -26,10 +29,18 @@ function installFakeIndexedDb() {
   }
 
   function makeTransaction() {
+    const index = {
+      // The fake ignores IDBKeyRange filtering entirely: crawl-state.js
+      // always re-checks cursor.value.jobId itself, so an unfiltered cursor
+      // over every record is behaviorally equivalent for these tests.
+      openCursor: () => makeCursorRequest([...records.values()])
+    };
     const store = {
       put: (value) => records.set(value.key, value),
       delete: (key) => records.delete(key),
-      openCursor: makeCursorRequest
+      openCursor: () => makeCursorRequest([...records.values()]),
+      createIndex: () => {},
+      index: () => index
     };
     const tx = { objectStore: () => store, _oncomplete: null, _onerror: null };
     Object.defineProperty(tx, "oncomplete", {
@@ -50,8 +61,19 @@ function installFakeIndexedDb() {
 
   globalThis.indexedDB = {
     open() {
-      const request = { result: { transaction: makeTransaction, close() {} }, onsuccess: null, onerror: null, onupgradeneeded: null };
-      queueMicrotask(() => request.onsuccess && request.onsuccess());
+      const db = {
+        objectStoreNames: { contains: () => true },
+        createObjectStore: () => makeTransaction().objectStore(),
+        transaction: makeTransaction,
+        close() {}
+      };
+      const request = { result: db, onsuccess: null, onerror: null, onupgradeneeded: null, transaction: makeTransaction() };
+      queueMicrotask(() => {
+        if (request.onupgradeneeded) {
+          request.onupgradeneeded();
+        }
+        request.onsuccess && request.onsuccess();
+      });
       return request;
     }
   };

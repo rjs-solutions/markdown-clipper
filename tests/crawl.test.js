@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { crawlSite, recommendedCaptureConcurrency } from "../extension/src/lib/crawl.js";
+import { crawlSite, recommendedCaptureConcurrency, waitForTabComplete } from "../extension/src/lib/crawl.js";
 
 const LINKS = {
   "https://a.com/1": [
@@ -328,6 +328,46 @@ test("a capture that keeps failing past the retry budget is recorded as one erro
   });
   assert.equal(pages.length, 0);
   assert.equal(errors.length, 1);
+});
+
+test("waitForTabComplete resolves false when the tab never reaches 'complete' before the timeout", async () => {
+  installFakeChrome();
+  const tab = await chrome.tabs.create({ url: "https://a.com/1" });
+  // Stub tabs.get to keep reporting "loading" and never fire onUpdated, so
+  // the only way waitForTabComplete can settle is via its timeout branch.
+  chrome.tabs.get = async (id) => ({ id, url: undefined, status: "loading" });
+  const loaded = await waitForTabComplete(tab.id, 10);
+  assert.equal(loaded, false);
+});
+
+// captureInNewTab's 30s default timeout isn't itself parameterized (by
+// design -- it's a fixed safety net, not a per-call option), so exercising
+// the full crawlSite() -> captureWithRetry() -> captureInNewTab() chain on a
+// genuine timeout would mean a real 30s wait per test run. waitForTabComplete
+// is unit-tested directly above instead; this test covers the other half of
+// the integration -- that a capture failure (of any kind, including what a
+// real timeout produces) is recorded as a failed/retried page rather than a
+// partial capture, using the existing flaky-capture fake to stand in for the
+// timeout's "capture never returns a result" failure mode.
+test("a capture failure from a stuck page load is recorded as a retried/failed page, not a partial capture", async () => {
+  installFakeChromeFlaky(new Map([["https://a.com/1", 99]]));
+  const errors = [];
+  const pages = await crawlSite({
+    seeds: ["https://a.com/1"],
+    followLinks: false,
+    maxPages: 1,
+    retries: 1,
+    retryDelayMs: 0,
+    settleMs: 0,
+    delayMs: 0,
+    onProgress: (event) => {
+      if (event.type === "error") {
+        errors.push(event);
+      }
+    }
+  });
+  assert.equal(pages.length, 0, "no partial page content is recorded");
+  assert.equal(errors.length, 1, "the failure is recorded once, through the normal error path");
 });
 
 test("pausing between pages leaves the remaining queue intact for a resumable job", async () => {

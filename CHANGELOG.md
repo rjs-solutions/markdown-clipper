@@ -5,6 +5,16 @@ All notable changes to Markdown Clipper are documented here. This project follow
 
 ## [Unreleased]
 
+- Stream ZIP site exports one page at a time from IndexedDB in capture order instead of loading
+  an entire collection into memory, skipping and counting any bodies that are missing.
+- Upgrade the IndexedDB page-body store to v2 with a `jobId` index so job export and delete no
+  longer scan the whole store; bodies captured before the upgrade lack `jobId` and are not
+  returned by job queries.
+- Record a **Page load timed out** failure, with normal retry handling, when a tab doesn't
+  finish loading within 30 seconds, instead of capturing partial content.
+- Revoke download object URLs when the download completes or is interrupted (with a 10-minute
+  fallback) instead of a fixed 60-second timer that could kill slow large downloads.
+- Clean up stale per-tab selection entries in session storage when their tabs close.
 - Add in-context **Retry errors** and **Clear results** recovery controls to Capture Collection.
   Retries preserve successful pages and requeue only failures, while capture tabs now explicitly
   target a normal Chrome window to prevent popup-driven `No current window` failures.
