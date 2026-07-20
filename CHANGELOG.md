@@ -5,6 +5,11 @@ All notable changes to Markdown Clipper are documented here. This project follow
 
 ## [Unreleased]
 
+- Separate saved collections from new URL-list, sitemap, `llms.txt`, and crawl sources in Capture
+  Collection so changing discovery methods can no longer look like an implicit merge. SharePoint
+  local syncs now refresh their authoritative page inventory first, flag suspicious inventory
+  reductions, retain last-good files after capture failures, and keep confirmed removals available
+  for explicit archive or delete review across subsequent syncs.
 - Stream ZIP site exports one page at a time from IndexedDB in capture order instead of loading
   an entire collection into memory, skipping and counting any bodies that are missing.
 - Upgrade the IndexedDB page-body store to v2 with a `jobId` index so job export and delete no

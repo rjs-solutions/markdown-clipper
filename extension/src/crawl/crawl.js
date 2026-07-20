@@ -10,7 +10,14 @@ import { slugify } from "../lib/slug.js";
 import { applyTheme } from "../lib/theme.js";
 import { deleteJob, loadJob, saveJob, getJobBodies, getPageBody } from "../lib/crawl-state.js";
 import { createCustomCollection, loadCollections, saveCollections } from "../lib/collections.js";
-import { loadSiteInventories } from "../lib/sharepoint-inventory.js";
+import {
+  inventoryReductionNeedsConfirmation,
+  loadSiteInventories,
+  loadSiteInventory,
+  reconcileSitePages,
+  saveSiteInventory
+} from "../lib/sharepoint-inventory.js";
+import { discoverSitePages } from "../lib/sharepoint-fetch.js";
 import { collectionExportPreset, matchSavedCollection } from "../lib/collection-export.js";
 import { syncCollectionToLibrary, writeCollectionLibraryCatalog } from "../lib/collection-library.js";
 import { loadCollectionLibraryHandle, ensurePermission } from "../lib/vault-handle.js";
@@ -51,6 +58,7 @@ const progressSection = document.getElementById("progress-section");
 const progressSummary = document.getElementById("progress-summary");
 const savedCollectionSelect = document.getElementById("saved-collection");
 const savedCollectionHint = document.getElementById("saved-collection-hint");
+const newSourceControls = document.getElementById("new-source-controls");
 const manageCollectionsButton = document.getElementById("manage-collections");
 const resetCaptureButton = document.getElementById("reset-capture");
 const retryErrorsButton = document.getElementById("retry-errors");
@@ -91,7 +99,7 @@ async function initialize() {
   await populateSavedCollections(seed, syncQueue[0] || params.get("collection"));
 
   const requestedMode = params.get("mode");
-  const requestedRadio = requestedMode && form.querySelector(`input[name="mode"][value="${requestedMode}"]`);
+  const requestedRadio = !selectedCollection() && requestedMode && form.querySelector(`input[name="mode"][value="${requestedMode}"]`);
   if (requestedRadio) requestedRadio.checked = true;
   for (const radio of form.querySelectorAll("input[name='mode']")) radio.addEventListener("change", reflectMode);
   reflectMode();
@@ -140,7 +148,7 @@ async function populateSavedCollections(seed = "", selectedId = "") {
   const collections = await loadCollections();
   const inventories = await loadSiteInventories(collections.map((collection) => collection.id));
   savedCollectionEntries = collections.map((collection) => ({ collection, inventory: inventories[collection.id] }));
-  savedCollectionSelect.replaceChildren(new Option("Choose a saved collection…", ""));
+  savedCollectionSelect.replaceChildren(new Option("New capture — choose a source below", ""));
   for (const entry of savedCollectionEntries) {
     const count = collectionExportPreset(entry.collection, entry.inventory).inventoryCount;
     savedCollectionSelect.append(new Option(`${entry.collection.name} · ${typeLabel(entry.collection.type)} · ${count} page${count === 1 ? "" : "s"}`, entry.collection.id));
@@ -162,7 +170,17 @@ async function populateSavedCollections(seed = "", selectedId = "") {
 function applySavedCollection(collectionId) {
   if (!collectionId) {
     loadedCollectionBaseline = null;
-    savedCollectionHint.textContent = "";
+    const listRadio = form.querySelector('input[name="mode"][value="list"]');
+    if (listRadio) listRadio.checked = true;
+    urlsInput.value = "";
+    startInput.value = "";
+    collectionNameInput.value = "";
+    maxPagesInput.value = "25";
+    includePatternsInput.value = "";
+    excludePatternsInput.value = "";
+    savedCollectionHint.textContent = "Choose one of the new-source methods below.";
+    reflectMode();
+    updateUrlCount();
     updateCollectionSaveState();
     return;
   }
@@ -179,8 +197,11 @@ function applySavedCollection(collectionId) {
   loadedCollectionBaseline = collectionDraftSignature();
   reflectMode();
   updateUrlCount();
+  const refreshNote = entry.collection.type === "sharepoint"
+    ? " SharePoint collections refresh automatically before local sync."
+    : "";
   savedCollectionHint.textContent = preset.inventoryCount
-    ? `Loaded ${preset.inventoryCount} saved page${preset.inventoryCount === 1 ? "" : "s"}.`
+    ? `Using ${preset.inventoryCount} saved page${preset.inventoryCount === 1 ? "" : "s"}.${refreshNote}`
     : `Using ${sourceLabel(preset.mode)} discovery for this ${typeLabel(entry.collection.type).toLowerCase()} collection.`;
 }
 
@@ -235,8 +256,10 @@ function currentMode() {
 
 function reflectMode() {
   const mode = currentMode();
+  const usingSavedCollection = Boolean(selectedCollection());
+  newSourceControls.hidden = usingSavedCollection;
   for (const field of form.querySelectorAll("[data-mode]")) {
-    field.style.display = field.getAttribute("data-mode").split(" ").includes(mode) ? "" : "none";
+    field.style.display = !usingSavedCollection && field.getAttribute("data-mode").split(" ").includes(mode) ? "" : "none";
   }
   startLabel.textContent = mode === "sitemap" ? "Sitemap URL" : mode === "llms" ? "llms.txt URL" : "Start URL";
 }
@@ -346,9 +369,6 @@ async function start() {
   showProgress();
   showPreparingAction();
   try {
-    const mode = currentMode();
-    const maxPages = clampInt(maxPagesInput.value, 1, 500, 25);
-    const maxDepth = clampInt(maxDepthInput.value, 0, 20, 5);
     let seeds = [];
     let followLinks = false;
     const destination = destinationSelect.value;
@@ -357,6 +377,20 @@ async function start() {
     if (destination === "library" && !collection) {
       throw new Error("Select or save a collection before syncing to the Local Collections Library.");
     }
+
+    // A saved SharePoint inventory can change between captures. Refresh it
+    // before a local sync so added/updated/deleted pages are based on the
+    // authoritative Site Pages list rather than a stale URL snapshot. Keep
+    // the permission request as the first await in this click handler so
+    // Chrome still recognizes the user's gesture.
+    if (destination === "library" && collection?.type === "sharepoint") {
+      await requestOrigins([collection.webUrl || collection.url]);
+      await refreshSharePointInventoryForSync(collection);
+    }
+
+    const mode = currentMode();
+    const maxPages = clampInt(maxPagesInput.value, 1, 500, 25);
+    const maxDepth = clampInt(maxDepthInput.value, 0, 20, 5);
 
     if (mode === "list") {
       seeds = parseUrlList(urlsInput.value);
@@ -420,7 +454,8 @@ async function start() {
         }),
         outputMode: outputSelect.value,
         destination,
-        collectionId: collection && collection.id
+        collectionId: collection && collection.id,
+        expectedUrls: destination === "library" && collection ? seeds : null
       }
     });
     if (!response || !response.id) throw new Error(response && response.error || "Could not start the crawl.");
@@ -432,6 +467,46 @@ async function start() {
     clearProgressAction();
     setRunning("done");
   }
+}
+
+async function refreshSharePointInventoryForSync(collection) {
+  log(`Refreshing ${collection.name} before sync…`);
+  const previous = await loadSiteInventory(collection.id);
+  const result = await discoverSitePages(collection);
+  if (!result.ok) {
+    const detail = result.status ? ` (status ${result.status})` : "";
+    throw new Error(`SharePoint inventory refresh failed${detail}. The saved inventory was not changed.`);
+  }
+
+  const comparison = reconcileSitePages(previous.pages, result.pages || []);
+  if (previous.pages.length && !comparison.pages.length) {
+    throw new Error("SharePoint returned no pages. Sync stopped and the previous inventory was preserved.");
+  }
+  if (inventoryReductionNeedsConfirmation(previous.pages.length, comparison.pages.length)) {
+    const removed = comparison.removedPages.length;
+    const accepted = window.confirm(
+      `${collection.name} returned ${comparison.pages.length} page(s), ${removed} fewer than the previous inventory. Continue with this sync? Existing local files will be preserved for review.`
+    );
+    if (!accepted) throw new Error("Sync stopped; the previous SharePoint inventory was preserved.");
+  }
+
+  const refreshedAt = Date.now();
+  const inventory = {
+    pages: comparison.pages,
+    removedPages: comparison.removedPages,
+    lastRefreshedAt: refreshedAt
+  };
+  await saveSiteInventory(collection.id, inventory);
+  const entry = savedCollectionEntries.find((candidate) => candidate.collection.id === collection.id);
+  if (entry) entry.inventory = inventory;
+  applySavedCollection(collection.id);
+
+  const changes = [];
+  if (comparison.newCount) changes.push(`${comparison.newCount} new`);
+  if (comparison.updatedCount) changes.push(`${comparison.updatedCount} updated`);
+  if (comparison.removedCount) changes.push(`${comparison.removedCount} removed`);
+  log(`Inventory refreshed: ${comparison.pages.length} current page(s)${changes.length ? ` · ${changes.join(" · ")}` : " · no changes"}.`);
+  return comparison;
 }
 
 function showProgress(reveal = false) {
@@ -506,14 +581,17 @@ async function exportJob(job) {
     const collections = await loadCollections();
     const collection = collections.find((item) => item.id === job.options.collectionId) || null;
     if (collection) await saveCollectionHealth(collection.id, { results: job.results, errors: job.errors });
-    await buildOutputs(pages, currentSettings, job.options.outputMode, {
+    const outputResult = await buildOutputs(pages, currentSettings, job.options.outputMode, {
       destination,
       collection,
       jobId: streamingZipOnly ? job.id : null,
-      results: streamingZipOnly ? job.results : null
+      results: streamingZipOnly ? job.results : null,
+      expectedUrls: job.options.expectedUrls,
+      captureErrors: job.errors
     });
     const synced = destination === "library";
-    summary.textContent = `${synced ? "Synced" : "Exported"} ${pageCount} page(s).`;
+    const completedPageCount = outputResult?.pageCount ?? pageCount;
+    summary.textContent = `${synced ? "Synced" : "Exported"} ${completedPageCount} page(s).`;
     progressSummary.textContent = synced ? "Local sync complete" : "Export complete";
     log("Done.");
     await saveJob({ ...job, exported: true });
@@ -544,7 +622,14 @@ async function exportJob(job) {
   }
 }
 
-async function buildOutputs(pages, settings, outputMode, { destination = "download", collection = null, jobId = null, results = null } = {}) {
+async function buildOutputs(pages, settings, outputMode, {
+  destination = "download",
+  collection = null,
+  jobId = null,
+  results = null,
+  expectedUrls = null,
+  captureErrors = []
+} = {}) {
   const siteTitle = collection && collection.name || deriveSiteTitle(pages);
   const base = slugify(siteTitle, { fallback: "site-export" });
   const options = { metadataStyle: settings.metadataStyle, includeTitleHeading: settings.includeTitleHeading };
@@ -553,11 +638,12 @@ async function buildOutputs(pages, settings, outputMode, { destination = "downlo
     if (!handle || await ensurePermission(handle) !== "granted") {
       throw new Error("Local Collections Library access is unavailable. Re-grant it in Manage Collections.");
     }
-    const result = await syncCollectionToLibrary(handle, collection, pages, settings);
+    const result = await syncCollectionToLibrary(handle, collection, pages, settings, { expectedUrls, captureErrors });
     await writeCollectionLibraryCatalog(handle, await loadCollections());
     log(`Synced ${result.pageCount} page(s) to ${result.folder}: ${result.updatedCount} updated, ${result.unchangedCount} unchanged.`);
+    if (result.retainedCount) log(`${result.retainedCount} last-good local file(s) retained because the current capture did not succeed.`, true);
     if (result.removed.length) log(`${result.removed.length} previously synced file(s) need review; none were deleted.`, true);
-    return;
+    return result;
   }
   let files = null;
   const pageFiles = () => files || (files = buildPageFiles(pages, options));

@@ -65,12 +65,22 @@ export function reconcileSitePages(previousPages, discoveredPages) {
     }
   }
 
-  const removedCount = previous.reduce(
-    (count, page) => count + (currentKeys.has(pageIdentity(page)) ? 0 : 1),
-    0
-  );
+  const removedPages = previous.filter((page) => !currentKeys.has(pageIdentity(page)));
+  const removedCount = removedPages.length;
 
-  return { pages, newCount, updatedCount, unchangedCount, removedCount, changeTypes };
+  return { pages, newCount, updatedCount, unchangedCount, removedCount, removedPages, changeTypes };
+}
+
+// Empty results are always suspicious when a collection previously had
+// pages. For larger inventories, require confirmation when at least 25% of
+// the pages disappear at once. A single normal deletion in a modest site can
+// continue without an unnecessary interruption.
+export function inventoryReductionNeedsConfirmation(previousCount, currentCount) {
+  const before = Math.max(0, Number(previousCount) || 0);
+  const after = Math.max(0, Number(currentCount) || 0);
+  if (!before || after >= before) return false;
+  if (after === 0) return true;
+  return before >= 5 && (before - after) / before >= 0.25;
 }
 
 async function loadInventories() {
@@ -86,8 +96,12 @@ export async function loadSiteInventory(siteId) {
 
 function normalizeInventory(inventory) {
   return inventory && typeof inventory === "object"
-    ? { pages: dedupePages(inventory.pages), lastRefreshedAt: inventory.lastRefreshedAt || null }
-    : { pages: [], lastRefreshedAt: null };
+    ? {
+        pages: dedupePages(inventory.pages),
+        removedPages: dedupePages(inventory.removedPages),
+        lastRefreshedAt: inventory.lastRefreshedAt || null
+      }
+    : { pages: [], removedPages: [], lastRefreshedAt: null };
 }
 
 // Read the shared local-storage object once when a UI needs several saved
@@ -102,6 +116,7 @@ export async function saveSiteInventory(siteId, inventory) {
   const inventories = await loadInventories();
   inventories[siteId] = {
     pages: dedupePages(inventory && inventory.pages),
+    removedPages: dedupePages(inventory && inventory.removedPages),
     lastRefreshedAt: inventory && inventory.lastRefreshedAt || Date.now()
   };
   await chrome.storage.local.set({ [STORAGE_KEY]: inventories });

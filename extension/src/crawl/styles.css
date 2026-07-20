@@ -311,6 +311,34 @@ select:focus {
   min-height: 176px;
 }
 
+.new-source-controls {
+  display: grid;
+  gap: 9px;
+}
+
+.new-source-controls[hidden] {
+  display: none;
+}
+
+.source-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.source-divider::before,
+.source-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: var(--border);
+}
+
 #urls::-webkit-scrollbar-corner,
 #urls::-webkit-resizer {
   background-color: var(--bg);

@@ -1140,7 +1140,9 @@ legend {
 }
 
 .site-discover-results li.is-error,
-.site-discover-results li.is-error a {
+.site-discover-results li.is-error a,
+.site-discover-results li.is-removed,
+.site-discover-results li.is-removed a {
   color: var(--danger);
 }
 
@@ -1165,6 +1167,17 @@ legend {
   list-style: none;
   margin-left: -16px;
   padding-top: 2px;
+}
+
+.site-change-badge.is-updated {
+  color: var(--accent-hover);
+  border-color: var(--accent);
+}
+
+.site-change-badge.is-removed {
+  color: var(--danger);
+  border-color: currentColor;
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
 .site-results-more button {

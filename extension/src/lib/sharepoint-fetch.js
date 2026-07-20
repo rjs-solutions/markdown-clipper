@@ -6,6 +6,7 @@
 // module drives.
 
 import { sitePagesQueryUrl, normalizeDiscoveredPages } from "./sharepoint-discover.js";
+import { normalWindowId } from "./crawl.js";
 
 const TAB_READY_TIMEOUT_MS = 20_000;
 
@@ -102,7 +103,15 @@ export async function discoverSitePages(site, { top = 100, maxItems = 2000 } = {
   const startUrl = sitePagesQueryUrl(site.apiBase, { top });
   let tab;
   try {
-    tab = await chrome.tabs.create({ url: site.webUrl, active: false });
+    const windowId = await normalWindowId();
+    if (chrome.windows?.getAll && windowId == null) {
+      return { ok: false, reason: "no-window", message: "Open a normal Chrome window and try again." };
+    }
+    tab = await chrome.tabs.create({
+      url: site.webUrl,
+      active: false,
+      ...(windowId == null ? {} : { windowId })
+    });
   } catch (error) {
     return { ok: false, reason: "tab-failed", message: error && error.message ? error.message : String(error) };
   }

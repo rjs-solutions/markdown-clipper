@@ -1,4 +1,5 @@
 import { buildPageFiles, buildIndexMarkdown } from "./aggregate.js";
+import { comparableUrl } from "./discover.js";
 import { sanitizePathSegment, slugify } from "./slug.js";
 import { encodePathForLink } from "./sitepath.js";
 
@@ -243,7 +244,12 @@ export async function writeCollectionLibraryCatalog(root, collections) {
   return { count: entries.length, collections: data };
 }
 
-function syncReport(collection, files, removed, syncedAt, { updatedCount = files.length, unchangedCount = 0 } = {}) {
+function syncReport(collection, files, removed, syncedAt, {
+  updatedCount = files.length,
+  unchangedCount = 0,
+  retainedCount = 0,
+  captureFailureCount = 0
+} = {}) {
   const lines = [
     `# ${collection.name} sync report`,
     "",
@@ -252,6 +258,8 @@ function syncReport(collection, files, removed, syncedAt, { updatedCount = files
     `Current pages: ${files.length}`,
     `Updated files: ${updatedCount}`,
     `Unchanged files: ${unchangedCount}`,
+    `Retained after capture issues: ${retainedCount}`,
+    `Capture failures: ${captureFailureCount}`,
     `No longer present: ${removed.length}`,
     ""
   ];
@@ -263,25 +271,33 @@ function syncReport(collection, files, removed, syncedAt, { updatedCount = files
   return lines.join("\n");
 }
 
-export async function syncCollectionToLibrary(root, collection, pages, settings = {}, { syncedAt = Date.now() } = {}) {
+export async function syncCollectionToLibrary(root, collection, pages, settings = {}, {
+  syncedAt = Date.now(),
+  expectedUrls = null,
+  captureErrors = []
+} = {}) {
   if (!root) throw new Error("Choose a Local Collections Library folder first.");
   if (!collection || !collection.id) throw new Error("Save or select a collection before syncing it locally.");
   const folder = collectionLibraryPath(collection);
   const files = buildLibraryFiles(collection, pages, settings);
   const previous = await readJson(root, `${folder}/${MANIFEST_FILE}`);
-  const previousByUrl = new Map((Array.isArray(previous && previous.files) ? previous.files : [])
+  const previousFiles = Array.isArray(previous && previous.files) ? previous.files : [];
+  const previousByUrl = new Map(previousFiles
     .filter((file) => file && typeof file === "object" && file.url)
-    .map((file) => [file.url, file]));
-  const currentPaths = new Set(files.map((file) => file.path));
-  const removed = Array.isArray(previous && previous.files)
-    ? previous.files.map((file) => typeof file === "string" ? file : file.path).filter((path) => path && !currentPaths.has(path))
-    : [];
+    .map((file) => [comparableUrl(file.url), file]));
+  const expectedSet = Array.isArray(expectedUrls)
+    ? new Set(expectedUrls.map(comparableUrl).filter(Boolean))
+    : null;
+  const capturedSet = new Set(files.map((file) => comparableUrl(file.url)).filter(Boolean));
+  const errorByUrl = new Map((Array.isArray(captureErrors) ? captureErrors : [])
+    .filter((entry) => entry?.url)
+    .map((entry) => [comparableUrl(entry.url), entry.error || "Capture failed"]));
 
   let updatedCount = 0;
   let unchangedCount = 0;
   for (const file of files) {
     file.contentHash = contentHash(file.content);
-    const old = previousByUrl.get(file.url);
+    const old = previousByUrl.get(comparableUrl(file.url));
     if (old && old.path === file.path && old.contentHash === file.contentHash) {
       unchangedCount += 1;
     } else {
@@ -289,8 +305,45 @@ export async function syncCollectionToLibrary(root, collection, pages, settings 
       updatedCount += 1;
     }
   }
-  await writeText(root, `${folder}/index.md`, buildIndexMarkdown(files, { siteTitle: collection.name }));
-  await writeText(root, `${folder}/${REPORT_FILE}`, syncReport(collection, files, removed, syncedAt, { updatedCount, unchangedCount }));
+
+  // When an authoritative current inventory is available, retain the last
+  // good local file for any expected URL that failed capture. Absence from a
+  // successful result alone is not proof that the source page was deleted.
+  const retainedFiles = expectedSet
+    ? previousFiles.filter((file) => (
+        file && typeof file === "object" && file.url &&
+        expectedSet.has(comparableUrl(file.url)) &&
+        !capturedSet.has(comparableUrl(file.url))
+      ))
+    : [];
+  const retainedEntries = retainedFiles.map((file) => ({
+    ...file,
+    captureStatus: errorByUrl.has(comparableUrl(file.url)) ? "error" : "retained",
+    captureError: errorByUrl.get(comparableUrl(file.url)) || "No current page body was available"
+  }));
+  const currentPaths = new Set([...files.map((file) => file.path), ...retainedEntries.map((file) => file.path)]);
+  const newlyRemoved = previousFiles
+    .filter((file) => {
+      const path = typeof file === "string" ? file : file?.path;
+      if (!path || currentPaths.has(path)) return false;
+      if (!expectedSet || typeof file === "string" || !file.url) return true;
+      return !expectedSet.has(comparableUrl(file.url));
+    })
+    .map((file) => typeof file === "string" ? file : file.path);
+  const priorPending = Array.isArray(previous?.removedFromPreviousSync) ? previous.removedFromPreviousSync : [];
+  const removed = [...new Set([...priorPending, ...newlyRemoved])].filter((path) => path && !currentPaths.has(path));
+  const manifestFiles = [
+    ...files.map((file) => ({ path: file.path, url: file.url, title: file.title || "", contentHash: file.contentHash })),
+    ...retainedEntries
+  ];
+
+  await writeText(root, `${folder}/index.md`, buildIndexMarkdown([...files, ...retainedEntries], { siteTitle: collection.name }));
+  await writeText(root, `${folder}/${REPORT_FILE}`, syncReport(collection, manifestFiles, removed, syncedAt, {
+    updatedCount,
+    unchangedCount,
+    retainedCount: retainedEntries.length,
+    captureFailureCount: errorByUrl.size
+  }));
 
   const manifest = {
     version: 1,
@@ -300,9 +353,20 @@ export async function syncCollectionToLibrary(root, collection, pages, settings 
     sourceUrl: collection.sourceUrl || collection.webUrl || collection.url || "",
     folder,
     syncedAt: new Date(syncedAt).toISOString(),
-    files: files.map((file) => ({ path: file.path, url: file.url, title: file.title || "", contentHash: file.contentHash })),
-    removedFromPreviousSync: removed
+    files: manifestFiles,
+    removedFromPreviousSync: removed,
+    reviewedRemoved: Array.isArray(previous?.reviewedRemoved) ? previous.reviewedRemoved : []
   };
   await writeText(root, `${folder}/${MANIFEST_FILE}`, `${JSON.stringify(manifest, null, 2)}\n`);
-  return { folder, filesWritten: updatedCount + 3, pageCount: files.length, updatedCount, unchangedCount, removed, manifest };
+  return {
+    folder,
+    filesWritten: updatedCount + 3,
+    pageCount: manifestFiles.length,
+    capturedCount: files.length,
+    retainedCount: retainedEntries.length,
+    updatedCount,
+    unchangedCount,
+    removed,
+    manifest
+  };
 }

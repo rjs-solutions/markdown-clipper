@@ -85,7 +85,7 @@ async function collectLinks(tabId) {
   }
 }
 
-async function normalWindowId() {
+export async function normalWindowId() {
   if (!chrome.windows?.getAll) return null;
   const windows = await chrome.windows.getAll({ windowTypes: ["normal"] });
   const target = windows.find((window) => window.focused) || windows[0];

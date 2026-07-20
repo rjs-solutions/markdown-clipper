@@ -151,6 +151,10 @@ test("Capture Collection uses branded flat sections and icon-led source choices"
   assert.doesNotMatch(html, /radio-mark/);
   assert.match(html, /class="form-panel"/);
   assert.match(html, /id="source-heading" class="group-heading"/);
+  assert.match(html, /id="new-source-controls" class="new-source-controls"/);
+  assert.match(html, /New capture — choose a source below/);
+  assert.match(source, /newSourceControls\.hidden = usingSavedCollection/);
+  assert.match(source, /refreshSharePointInventoryForSync/);
   assert.match(html, /id="scope-heading" class="group-heading"/);
   assert.match(html, /id="output-heading" class="group-heading"/);
   assert.equal((html.match(/class="mode-icon"/g) || []).length, 4);

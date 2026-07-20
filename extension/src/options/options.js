@@ -26,6 +26,7 @@ import {
   saveSiteInventory,
   removeSiteInventory,
   reconcileSitePages,
+  inventoryReductionNeedsConfirmation,
   pageIdentity
 } from "../lib/sharepoint-inventory.js";
 import { exportSettings, importSettings } from "../lib/settings-backup.js";
@@ -1330,9 +1331,16 @@ function renderCollectionsControl(panel) {
     const discoverResults = document.createElement("ul");
     discoverResults.className = "site-discover-results";
     let currentPages = [];
+    let currentRemovedPages = [];
     let currentChangeTypes = {};
     let currentHealthPages = [];
-    const renderCurrentPages = () => renderDiscoveredPages(discoverResults, currentPages, currentChangeTypes, currentHealthPages);
+    const renderCurrentPages = () => renderDiscoveredPages(
+      discoverResults,
+      currentPages,
+      currentChangeTypes,
+      currentHealthPages,
+      currentRemovedPages
+    );
     details.append(discoverResults);
     const healthReview = document.createElement("div");
     healthReview.className = "collection-health-review";
@@ -1604,14 +1612,32 @@ function renderCollectionsControl(panel) {
         if (result.ok) {
           const previous = await loadSiteInventory(site.id);
           const comparison = reconcileSitePages(previous.pages, result.pages || []);
+          if (previous.pages.length && !comparison.pages.length) {
+            discoverStatus.textContent = "No pages were returned. The previous inventory was preserved.";
+            return false;
+          }
+          if (inventoryReductionNeedsConfirmation(previous.pages.length, comparison.pages.length)) {
+            const accepted = window.confirm(
+              `${site.name} returned ${comparison.pages.length} page(s), ${comparison.removedCount} fewer than the previous inventory. Continue? Existing local files will be preserved for review.`
+            );
+            if (!accepted) {
+              discoverStatus.textContent = "Refresh stopped; the previous inventory was preserved.";
+              return false;
+            }
+          }
           const refreshedAt = Date.now();
-          await saveSiteInventory(site.id, { pages: comparison.pages, lastRefreshedAt: refreshedAt });
+          await saveSiteInventory(site.id, {
+            pages: comparison.pages,
+            removedPages: comparison.removedPages,
+            lastRefreshedAt: refreshedAt
+          });
           if (result.sourceMode && site.sourceMode === "auto") {
             site.sourceMode = result.sourceMode;
             site.sourceUrl = result.sourceUrl || site.sourceUrl;
           }
           discoverStatus.textContent = describeRefreshResult(comparison, previous.lastRefreshedAt, refreshedAt);
           currentPages = comparison.pages;
+          currentRemovedPages = comparison.removedPages;
           currentChangeTypes = previous.lastRefreshedAt ? comparison.changeTypes : {};
           renderCurrentPages();
           persist();
@@ -1685,12 +1711,14 @@ function renderCollectionsControl(panel) {
       if (inventory.lastRefreshedAt) {
         discoverStatus.textContent = `Last checked · ${formatDateTime(inventory.lastRefreshedAt)} · ${inventory.pages.length} page${inventory.pages.length === 1 ? "" : "s"}`;
         currentPages = inventory.pages;
+        currentRemovedPages = inventory.removedPages || [];
         currentChangeTypes = {};
         renderCurrentPages();
       } else if (site.urls?.length) {
         const pages = site.urls.map(pageFromUrl);
         discoverStatus.textContent = `${pages.length} saved URL${pages.length === 1 ? "" : "s"}.`;
         currentPages = pages;
+        currentRemovedPages = [];
         currentChangeTypes = {};
         renderCurrentPages();
       }
@@ -1802,7 +1830,7 @@ function renderCollectionsControl(panel) {
 
 // Show up to 10 discovered pages: title (or FileRef basename) plus a
 // readable Modified date, if present.
-function renderDiscoveredPages(list, pages, changeTypes = {}, healthPages = []) {
+function renderDiscoveredPages(list, pages, changeTypes = {}, healthPages = [], removedPages = []) {
   list.replaceChildren();
   const comparablePageUrl = (value) => {
     try {
@@ -1819,7 +1847,8 @@ function renderDiscoveredPages(list, pages, changeTypes = {}, healthPages = []) 
   const inventoryKeys = new Set((pages || []).map((page) => comparablePageUrl(page.url)));
   const displayPages = [
     ...(pages || []),
-    ...(healthPages || []).filter((page) => page.status === "error" && !inventoryKeys.has(comparablePageUrl(page.url)))
+    ...(healthPages || []).filter((page) => page.status === "error" && !inventoryKeys.has(comparablePageUrl(page.url))),
+    ...(removedPages || []).map((page) => ({ ...page, inventoryStatus: "removed" }))
   ];
   const expanded = list.dataset.expanded === "true";
   const visiblePages = expanded ? displayPages : displayPages.slice(0, 10);
@@ -1835,18 +1864,23 @@ function renderDiscoveredPages(list, pages, changeTypes = {}, healthPages = []) 
       text.rel = "noreferrer";
     }
     const failure = failures.get(comparablePageUrl(page.url));
-    if (failure) {
+    if (page.inventoryStatus === "removed") {
+      item.classList.add("is-removed");
+      const explanation = "No longer present in the latest inventory. Any existing local file is preserved until review.";
+      item.title = explanation;
+      text.title = explanation;
+    } else if (failure) {
       item.classList.add("is-error");
       const explanation = `Needs review: ${failure.error || "Capture failed"}`;
       item.title = explanation;
       text.title = explanation;
     }
     item.append(text);
-    const changeType = changeTypes[pageIdentity(page)];
+    const changeType = page.inventoryStatus === "removed" ? "removed" : changeTypes[pageIdentity(page)];
     if (changeType) {
       const badge = document.createElement("span");
       badge.className = `site-change-badge is-${changeType}`;
-      badge.textContent = changeType === "new" ? "New" : "Updated";
+      badge.textContent = changeType === "new" ? "New" : changeType === "removed" ? "Removed" : "Updated";
       item.append(badge);
     }
     list.append(item);
@@ -1859,7 +1893,7 @@ function renderDiscoveredPages(list, pages, changeTypes = {}, healthPages = []) 
     moreButton.textContent = `Show ${displayPages.length - 10} more page${displayPages.length - 10 === 1 ? "" : "s"}`;
     moreButton.addEventListener("click", () => {
       list.dataset.expanded = "true";
-      renderDiscoveredPages(list, pages, changeTypes, healthPages);
+      renderDiscoveredPages(list, pages, changeTypes, healthPages, removedPages);
     });
     more.append(moreButton);
     list.append(more);

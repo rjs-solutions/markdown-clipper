@@ -102,6 +102,60 @@ test("a later sync overwrites current pages and reports missing files without de
   assert.match(directory(root, "sharepoint/team-docs").files.get("_sync-report.md").content, /docs\/remove\.md/);
 });
 
+test("an expected page that fails capture keeps its last-good local file", async () => {
+  const root = makeDirectory();
+  const stable = { url: "https://example.test/docs/stable", title: "Stable", markdown: "Current", metadata: {} };
+  const flaky = { url: "https://example.test/docs/flaky", title: "Flaky", markdown: "Last good", metadata: {} };
+  await syncCollectionToLibrary(root, collection, [stable, flaky], { metadataStyle: "none", includeTitleHeading: true });
+
+  const result = await syncCollectionToLibrary(
+    root,
+    collection,
+    [{ ...stable, markdown: "Updated" }],
+    { metadataStyle: "none", includeTitleHeading: true },
+    {
+      expectedUrls: [stable.url, flaky.url],
+      captureErrors: [{ url: flaky.url, error: "Temporary SharePoint error" }]
+    }
+  );
+  const target = directory(root, "sharepoint/team-docs");
+  const docs = directory(target, "docs");
+  const manifest = JSON.parse(target.files.get("collection.json").content);
+
+  assert.equal(result.retainedCount, 1);
+  assert.deepEqual(result.removed, []);
+  assert.match(docs.files.get("flaky.md").content, /Last good/);
+  assert.equal(manifest.files.find((file) => file.url === flaky.url).captureStatus, "error");
+  assert.match(target.files.get("_sync-report.md").content, /Capture failures: 1/);
+  assert.match(target.files.get("index.md").content, /Flaky/);
+});
+
+test("confirmed removals stay pending across later syncs until reviewed", async () => {
+  const root = makeDirectory();
+  const keep = { url: "https://example.test/docs/keep", title: "Keep", markdown: "Keep", metadata: {} };
+  const gone = { url: "https://example.test/docs/gone", title: "Gone", markdown: "Gone", metadata: {} };
+  await syncCollectionToLibrary(root, collection, [keep, gone], { metadataStyle: "none", includeTitleHeading: true });
+
+  const firstMissing = await syncCollectionToLibrary(
+    root,
+    collection,
+    [keep],
+    { metadataStyle: "none", includeTitleHeading: true },
+    { expectedUrls: [keep.url] }
+  );
+  const stillMissing = await syncCollectionToLibrary(
+    root,
+    collection,
+    [keep],
+    { metadataStyle: "none", includeTitleHeading: true },
+    { expectedUrls: [keep.url] }
+  );
+
+  assert.deepEqual(firstMissing.removed, ["docs/gone.md"]);
+  assert.deepEqual(stillMissing.removed, ["docs/gone.md"]);
+  assert.ok(directory(root, "sharepoint/team-docs/docs").files.has("gone.md"));
+});
+
 test("unchanged content is not rewritten on incremental sync", async () => {
   const root = makeDirectory();
   const pages = [{ url: "https://example.test/docs/keep", title: "Keep", markdown: "Same", metadata: {} }];

@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  inventoryReductionNeedsConfirmation,
   loadSiteInventories,
   pageIdentity,
   reconcileSitePages
@@ -41,6 +42,7 @@ test("reconcileSitePages reports new, unchanged, and removed pages", () => {
   assert.equal(result.updatedCount, 0);
   assert.equal(result.unchangedCount, 1);
   assert.equal(result.removedCount, 1);
+  assert.deepEqual(result.removedPages, [removed]);
   assert.equal(result.changeTypes[pageIdentity(added)], "new");
 });
 
@@ -51,8 +53,17 @@ test("reconcileSitePages tolerates empty and malformed page lists", () => {
     updatedCount: 0,
     unchangedCount: 0,
     removedCount: 0,
+    removedPages: [],
     changeTypes: {}
   });
+});
+
+test("inventory reduction guard catches empty and unusually large drops", () => {
+  assert.equal(inventoryReductionNeedsConfirmation(19, 18), false);
+  assert.equal(inventoryReductionNeedsConfirmation(20, 15), true);
+  assert.equal(inventoryReductionNeedsConfirmation(1, 0), true);
+  assert.equal(inventoryReductionNeedsConfirmation(0, 0), false);
+  assert.equal(inventoryReductionNeedsConfirmation(10, 12), false);
 });
 
 test("loadSiteInventories reads the shared map once and normalizes missing sites", async () => {
@@ -77,7 +88,7 @@ test("loadSiteInventories reads the shared map once and normalizes missing sites
     assert.equal(reads, 1);
     assert.equal(result.saved.pages.length, 1);
     assert.equal(result.saved.lastRefreshedAt, 123);
-    assert.deepEqual(result.missing, { pages: [], lastRefreshedAt: null });
+    assert.deepEqual(result.missing, { pages: [], removedPages: [], lastRefreshedAt: null });
   } finally {
     globalThis.chrome = previousChrome;
   }
