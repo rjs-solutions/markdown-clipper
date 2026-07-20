@@ -55,6 +55,7 @@
         "src/lib/markdown.js",
         "src/lib/settings.js",
         "src/lib/settings-schema.js",
+        "src/lib/slug.js",
         "src/lib/template.js",
         "src/lib/tweet.js",
         "src/vendor/*.js",
